@@ -180,6 +180,7 @@ svg.kscr{width:100%;height:100%;z-index:1}.mapbar,.mapui{z-index:4}svg.net .kv{p
 svg.net line{pointer-events:stroke;cursor:pointer;stroke-linecap:round}
 svg.net line.hit{stroke:transparent}
 svg.net text{font-family:var(--f-mono);font-weight:600;paint-order:stroke;stroke:#fff;pointer-events:none}
+.platabs{position:absolute;left:10px;bottom:10px;right:56px;display:flex;gap:4px;flex-wrap:wrap;z-index:6;pointer-events:none}.platabs:empty{display:none}.platabs button{pointer-events:auto;border:1px solid var(--line,#2b4157);background:#172534e6;color:#e8f1f9;border-radius:8px;padding:6px 10px;font:600 12px Montserrat,system-ui,sans-serif;display:flex;align-items:center;gap:6px;cursor:pointer}.platabs button.on{background:#62a8dc;color:#0b141d;border-color:#62a8dc}.platabs .d{width:9px;height:9px;border-radius:50%;display:inline-block}.platabs button.add{border-style:dashed;color:#62a8dc}
 .mapbar{position:absolute;left:10px;top:10px;right:56px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
 .mapbar>*{pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .mapui{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
@@ -1201,6 +1202,15 @@ async function editor(id){
     todos(()=>O.from("apelidos_estrutura").select("*").eq("concessionaria_id",conc)),
     todos(()=>O.from("orc_itens_extra").select("*").eq("orcamento_id",id))]);
   [PE,IT].forEach(a=>a.forEach(r=>delete r.orc_pontos));
+  /* ---- loteamento subterrâneo: várias plantas por orçamento ---- */
+  const LOT=!!ORC.loteamento;let PLS=[],PLA=null;
+  const DISC={mt:["Média tensão","#1d3bff"],bt:["Baixa tensão","#2aa58a"],civil:["Civil","#b06ad9"],ip:["Iluminação pública","#e3a94b"],dados:["Dados","#d6119c"]};
+  const PFIELDS=["planta_url","planta_tipo","planta_w","planta_h","escala_m_por_unid","planta_textos","planta_pdf","planta_pdf_pag","planta_pdf_k","planta_off_x","planta_off_y"];
+  const swapPlanta=pl=>{PFIELDS.forEach(k=>{ORC[k]=pl&&pl[k]!==undefined?pl[k]:null})};
+  if(LOT){PLS=await todos(()=>O.from("orc_plantas").select("*").eq("orcamento_id",id).order("ordem").order("criado_em"));let sel=null;try{sel=localStorage.getItem("orc.pl."+id)}catch(e){}PLA=PLS.find(x=>x.id===sel)||PLS[0]||null;swapPlanta(PLA)}
+  const daPlanta=p=>!LOT||!PLA||(p&&p.planta_id===PLA.id);
+  const plantaIns=()=>LOT&&PLA?{planta_id:PLA.id}:{};
+  async function salvaPlantaCampos(upd){if(LOT&&PLA){await chk(O.from("orc_plantas").update(upd).eq("id",PLA.id));Object.assign(PLA,upd)}else await chk(O.from("orcamentos").update(upd).eq("id",ORC.id));Object.assign(ORC,upd)}
   const PASTA=ORC.pasta_id?(await O.from("pastas").select("*").eq("id",ORC.pasta_id).single()).data:null;
   const MAT=Object.fromEntries(MATS.map(m=>[m.codigo,m]));
   const VIGR=Object.fromEntries(PV.map(p=>[p.material_codigo,p]));const VIG=Object.fromEntries(PV.map(p=>[p.material_codigo,+p.valor]));
@@ -1310,7 +1320,7 @@ async function editor(id){
       <nav class="steps">${[["projeto","1","Projeto"],["materiais","2","Materiais"],["precificacao","3","Precificação"],["proposta","4","Proposta"]].map(([k,n,l])=>`<button data-e="${k}" class="${etapa===k?"on":""}" ><b>${n}</b>${l}</button>`).join("")}</nav></header>
      ${etapa==="projeto"?`<div class="proj" id="proj"><aside id="side"></aside><div class="split" id="split" title="Arraste para ajustar a largura · duplo clique volta ao padrão"><button class="spbtn" id="sp1b" title="Recolher/expandir a lista">«</button></div>
       <div class="mapwrap" id="map"><div class="stage" id="stage"><img id="img" alt="" hidden><div class="blank" id="blank"></div><svg class="net" id="lbls"></svg><svg class="net" id="net"></svg><div id="pins"></div></div><svg class="net kscr" id="kml"></svg>
-       <div class="mapbar" id="mapbar"></div><div class="mapui"><button id="zmax" aria-label="Expandir mapa" title="Expandir o mapa (Esc volta)" style="font-size:15px">⛶</button><button id="zin" aria-label="Aproximar">+</button><button id="zout" aria-label="Afastar">−</button><button id="zfit" aria-label="Enquadrar" style="font-size:13px">⤢</button></div>
+       <div class="platabs" id="platabs"></div><div class="mapbar" id="mapbar"></div><div class="mapui"><button id="zmax" aria-label="Expandir mapa" title="Expandir o mapa (Esc volta)" style="font-size:15px">⛶</button><button id="zin" aria-label="Aproximar">+</button><button id="zout" aria-label="Afastar">−</button><button id="zfit" aria-label="Enquadrar" style="font-size:13px">⤢</button></div>
        <div class="hint" id="hint" hidden></div><div class="leg" id="leg" hidden></div><div class="esc" id="esc"></div></div><div class="split" id="split2" hidden title="Arraste para ajustar a largura · duplo clique volta ao padrão"><button class="spbtn" id="sp2b" title="Recolher/expandir o painel">»</button></div><aside id="ptpanel" hidden></aside></div>`:`<div class="full-pane" id="full"></div>`}</div>`;
     $$("[data-e]").forEach(b=>b.onclick=()=>{if(b.dataset.e===etapa)return;if(typeof sujoP!=="undefined"&&sujoP&&!confirm("Há alterações não salvas na precificação. Sair mesmo assim?"))return;if(etapa==="proposta"&&propSujo&&!confirm("Há alterações não salvas na proposta. Sair mesmo assim?"))return;propSujo=false;etapa=b.dataset.e;history.pushState(null,"","?id="+ORC.id+(etapa==="projeto"?"":"&etapa="+etapa));shell()});
     $("#hVer")&&($("#hVer").onchange=e=>location.href="orcarede.html?id="+e.target.value+(etapa==="projeto"?"":"&etapa="+etapa));
@@ -1344,11 +1354,12 @@ async function editor(id){
      <label class="fld">Concessionária<select name="conc">${CONCS.map(c=>`<option value="${c.id}" ${ORC.concessionaria_id==c.id?"selected":""}>${esc(c.sigla)} · ${esc(c.nome||"")}</option>`).join("")}</select><span class="note">Ao trocar, os grupos de itens e padrões passam a ser os da nova concessionária. O que já está nos pontos continua até você trocar.</span></label>
      <div class="grid2"><label class="fld">Nº de lotes (loteamento)<input name="lotes" inputmode="numeric" value="${ORC.lotes||""}" placeholder="opcional"></label>
      <label class="fld">Classe de tensão da rede<select name="kv"><option value="">— não definida —</option>${[15,25].map(k=>`<option value="${k}" ${+ORC.tensao_kv===k?"selected":""}>${k} kV</option>`).join("")}</select></label></div>
+     <label class="fld" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="lot" value="1" ${LOT?"checked disabled":""} style="width:auto"> Loteamento subterrâneo (várias plantas por disciplina)${LOT?"":' <span class="note">· depois de ativar não volta atrás</span>'}</label>
      <label class="fld">Segmentos da obra (um por linha)<textarea name="segs" rows="4">${esc(SEGS.map(s=>s.nome).join("\n"))}</textarea></label>
      <label class="fld">Observações<textarea name="obs" rows="3">${esc(ORC.obs||"")}</textarea></label>
      ${AUTO_CINTA?`<div class="row"><span class="note">Cintas automáticas: recalcula todos os pontos que não estão em modo manual.</span><button type="button" class="btn sm" id="dCint">↻ Recalcular cintas</button></div>`:""}
      <div><button type="button" class="btn del sm" id="dDel">Excluir esta versão</button></div>`,async f=>{
-      const upd={titulo:f.titulo.trim(),cliente:f.cliente.trim()||null,cidade:f.cidade.trim()||null,obs:f.obs,tensao_kv:f.kv?+f.kv:null,lotes:parseInt(f.lotes)||null,concessionaria_id:+f.conc||ORC.concessionaria_id};const trocouConc=upd.concessionaria_id!==ORC.concessionaria_id;await chk(O.from("orcamentos").update(upd).eq("id",ORC.id));Object.assign(ORC,upd);
+      const upd={titulo:f.titulo.trim(),cliente:f.cliente.trim()||null,cidade:f.cidade.trim()||null,obs:f.obs,tensao_kv:f.kv?+f.kv:null,lotes:parseInt(f.lotes)||null,concessionaria_id:+f.conc||ORC.concessionaria_id};const trocouConc=upd.concessionaria_id!==ORC.concessionaria_id;await chk(O.from("orcamentos").update(upd).eq("id",ORC.id));Object.assign(ORC,upd);if(f.lot&&!LOT){await viraLoteamento();return}
       const nomes=f.segs.split("\n").map(s=>s.trim()).filter(Boolean);
       for(const s of SEGS.filter(s=>!nomes.includes(s.nome))){await chk(O.from("orc_segmentos").delete().eq("id",s.id));SEGS.splice(SEGS.indexOf(s),1);PTS.forEach(p=>{if(p.segmento_id===s.id)p.segmento_id=null});PE.forEach(e=>{if(e.segmento_id===s.id)e.segmento_id=null});VAOS.forEach(v=>{if(v.segmento_id===s.id)v.segmento_id=null})}
       const cores=["#c2185b","#1565c0","#e0a800","#6a3fbf","#00897b","#ef6c00","#5d4037"];
@@ -1359,7 +1370,7 @@ async function editor(id){
   }
 
   /* ---------- 1. PROJETO ---------- */
-  function montarProjeto(){wrap=$("#map");stage=$("#stage");img=$("#img");blank=$("#blank");setPlanta();renderMapbar();renderPins();renderSide();bindMapa();bindLayout();renderLbls();bindKml();camCarrega();requestAnimationFrame(()=>fit())}
+  function montarProjeto(){wrap=$("#map");stage=$("#stage");img=$("#img");blank=$("#blank");setPlanta();renderMapbar();renderPlantas();renderPins();renderSide();bindMapa();bindLayout();renderLbls();bindKml();camCarrega();requestAnimationFrame(()=>fit())}
   const lsG=k=>{try{return localStorage.getItem("orc."+k)}catch(e){return null}},lsS=(k,v)=>{try{localStorage.setItem("orc."+k,v)}catch(e){}};
   function bindLayout(){
     const pj=$("#proj"),sp=$("#split");const w0=lsG("listw");if(w0)pj.style.setProperty("--listw",w0+"px");
@@ -1693,6 +1704,16 @@ async function editor(id){
   function fit(){if(!wrap)return;const r=wrap.getBoundingClientRect();if(!r.width)return;const s=Math.min(r.width/D.w,r.height/D.h)*.98;T={s,x:(r.width-D.w*s)/2,y:(r.height-D.h*s)/2};apply()}
   function centrar(p){if(!p||!wrap)return;const r=wrap.getBoundingClientRect();T.x=r.width/2-p.x*T.s;T.y=r.height/2-p.y*T.s;apply()}
   function zoomAt(f,cx,cy){const r=wrap.getBoundingClientRect();const minS=Math.min(r.width/D.w,r.height/D.h)*.5;const ns=Math.max(minS,Math.min(12,T.s*f));f=ns/T.s;T.x=cx-(cx-T.x)*f;T.y=cy-(cy-T.y)*f;T.s=ns;apply()}
+  function renderPlantas(){const el=$("#platabs");if(!el)return;if(!LOT){el.innerHTML="";return}
+    el.innerHTML=PLS.map(pl=>{const d=DISC[pl.disciplina]||["",""];const n=PTS.filter(p=>p.planta_id===pl.id).length;return `<button class="${PLA&&PLA.id===pl.id?"on":""}" data-pl="${pl.id}" title="${esc(d[0])} · ${n} pontos"><span class="d" style="background:${d[1]}"></span>${esc(pl.nome)}${PLA&&PLA.id===pl.id?` <span data-prn="${pl.id}" title="Renomear / disciplina">✎</span> <span data-pdel="${pl.id}" title="Excluir planta">🗑</span>`:""}</button>`}).join("")+(!SOVER?`<button class="add" id="plAdd">+ Planta</button>`:"");
+    $$("[data-pl]",el).forEach(b=>b.onclick=e=>{if(e.target.closest("[data-prn],[data-pdel]"))return;ativaPlanta(b.dataset.pl)});
+    $$("[data-prn]",el).forEach(b=>b.onclick=e=>{e.stopPropagation();const pl=PLS.find(x=>x.id===b.dataset.prn);modal(`<h2>Planta</h2><label class="fld">Nome<input name="nome" required value="${esc(pl.nome)}"></label><label class="fld">Disciplina<select name="disc">${Object.entries(DISC).map(([k,v])=>`<option value="${k}" ${pl.disciplina===k?"selected":""}>${v[0]}</option>`).join("")}</select></label>`,async f=>{const u={nome:f.nome.trim()||pl.nome,disciplina:f.disc};await chk(O.from("orc_plantas").update(u).eq("id",pl.id));Object.assign(pl,u);renderPlantas()})});
+    $$("[data-pdel]",el).forEach(b=>b.onclick=e=>{e.stopPropagation();const pl=PLS.find(x=>x.id===b.dataset.pdel);const n=PTS.filter(p=>p.planta_id===pl.id).length;if(n){toast(`Esta planta tem ${n} ponto(s). Exclua ou mova os pontos antes de excluir a planta.`);return}
+      modal(`<h2>Excluir planta “${esc(pl.nome)}”?</h2><p class="note">A imagem e a camada KML desta planta deixam de aparecer. Os pontos não são afetados (ela não tem pontos).</p>`,async()=>{await chk(O.from("orc_plantas").delete().eq("id",pl.id));PLS.splice(PLS.indexOf(pl),1);if(PLA&&PLA.id===pl.id){PLA=null;ativaPlanta(PLS[0]&&PLS[0].id)}renderPlantas()},"Excluir")});
+    const ad=$("#plAdd",el);if(ad)ad.onclick=()=>modal(`<h2>Nova planta</h2><label class="fld">Nome<input name="nome" required value="${esc(`Planta ${PLS.length+1}`)}"></label><label class="fld">Disciplina<select name="disc">${Object.entries(DISC).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join("")}</select></label><p class="note">Depois de criar, use o botão “Planta” para importar o PDF, a imagem ou o satélite desta planta.</p>`,async f=>{const r=await chk(O.from("orc_plantas").insert({orcamento_id:id,disciplina:f.disc,nome:f.nome.trim()||`Planta ${PLS.length+1}`,ordem:PLS.length}).select("*").single());PLS.push(r);ativaPlanta(r.id)})}
+  function ativaPlanta(pid){const pl=PLS.find(x=>x.id===pid);if(!pl||pl===PLA)return;PLA=pl;try{localStorage.setItem("orc.pl."+id,pl.id)}catch(e){}swapPlanta(pl);escala=+ORC.escala_m_por_unid||0;D=dims();CAM=camVazia();camSel=null;selP=null;selV=null;
+    setPlanta();renderMapbar();renderPlantas();renderPins();renderNet();renderLbls();renderHead();renderSide();camCarrega();requestAnimationFrame(()=>fit())}
+  async function viraLoteamento(){await chk(O.from("orcamentos").update({loteamento:true}).eq("id",ORC.id));const pl={orcamento_id:ORC.id,disciplina:"mt",nome:"Planta 1",ordem:0};PFIELDS.forEach(k=>{pl[k]=ORC[k]===undefined?null:ORC[k]});const r=await chk(O.from("orc_plantas").insert(pl).select("*").single());await chk(O.from("orc_pontos").update({planta_id:r.id}).eq("orcamento_id",ORC.id));try{localStorage.setItem("orc.pl."+ORC.id,r.id)}catch(e){}location.reload()}
   function renderMapbar(){
     const b=$("#mapbar");if(!b)return;
     b.innerHTML=(colando?`<button class="btn on" id="mStopCol">⧉ Parar de colar</button>`:"")+`<button class="btn" id="bPlanta">Planta</button>${ORC.planta_url?`<button class="btn ${plantaOculta()?"on":""}" id="bOculta" title="Esconder a imagem da planta para a tela ficar mais leve (os pontos continuam)">${plantaOculta()?"👁 Mostrar planta":"🙈 Ocultar planta"}</button>`:""}<button class="btn ${placing?"on":""}" id="mPlace">${placing?"Cancelar":"+ Ponto"}</button>`
@@ -1717,7 +1738,7 @@ async function editor(id){
     h.textContent=colando?`Colando “${nomePonto(ptById(colando)||{numero:0})}”: clique na planta (novo ponto) ou em pontos existentes · Esc termina`:placing?"Toque na planta onde fica o ponto":tracing?(anchor?"Toque no próximo poste · toque no vazio para começar outro trecho":"Toque no poste de início"):calib?(calib.length?"Agora toque no segundo ponto da medida conhecida":"Toque no primeiro ponto de uma medida conhecida (ex.: cota de 100 m)"):""}
   function renderPins(){
     const el=$("#pins");if(!el)return;const SG=SEGM();
-    el.innerHTML=PTS.filter(p=>tracing||placing||calib||p.id===selP||!redeOc.has("_po")).map(p=>`<button class="pin ${p.poste_id?"":"vazio"} ${CAM.vis.simb&&kmlOn()&&simbPonto(p)?"sy":""} ${p.id===selP?"sel":""} ${p.id===anchor?"anchor":""}" data-id="${p.id}" style="left:${p.x}px;top:${p.y}px${SG[p.segmento_id]?";background:"+SG[p.segmento_id].cor:""}" title="${esc(nomePonto(p))}">${p.numero}${p.poste_id||temIP(p)?`<span class="lp ${temIP(p)?"":"no"}" title="${temIP(p)?"Luminária orçada":"Sem luminária"}">💡</span>`:""}${temTR(p)&&!redeOc.has("_tr")?'<span class="tr" title="Transformador"></span>':""}</button>`).join("");
+    el.innerHTML=PTS.filter(daPlanta).filter(p=>tracing||placing||calib||p.id===selP||!redeOc.has("_po")).map(p=>`<button class="pin ${p.poste_id?"":"vazio"} ${CAM.vis.simb&&kmlOn()&&simbPonto(p)?"sy":""} ${p.id===selP?"sel":""} ${p.id===anchor?"anchor":""}" data-id="${p.id}" style="left:${p.x}px;top:${p.y}px${SG[p.segmento_id]?";background:"+SG[p.segmento_id].cor:""}" title="${esc(nomePonto(p))}">${p.numero}${p.poste_id||temIP(p)?`<span class="lp ${temIP(p)?"":"no"}" title="${temIP(p)?"Luminária orçada":"Sem luminária"}">💡</span>`:""}${temTR(p)&&!redeOc.has("_tr")?'<span class="tr" title="Transformador"></span>':""}</button>`).join("");
     $$(".pin",el).forEach(b=>{
       b.onpointerdown=e=>{e.stopPropagation();if(e.button!==0||tracing||placing||calib||b.dataset.id!==selP)return;
         const p=ptById(b.dataset.id),sx=e.clientX,sy=e.clientY,ox=p.x,oy=p.y;let dragged=false;b.setPointerCapture(e.pointerId);
@@ -1787,9 +1808,9 @@ async function editor(id){
   let CAM=camVazia(),camSel=null,camMover=false,camTimer=null;const camHist=[];
   const camPush=()=>{camHist.push(JSON.stringify(CAM));if(camHist.length>60)camHist.shift()};
   function camDesfaz(){if(!camHist.length){toast("Nada para desfazer na camada.");return}CAM=Object.assign(camVazia(),JSON.parse(camHist.pop()));if(camSel&&!(CAM.L[camSel.li]&&CAM.L[camSel.li].V[camSel.i]))camSel=null;camSalva();renderKml();renderPins();renderSide();if($("#kpanel"))camPainel(true);toast("Desfeito.")}
-  const camDir=()=>`orcarede/camada/${ORC.id}`;
-  async function camCarrega(){try{const l=await sb.storage.from("negocios").list(camDir(),{limit:1,sortBy:{column:"name",order:"desc"}});
-      const f=l.data&&l.data[0];if(f){const r=await sb.storage.from("negocios").download(`${camDir()}/${f.name}`);if(r.data){const o=JSON.parse(await r.data.text()),v=camVazia();CAM=Object.assign(v,o,{vis:Object.assign(v.vis,o.vis||{})})}}}catch(e){console.warn("camada",e)}
+  const camDir=()=>`orcarede/camada/${ORC.id}${LOT&&PLA&&PLS[0]&&PLA.id!==PLS[0].id?"/"+PLA.id:""}`;
+  async function camCarrega(){try{const l=await sb.storage.from("negocios").list(camDir(),{limit:100,sortBy:{column:"name",order:"desc"}});
+      const f=(l.data||[]).find(x=>/\.json$/i.test(x.name));if(f){const r=await sb.storage.from("negocios").download(`${camDir()}/${f.name}`);if(r.data){const o=JSON.parse(await r.data.text()),v=camVazia();CAM=Object.assign(v,o,{vis:Object.assign(v.vis,o.vis||{})})}}}catch(e){console.warn("camada",e)}
     renderKml()}
   function camSalva(){if(SOVER)return;clearTimeout(camTimer);camTimer=setTimeout(async()=>{try{const b=new Blob([JSON.stringify(CAM)],{type:"application/json"});
       const r=await sb.storage.from("negocios").upload(`${camDir()}/${String(Date.now()).padStart(15,"0")}.json`,b,{contentType:"application/json"});if(r.error)throw r.error}catch(e){console.error(e);toast("Não consegui guardar a camada: "+(e.message||e))}},1500)}
@@ -1813,10 +1834,10 @@ async function editor(id){
         o.push(`<circle class="kv" data-k="${key}" cx="${X}" cy="${Y}" r="${10*w}" fill="transparent"/>`);
         if(sel)o.push(`<circle cx="${X}" cy="${Y}" r="${10*w}" fill="none" stroke="#ffd54a" stroke-width="${2*w}" pointer-events="none"/>`);
         if(V.nomes&&v.n)o.push(`<text x="${X+7*w}" y="${Y-7*w}" font-size="${11*w}" fill="#243447" stroke="#fff" stroke-width="${3*w}" paint-order="stroke">${esc(v.n)}</text>`)})});
-    if(V.leg&&CAM.L.length)PTS.forEach(p0=>{const pp=posP(p0),p={id:p0.id,x:pp.X,y:pp.Y},g=CAM.leg[p.id]||{};if(g.oc)return;const t=(g.t||"").trim()||seqDoPonto(p0);if(!t)return;
+    if(V.leg&&CAM.L.length)PTS.filter(daPlanta).forEach(p0=>{const pp=posP(p0),p={id:p0.id,x:pp.X,y:pp.Y},g=CAM.leg[p.id]||{};if(g.oc)return;const t=(g.t||"").trim()||seqDoPonto(p0);if(!t)return;
       const tx=t.split(/[;\n]/).map(l=>l.trim()).filter(Boolean).join("  ·  "),W=(tx.length*5.3+12)*w,Hh=17*w,x0=p.x+17*w,y0=p.y-Hh/2;
       o.push(`<g class="klg" data-pl="${p.id}"><rect x="${x0}" y="${y0}" width="${W}" height="${Hh}" rx="${3*w}" fill="#fff" stroke="#243447" stroke-width="${1*w}"/><text x="${x0+6*w}" y="${p.y+3.8*w}" font-size="${10.5*w}" font-weight="600" fill="#0f2233" pointer-events="none">${esc(tx)}</text></g>`)});
-    if(V.simb&&CAM.L.length)PTS.forEach(p0=>{const pp=posP(p0),p={id:p0.id,numero:p0.numero,x:pp.X,y:pp.Y},s=simbPonto(p0);if(s)o.push(symG(s,p.x,p.y,1.3*w,CAM.sang["p:"+p.id])+`<g pointer-events="none"><circle cx="${p.x+13*w}" cy="${p.y-13*w}" r="${7.5*w}" fill="#fff" stroke="#243447" stroke-width="${1.2*w}"/><text x="${p.x+13*w}" y="${p.y-13*w+3.4*w}" font-size="${9.5*w}" font-weight="700" fill="#0f2233" text-anchor="middle" stroke="none">${esc(p.numero)}</text></g>`)});
+    if(V.simb&&CAM.L.length)PTS.filter(daPlanta).forEach(p0=>{const pp=posP(p0),p={id:p0.id,numero:p0.numero,x:pp.X,y:pp.Y},s=simbPonto(p0);if(s)o.push(symG(s,p.x,p.y,1.3*w,CAM.sang["p:"+p.id])+`<g pointer-events="none"><circle cx="${p.x+13*w}" cy="${p.y-13*w}" r="${7.5*w}" fill="#fff" stroke="#243447" stroke-width="${1.2*w}"/><text x="${p.x+13*w}" y="${p.y-13*w+3.4*w}" font-size="${9.5*w}" font-weight="700" fill="#0f2233" text-anchor="middle" stroke="none">${esc(p.numero)}</text></g>`)});
     if(ex)return o.join("").replace(/<circle class="kv"[^>]*fill="transparent"\/>/g,"");svg.innerHTML=o.join("");kPop()}
   async function kmlComposta(leg){
     const W=ORC.planta_w,H=ORC.planta_h;if(!ORC.planta_url||!W||!H)throw new Error("Este projeto não tem planta/satélite de fundo.");
@@ -1825,7 +1846,7 @@ async function editor(id){
     const k=Math.min(1,2400/Math.max(W,H)),cw=Math.round(W*k),ch=Math.round(H*k);
     const cv=document.createElement("canvas");cv.width=cw;cv.height=ch;const cx=cv.getContext("2d");cx.drawImage(im,0,0,cw,ch);
     const sel=camSel;camSel=null;let g;try{g=renderKml({w:Math.max(1,W/820),leg})}finally{camSel=sel}
-    let lg="";if(leg){const usados=[...new Set(PTS.map(p0=>simbPonto(p0)).filter(Boolean))],linhas=[...new Set(CAM.L.flatMap((ln,li)=>ln.V.slice(0,-1).map((v,i)=>CAM.seg[`s:${li}:${i}`]||"kml")))];
+    let lg="";if(leg){const usados=[...new Set(PTS.filter(daPlanta).map(p0=>simbPonto(p0)).filter(Boolean))],linhas=[...new Set(CAM.L.flatMap((ln,li)=>ln.V.slice(0,-1).map((v,i)=>CAM.seg[`s:${li}:${i}`]||"kml")))];
       const ww=Math.max(1,W/820),it=[];linhas.forEach(id=>{const st=LIN[id]||LIN.kml;it.push(`<line x1="0" y1="0" x2="${30*ww}" y2="0" stroke="${st.c}" stroke-width="${2.6*ww}" ${st.d?`stroke-dasharray="${st.d.split(" ").map(n=>n*ww).join(" ")}"`:""}/><text x="${40*ww}" y="${4*ww}" font-size="${11*ww}" fill="#0f2233">${esc(st.n)}</text>`)});
       usados.forEach(id=>it.push(`<g transform="translate(${15*ww} 0)">${symG(id,0,0,1.3*ww,0)}</g><text x="${40*ww}" y="${4*ww}" font-size="${11*ww}" fill="#0f2233">${esc(SIM[id][0])}</text>`));
       if(it.length){const rh=21*ww,bw=250*ww,bh=(it.length*rh+30*ww),x0=W-bw-14*ww,y0=H-bh-14*ww;
@@ -1840,9 +1861,9 @@ async function editor(id){
   const kmlOn=()=>CAM.L.length>0;
   const simbPonto=p=>{const e=CAM.simb["p:"+p.id];if(e)return e;if(!CAM.vis.auto)return null;const c=(POM[p.poste_id]||{}).codigo||"";return /(^|[^A-Z])DT([^A-Z]|$)/i.test(c)?"dt_pr":/(^|[^A-Z])TC([^A-Z]|$)/i.test(c)?"tc_pr":null};
   const kLigados=()=>{const S=new Set();CAM.L.forEach(l=>l.V.forEach(v=>{if(v.pid&&ptById(v.pid))S.add(v.pid)}));return S};
-  function kPerto(li,i){const v=CAM.L[li].V[i],q=kP(v.x,v.y),S=kLigados();let best=null,bd=250;PTS.forEach(p=>{if(S.has(p.id))return;const d=Math.hypot(p.x-q.X,p.y-q.Y);if(d<bd){bd=d;best={p,m:Math.round(d*(escala||0))}}});return best}
+  function kPerto(li,i){const v=CAM.L[li].V[i],q=kP(v.x,v.y),S=kLigados();let best=null,bd=250;PTS.filter(daPlanta).forEach(p=>{if(S.has(p.id))return;const d=Math.hypot(p.x-q.X,p.y-q.Y);if(d<bd){bd=d;best={p,m:Math.round(d*(escala||0))}}});return best}
   async function kLigaPonto(li,i,pt){const v=CAM.L[li].V[i],q=kP(v.x,v.y);pt.x=Math.round(q.X);pt.y=Math.round(q.Y);await chk(O.from("orc_pontos").update({x:pt.x,y:pt.y}).eq("id",pt.id));await remedir(pt.id);kmlLiga({li,i},pt);renderHead();renderSide();toast(`Ponto ${pt.numero} ligado ao vértice ${v.n||""}.`)}
-  async function kLigaTodos(){const S=kLigados(),pares=[];CAM.L.forEach((ln,li)=>ln.V.forEach((v,i)=>{if(v.pid&&ptById(v.pid))return;const q=kP(v.x,v.y);PTS.forEach(p=>{if(S.has(p.id))return;const d=Math.hypot(p.x-q.X,p.y-q.Y);if(d<=120)pares.push({li,i,p,d,q})})}));
+  async function kLigaTodos(){const S=kLigados(),pares=[];CAM.L.forEach((ln,li)=>ln.V.forEach((v,i)=>{if(v.pid&&ptById(v.pid))return;const q=kP(v.x,v.y);PTS.filter(daPlanta).forEach(p=>{if(S.has(p.id))return;const d=Math.hypot(p.x-q.X,p.y-q.Y);if(d<=120)pares.push({li,i,p,d,q})})}));
     pares.sort((a,b)=>a.d-b.d);const uV=new Set(),uP=new Set(),L=[];pares.forEach(r=>{const kv=r.li+":"+r.i;if(uV.has(kv)||uP.has(r.p.id))return;uV.add(kv);uP.add(r.p.id);L.push(r)});
     if(!L.length){toast("Nenhum ponto solto perto dos vértices (até ~25 m).");return}
     if(!confirm(`Ligar ${L.length} ponto(s) aos vértices mais próximos? Cada ponto é movido para a posição do vértice e os vãos são remedidos.`))return;
@@ -1993,7 +2014,7 @@ async function editor(id){
     const multi=Object.entries(PR).filter(([,p])=>p.L.length>1),DIR={},porPt={};multi.forEach(([k,p])=>{[p.a,p.b].forEach(x=>(porPt[x]=porPt[x]||[]).push(k))});
     multi.forEach(([k0,p0])=>{if(DIR[k0])return;const A=ptById(p0.a),B=ptById(p0.b);if(!A||!B)return;DIR[k0]=(B.x-A.x>0||(B.x===A.x&&B.y>A.y))?[p0.a,p0.b]:[p0.b,p0.a];const fila=[k0];
       while(fila.length){const k=fila.shift();const [f,t]=DIR[k];[[t,"ini"],[f,"fim"]].forEach(([P,modo])=>(porPt[P]||[]).forEach(k2=>{if(DIR[k2])return;const q=PR[k2];const o=q.a===P?q.b:q.a;DIR[k2]=modo==="ini"?[P,o]:[o,P];fila.push(k2)}))}});
-    svg.innerHTML=VAOS.filter(g=>tracing||!redeOc.has(String(g.tipo_rede_id))).map(g=>{const a=ptById(g.ponto_a),b=ptById(g.ponto_b);if(!a||!b)return"";const t=TRM[g.tipo_rede_id]||{cor:"#555"};
+    svg.innerHTML=VAOS.filter(g=>daPlanta(ptById(g.ponto_a))).filter(g=>tracing||!redeOc.has(String(g.tipo_rede_id))).map(g=>{const a=ptById(g.ponto_a),b=ptById(g.ponto_b);if(!a||!b)return"";const t=TRM[g.tipo_rede_id]||{cor:"#555"};
       const k=[g.ponto_a,g.ponto_b].sort().join("|"),pr=PR[k];let nx=0,ny=0,off=0;
       if(pr.L.length>1&&DIR[k]){const F=ptById(DIR[k][0]),T2=ptById(DIR[k][1]);const dx=T2.x-F.x,dy=T2.y-F.y,L=Math.hypot(dx,dy)||1;nx=-dy/L;ny=dx/L;off=(pr.L.indexOf(g)-(pr.L.length-1)/2)*9*w}
       else{const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1;nx=-dy/L;ny=dx/L;if(ny<0||(ny===0&&nx<0)){nx=-nx;ny=-ny}}
@@ -2008,7 +2029,7 @@ async function editor(id){
   function iniciarColar(pt){colando=pt.id;placing=false;tracing=null;anchor=null;calib=null;renderMapbar();updHint();toast(`Copiado: ${nomePonto(pt)}. Clique na planta para criar cópias ou em pontos existentes para colar neles; Esc termina.`)}
   async function colarPonto(srcId,x,y){const src=ptById(srcId);if(!src)return;
     const n=PTS.reduce((m,p)=>Math.max(m,p.numero),0)+1;const base=(src.titulo||"").replace(/\s+\d{1,3}$/,"");
-    const pt=await chk(O.from("orc_pontos").insert({orcamento_id:ORC.id,numero:n,x,y,titulo:base||null,poste_id:src.poste_id,segmento_id:src.segmento_id,cintas_manual:!!src.cintas_manual}).select("*").single());PTS.push(pt);
+    const pt=await chk(O.from("orc_pontos").insert({orcamento_id:ORC.id,...plantaIns(),numero:n,x,y,titulo:base||null,poste_id:src.poste_id,segmento_id:src.segmento_id,cintas_manual:!!src.cintas_manual}).select("*").single());PTS.push(pt);
     for(const e of PE.filter(e=>e.ponto_id===src.id).sort((a,b)=>a.ordem-b.ordem)){
       const ne=await chk(O.from("orc_ponto_estruturas").insert({ponto_id:pt.id,estrutura_id:e.estrutura_id,ordem:e.ordem,segmento_id:e.segmento_id}).select("id").single());
       const its=IT.filter(i=>i.ponto_estrutura_id===e.id).map(i=>({ponto_id:pt.id,ponto_estrutura_id:ne.id,material_codigo:i.material_codigo,quantidade:i.quantidade,editado:i.editado}));
@@ -2031,7 +2052,7 @@ async function editor(id){
     if(av.length)await chk(O.from("orc_ponto_itens").insert(av))}
   async function novoPonto(x,y){if(SOVER){toast("Somente visualização.");return}
     const n=PTS.reduce((m,p)=>Math.max(m,p.numero),0)+1;
-    const pt=await chk(O.from("orc_pontos").insert({orcamento_id:ORC.id,numero:n,x,y}).select("*").single());PTS.push(pt);selP=pt.id;selV=null;renderHead();renderPins();renderSide();setTimeout(()=>$("#pSeq")&&$("#pSeq").focus(),30);return pt}
+    const pt=await chk(O.from("orc_pontos").insert({orcamento_id:ORC.id,...plantaIns(),numero:n,x,y}).select("*").single());PTS.push(pt);selP=pt.id;selV=null;renderHead();renderPins();renderSide();setTimeout(()=>$("#pSeq")&&$("#pSeq").focus(),30);return pt}
   function bindMapa(){
     $("#zin").onclick=()=>{const r=wrap.getBoundingClientRect();zoomAt(1.5,r.width/2,r.height/2)};
     $("#zout").onclick=()=>{const r=wrap.getBoundingClientRect();zoomAt(1/1.5,r.width/2,r.height/2)};
@@ -2052,7 +2073,7 @@ async function editor(id){
         const px=Math.hypot(calib[1].x-calib[0].x,calib[1].y-calib[0].y);calib=null;renderMapbar();updHint();renderNet();
         if(px<5){toast("Os dois pontos ficaram muito próximos.");return}
         modal(`<h2>Calibrar escala</h2><p class="note">Qual é a distância real entre os dois pontos marcados?</p><label class="fld">Distância (m)<input name="m" inputmode="decimal" required></label><p class="note">Os vãos já lançados (exceto os manuais) serão medidos de novo.</p>`,async f=>{const m=pnum(f.m);if(!(m>0))return false;escala=m/px;
-          await chk(O.from("orcamentos").update({escala_m_por_unid:escala}).eq("id",ORC.id));ORC.escala_m_por_unid=escala;
+          await salvaPlantaCampos({escala_m_por_unid:escala});
           for(const v of VAOS.filter(v=>!v.manual)){v.comprimento_m=+(lenPx(v)*escala).toFixed(2);await chk(O.from("orc_vaos").update({comprimento_m:v.comprimento_m}).eq("id",v.id))}renderHead();renderNet();renderSide();toast("Escala calibrada.")},"Calibrar")}
       else if(tracing&&anchor){anchor=null;renderPins();updHint()}
       else if(selP||selV){selP=null;selV=null;renderPins();renderSide()}};
@@ -2115,7 +2136,7 @@ async function editor(id){
       try{for(let k=0;k<sel.length;k++){const x=sel[k];const num=x.num&&!PTS.some(p=>p.numero===x.num)?x.num:++n;n=Math.max(n,num);
           const seg=x.seg?SEGS.find(s=>norm(s.nome)===norm(x.seg)):null;
           const usaXY=$("#xXY",md)&&$("#xXY",md).checked&&x.px!=null;
-          const pt=await chk(O.from("orc_pontos").insert({orcamento_id:ORC.id,numero:num,...(x.tit?{titulo:x.tit}:{}),...(()=>{if(usaXY)return{x:x.px,y:x.py};const g=satGeo();if(g&&x.lat&&x.lng){const n=256*2**g.z,sn=Math.sin(x.lat*Math.PI/180);return{x:(x.lng+180)/360*n-g.x0,y:(.5-Math.log((1+sn)/(1-sn))/(4*Math.PI))*n-g.y0}}return{x:60+(k%cols)*90,y:60+Math.floor(k/cols)*90}})(),segmento_id:segI||(seg?seg.id:null)}).select("*").single());PTS.push(pt);
+          const pt=await chk(O.from("orc_pontos").insert({orcamento_id:ORC.id,...plantaIns(),numero:num,...(x.tit?{titulo:x.tit}:{}),...(()=>{if(usaXY)return{x:x.px,y:x.py};const g=satGeo();if(g&&x.lat&&x.lng){const n=256*2**g.z,sn=Math.sin(x.lat*Math.PI/180);return{x:(x.lng+180)/360*n-g.x0,y:(.5-Math.log((1+sn)/(1-sn))/(4*Math.PI))*n-g.y0}}return{x:60+(k%cols)*90,y:60+Math.floor(k/cols)*90}})(),segmento_id:segI||(seg?seg.id:null)}).select("*").single());PTS.push(pt);
           const r=x.seq?await aplicarSequencia(pt,x.seq):{nok:[]};r.nok.forEach(t=>nok.add(t));
           if(x.extras&&x.extras.length&&$("#xEx",md)&&$("#xEx",md).checked){const posteMat=((POSTES.find(p=>p.id===pt.poste_id)||{}).material_codigo)||"";const U={};
             x.extras.forEach(e=>{const m=MAT[e.cod];if(!m){exNok.add(e.cod);return}if(e.cod===posteMat||String(m.subgrupo||"").toUpperCase()==="POSTE"||POSTES.some(p=>p.codigo===e.cod))return;U[e.cod]=(U[e.cod]||0)+e.q});
@@ -2193,7 +2214,7 @@ async function editor(id){
         const {error}=await sb.storage.from("negocios").upload(path,blob,{contentType:"image/jpeg",upsert:false});if(error)throw error;
         const latc=(bd.getNorth()+bd.getSouth())/2,mpp=156543.03392*Math.cos(latc*Math.PI/180)/2**z;
         const upd={planta_url:"storage:"+path,planta_w:W,planta_h:H,planta_tipo:`satelite|${z}|${x0}|${y0}`,planta_textos:[],planta_pdf:null,planta_pdf_pag:null,planta_pdf_k:null,planta_off_x:null,planta_off_y:null,escala_m_por_unid:mpp};
-        await chk(O.from("orcamentos").update(upd).eq("id",ORC.id));Object.assign(ORC,upd);escala=mpp;
+        await salvaPlantaCampos(upd);escala=mpp;
         for(const v of VAOS.filter(v=>!v.manual)){v.comprimento_m=+(lenPx(v)*escala).toFixed(2);await chk(O.from("orc_vaos").update({comprimento_m:v.comprimento_m}).eq("id",v.id))}
         setPlanta();fit();renderHead();renderPins();m.remove();document.querySelectorAll(".modal").forEach(x=>{if(x.querySelector("#pFile"))x.remove()});toast("Base de satélite aplicada. Distâncias em metros reais.")}
       catch(e){console.error(e);msg.textContent="Não consegui gerar a imagem: "+(e.message||e);b.disabled=false}}}
@@ -2254,7 +2275,7 @@ async function editor(id){
         const tx=isPdf?txt.filter(([t,x,y])=>x>=R.x&&y>=R.y&&x<=R.x+R.w&&y<=R.y+R.h&&(/;/.test(t)||/^\d+\(\d+\)/.test(t)||codes.has(t.toUpperCase()))).map(([t,x,y])=>[t,Math.round(x-R.x),Math.round(y-R.y)]):[];
         const upd={planta_url:url,planta_w:out.width,planta_h:out.height,planta_tipo:isPdf?"pdf":"imagem",planta_textos:tx,planta_pdf:pdfPath,planta_pdf_pag:isPdf?pag:null,planta_pdf_k:isPdf?k:null,planta_off_x:isPdf?R.x:null,planta_off_y:isPdf?R.y:null};
         if(isPdf&&k){const esc1=parseFloat($("#pEsc",m).value)||1000;upd.escala_m_por_unid=(esc1/1000)/(k*72/25.4)}else if(isDxf&&dxfK){upd.escala_m_por_unid=(parseFloat($("#pUn",m).value)||1)/dxfK}else upd.escala_m_por_unid=null;
-        await chk(O.from("orcamentos").update(upd).eq("id",ORC.id));Object.assign(ORC,upd);escala=+ORC.escala_m_por_unid||0;
+        await salvaPlantaCampos(upd);escala=+ORC.escala_m_por_unid||0;
         if(escala)for(const v of VAOS.filter(v=>!v.manual)){v.comprimento_m=+(lenPx(v)*escala).toFixed(2);await chk(O.from("orc_vaos").update({comprimento_m:v.comprimento_m}).eq("id",v.id))}
         setPlanta();fit();renderHead();renderPins();renderLbls();m.remove();toast((escala?"Planta atualizada com escala.":"Planta atualizada. Use o botão Escala para calibrar.")+(tx.length?` ${tx.length} etiquetas de estrutura lidas do PDF.`:""))}
       catch(err){console.error(err);ok.disabled=false;ok.textContent="Usar seleção";msg.textContent="Não foi possível enviar a planta"+(err&&err.message?" ("+err.message+")":"")+"."}};
