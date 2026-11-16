@@ -1411,7 +1411,13 @@ async function editor(id){
     TXT().forEach(([t,x,y])=>{if(!/;|\(\d+\)/.test(t))return;const d=Math.hypot(x-pt.x,y-pt.y);if(d<bd){bd=d;best=t}});return bd<=lim?best:null}
   function renderLbls(){const g=$("#lbls");if(!g)return;g.setAttribute("width",D.w);g.setAttribute("height",D.h);
     g.innerHTML=ORC.planta_url?"":TXT().map(([t,x,y])=>`<text x="${x}" y="${y}" font-size="13" fill="#7a8b99" style="stroke:none;font-weight:500">${esc(t)}</text>`).join("")}
-  const segOpts=(sel,vazio="— sem segmento —")=>`<option value="">${vazio}</option>`+SEGS.map(s=>`<option value="${s.id}" ${s.id===sel?"selected":""}>${esc(s.nome)}</option>`).join("");
+  const segOpts=(sel,vazio="— sem segmento —")=>`<option value="">${vazio}</option>`+SEGS.map(s=>`<option value="${s.id}" ${s.id===sel?"selected":""}>${esc(s.nome)}</option>`).join("")+`<option value="__novo" data-seg="1">＋ Novo segmento…</option>`;
+  document.addEventListener("change",e=>{const se=e.target;if(!se||se.tagName!=="SELECT"||se.value!=="__novo"||!se.querySelector("option[data-seg]"))return;e.stopImmediatePropagation();e.preventDefault();
+    const sel=se;sel.value="";
+    modal(`<h2>Novo segmento</h2><label class="fld">Nome<input name="nome" required placeholder="Ex.: Civil, Entrada de energia…"></label><label class="fld">Cor<input type="color" name="cor" value="${["#c2185b","#1565c0","#00897b","#ef6c00","#6a3fbf","#e0a800"][SEGS.length%6]}"></label>`,async f=>{
+      const nome=f.nome.trim();if(!nome)return false;const ex=SEGS.find(x=>x.nome.toLowerCase()===nome.toLowerCase());
+      const r=ex||await chk(O.from("orc_segmentos").insert({orcamento_id:ORC.id,nome,cor:f.cor,ordem:SEGS.length}).select("*").single());if(!ex)SEGS.push(r);
+      sel.innerHTML=segOpts(r.id);sel.value=r.id;sel.dispatchEvent(new Event("change",{bubbles:true}));toast(ex?"Segmento já existia.":"Segmento criado.")},"Criar")},true);
   const segTag=id=>{const s=SEGM()[id];return s?`<span class="segtag" style="background:${s.cor}">${esc(s.nome)}</span>`:""};
   function renderSide(){const a=$("#side"),pn=$("#ptpanel");if(!a)return;
     const v=selV&&VAOS.find(x=>x.id===selV),p=!v&&selP&&ptById(selP);if(!v)selV=null;if(!p)selP=null;
@@ -2944,8 +2950,11 @@ async function editor(id){
     const salvaSub=async(c,v)=>{await chk(O.from("materiais").update({subgrupo:v||null}).eq("codigo",c));const m=MAT[c];if(m)m.subgrupo=v||null;const mm=MATS.find(x=>x.codigo===c);if(mm)mm.subgrupo=v||null;_RS=null;toast("Subgrupo atualizado na base.");renderHead();telaMateriais()};
     $$("[data-sga]",el).forEach(b=>b.onclick=ev=>{ev.stopPropagation();salvaSub(b.dataset.sga,b.dataset.v)});
     $$("[data-sg]",el).forEach(sp=>sp.onclick=()=>{if(sp.querySelector("select"))return;const c=sp.dataset.sg,m=MAT[c]||{};
-      sp.innerHTML=`<select class="inp sm"><option value="">—</option>${SUBL.concat(m.subgrupo&&!SUBL.includes(m.subgrupo)?[m.subgrupo]:[]).map(n=>`<option ${m.subgrupo===n?"selected":""}>${esc(n)}</option>`).join("")}</select>`;const se=sp.querySelector("select");se.focus();
-      se.onchange=()=>salvaSub(c,se.value);se.onblur=()=>setTimeout(()=>sp.isConnected&&sp.querySelector("select")&&telaMateriais(),200)});
+      sp.innerHTML=`<select class="inp sm"><option value="">—</option>${SUBL.concat(m.subgrupo&&!SUBL.includes(m.subgrupo)?[m.subgrupo]:[]).map(n=>`<option ${m.subgrupo===n?"selected":""}>${esc(n)}</option>`).join("")}<option value="__novo">＋ Novo subgrupo…</option></select>`;const se=sp.querySelector("select");se.focus();
+      se.onchange=()=>{if(se.value!=="__novo")return salvaSub(c,se.value);se.onblur=null;
+        modal(`<h2>Novo subgrupo</h2><label class="fld">Nome<input name="nome" required placeholder="Ex.: CAIXAS, DUTOS…"></label>`,async f=>{const nome=f.nome.trim().toUpperCase();if(!nome)return false;
+          if(!SUBL.includes(nome)){await chk(O.from("subgrupos").insert({nome,cor:"#8a96a3",ordem:SUBL.length}));SUBL.push(nome)}
+          await salvaSub(c,nome)},"Criar e aplicar");telaMateriais()};se.onblur=()=>setTimeout(()=>sp.isConnected&&sp.querySelector("select")&&telaMateriais(),200)});
     $("#mF").oninput=e=>{fMat=e.target.value;const pos=e.target.selectionStart;telaMateriais();const i=$("#mF");i.focus();i.setSelectionRange(pos,pos)};
     $$("[data-mp]",el).forEach(b=>b.onclick=async()=>{if(b.dataset.mp===ORC.modo_preco)return;
       if(b.dataset.mp==="travado"){await chk(O.rpc("travar_precos",{p_orc:ORC.id}));ORC.modo_preco="travado";ORC.travado_em=new Date().toISOString()}
