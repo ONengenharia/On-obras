@@ -1287,7 +1287,7 @@ async function editor(id){
   const fixIP=p=>{const ps=POM[p.poste_id];if(!ps)return null;const c=`FIX_IP_${+ps.altura_m}(${+ps.esforco_kn})`.toUpperCase();return EST.find(e=>e.codigo.toUpperCase()===c)||null};
   let P=(PRC.data&&PRC.data[0])||{orcamento_id:id,metodo:"A",pct_materiais:50,valor_servico:null,lucro_pct:15,custos:[],materiais_ref:null};
   let etapa=["projeto","materiais","precificacao","proposta"].includes(Q.get("etapa"))?Q.get("etapa"):"materiais";
-  let selP=null,selV=null,placing=false,tracing=null,anchor=null,calib=null,fMat="",fPt="",soSemPreco=false,fOrg=new Set(),fForn="",fCat="",fSub="",cardModo=(()=>{try{const v=localStorage.getItem("orc_cardModo");return v==="seg"?"seg":"org"}catch(e){return"org"}})(),SUBL=null,ordMat=(()=>{try{return localStorage.getItem("orc_ordMat")||"alfa"}catch(e){return"alfa"}})();const marcados=new Set();
+  let _troca=false,selP=null,selV=null,placing=false,tracing=null,anchor=null,calib=null,fMat="",fPt="",soSemPreco=false,fOrg=new Set(),fForn="",fCat="",fSub="",cardModo=(()=>{try{const v=localStorage.getItem("orc_cardModo");return v==="seg"?"seg":"org"}catch(e){return"org"}})(),SUBL=null,ordMat=(()=>{try{return localStorage.getItem("orc_ordMat")||"alfa"}catch(e){return"alfa"}})();const marcados=new Set();
 
   const preco=c=>{const o=OP[c];return (o&&(o.manual||ORC.modo_preco==="travado"))?(o?o.v:VIG[c]):(VIG[c]??(o&&o.v))};
   const ptById=i=>PTS.find(p=>p.id===i);
@@ -1732,18 +1732,21 @@ async function editor(id){
   function renderMapbar(){
     const b=$("#mapbar");if(!b)return;
     b.innerHTML=(colando?`<button class="btn on" id="mStopCol">⧉ Parar de colar</button>`:"")+`<button class="btn" id="bPlanta">Planta</button>${ORC.planta_url?`<button class="btn ${plantaOculta()?"on":""}" id="bOculta" title="Esconder a imagem da planta para a tela ficar mais leve (os pontos continuam)">${plantaOculta()?"👁 Mostrar planta":"🙈 Ocultar planta"}</button>`:""}<button class="btn ${placing?"on":""}" id="mPlace">${placing?"Cancelar":"+ Ponto"}</button>`
-      +(tracing?`<button class="btn on" id="mRede"><span class="dot" style="border-color:${TRM[tracing].cor}"></span>Concluir ${esc(TRM[tracing].nome)}${traceSobra!=null?` · sobra ${num(traceSobra)}%`:""}</button>`:`<button class="btn" id="mRede">${rotRede().btn}</button>`)
+      +(tracing?`<button class="btn on" id="mRede"><span class="dot" style="border-color:${TRM[tracing].cor}"></span>Concluir ${esc(TRM[tracing].nome)}${traceSobra!=null?` · sobra ${num(traceSobra)}%`:""}</button><button class="btn" id="mNovoT" title="Começa um novo trecho a partir de outro ponto, sem sair do traçado (Esc)">↦ Novo trecho</button><button class="btn" id="mTroca" title="Muda a configuração e continua traçando do ponto atual">⇄ Trocar configuração</button>`:`<button class="btn" id="mRede">${rotRede().btn}</button>`)
       +`<button class="btn ${calib?"on":""}" id="mCal">${calib?"Cancelar escala":"Escala"}</button><button class="btn" id="mKml" title="Camada KML (traçado importado) e símbolos">🗺 KML</button>${CAM.L.length?`<button class="btn" id="mKmlUn" title="Desfazer a última alteração da camada KML, símbolos e legendas (Ctrl+Z)">↩ Desfazer</button>`:""}`;
     $("#bPlanta").onclick=plantaDialog;$("#bOculta")&&($("#bOculta").onclick=()=>{const v=!plantaOculta();try{localStorage.setItem(ocultaKey(),v?"1":"0")}catch(e){}if(v){img.removeAttribute("src")}setPlanta();renderMapbar();toast(v?"Planta oculta: a tela fica mais leve. Os pontos e a rede continuam.":"Planta visível.")});$("#mStopCol")&&($("#mStopCol").onclick=()=>{colando=null;renderMapbar();updHint()});
     $("#mPlace").onclick=()=>{placing=!placing;tracing=null;anchor=null;calib=null;renderMapbar();updHint();renderPins()};
-    $("#mRede").onclick=()=>{if(tracing){tracing=null;anchor=null;renderMapbar();updHint();renderPins();return}
+    $("#mNovoT")&&($("#mNovoT").onclick=()=>{anchor=null;renderPins();updHint();toast("Clique no ponto onde o novo trecho começa.")});
+    $("#mTroca")&&($("#mTroca").onclick=()=>{_troca=true;$("#mRede").onclick()});
+    $("#mRede").onclick=()=>{const keep=!!tracing&&_troca;_troca=false;if(tracing&&!keep){tracing=null;anchor=null;renderMapbar();updHint();renderPins();return}
       if(!escala){toast("Calibre a escala da planta antes de traçar a rede.");return}
       const m=modal(`<h2>${rotRede().tit}</h2><p class="note">${rotRede().txt}</p>
-        <div class="trl">${trDisc().map((t,i)=>`<label><input type="radio" name="t" value="${t.id}" ${i===0?"checked":""}><span class="dot" style="border-color:${t.cor};border-top-width:4px;width:22px"></span><span>${esc(t.nome)}<small>${t.itens.map(x=>(x.multiplicador>1?num(x.multiplicador)+"× ":"")+esc((MAT[x.material_codigo]||{}).nome||x.material_codigo)).join(" + ")}</small></span><span class="note">${SUBT?"":/^MT/i.test(t.nome)?"centro do poste":"lateral"}</span></label>`).join("")}</div>
+        <div class="trl">${trDisc(tracing).map((t,i)=>`<label><input type="radio" name="t" value="${t.id}" ${(tracing?t.id===tracing:i===0)?"checked":""}><span class="dot" style="border-color:${t.cor};border-top-width:4px;width:22px"></span><span>${esc(t.nome)}<small>${t.itens.map(x=>(x.multiplicador>1?num(x.multiplicador)+"× ":"")+esc((MAT[x.material_codigo]||{}).nome||x.material_codigo)).join(" + ")}</small></span><span class="note">${SUBT?`<button type="button" class="lnk" data-dup="${t.id}" title="Cria uma nova configuração a partir desta">⧉ duplicar</button>`:/^MT/i.test(t.nome)?"centro do poste":"lateral"}</span></label>`).join("")}</div>
         <div class="row"><button type="button" class="lnk" id="tNovoCabo">${SUBT?"+ nova configuração (ramais, outros diâmetros…)":"+ incluir cabo"}</button><span></span></div>
         <label class="fld" style="max-width:200px">Sobra deste trecho (%)<input name="sob" value="${num(ORC.sobra_condutor_pct)}" inputmode="decimal"></label>`,f=>{
-        if(!f.t){toast("Escolha ou inclua um cabo.");return false}tracing=+f.t;const sv=pnum(f.sob);traceSobra=Math.abs(sv-ORC.sobra_condutor_pct)<1e-9?null:sv;anchor=null;placing=false;calib=null;renderMapbar();updHint();renderPins()},"Começar a traçar");
-      const _nc=$("#tNovoCabo",m);if(_nc)_nc.onclick=()=>{m.remove();novoCabo()}};
+        if(!f.t){toast("Escolha ou inclua um cabo.");return false}tracing=+f.t;const sv=pnum(f.sob);traceSobra=Math.abs(sv-ORC.sobra_condutor_pct)<1e-9?null:sv;if(!keep)anchor=null;placing=false;calib=null;renderMapbar();updHint();renderPins()},"Começar a traçar");
+      const _nc=$("#tNovoCabo",m);if(_nc)_nc.onclick=()=>{m.remove();novoCabo()};
+      $$("[data-dup]",m).forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();m.remove();novoCabo(TRM[b.dataset.dup])})};
     $("#mCal").onclick=()=>{calib=calib?null:[];placing=false;tracing=null;anchor=null;renderMapbar();updHint();renderNet()};
     $("#mKml").onclick=()=>camPainel();$("#mKmlUn")&&($("#mKmlUn").onclick=camDesfaz);
     b.onpointerdown=e=>e.stopPropagation();
@@ -1991,11 +1994,11 @@ async function editor(id){
     const mv=$("#kpMov",b);if(mv)mv.onchange=()=>{camMover=mv.checked;renderKml()};
     const ro=$("#kpRotOk",b);if(ro)ro.onclick=()=>{const n=pnum($("#kpRot",b).value);if(!isFinite(n))return;camPush();const ps=[];CAM.L.forEach(l=>l.V.forEach(v=>ps.push(kP(v.x,v.y))));
       const cx=ps.reduce((s,p)=>s+p.X,0)/ps.length,cy=ps.reduce((s,p)=>s+p.Y,0)/ps.length;const a=kInv(cx-CAM.ox,cy-CAM.oy);CAM.rot=n;const p2=kP(a.x,a.y);CAM.ox+=cx-p2.X;CAM.oy+=cy-p2.Y;camSalva();renderKml()}}
-  function novoCabo(){
-    const linha=()=>`<div class="gl tl2"><input class="inp" list="dlMat" name="m" placeholder="Material (duto, cabo, areia…)"><input class="inp n" name="x" value="1" placeholder="Mult."><span></span><button type="button" class="btn sm" data-rm>✕</button></div>`;
-    const md=modal(`<h2>${SUBT?"Nova configuração de trecho":"Incluir cabo"}</h2><div class="grid2"><label class="fld">Nome<input name="nome" required placeholder="${SUBT?"Ramal 1 duto 2\" (50 mm)":"MT compacta 185 mm² 25 kV"}"></label><label class="fld">Cor no mapa<input type="color" name="cor" value="${["#c2185b","#1565c0","#00897b","#ef6c00","#6a3fbf"][TR.length%5]}"></label></div>
+  function novoCabo(pre){
+    const linha=(it)=>`<div class="gl tl2"><input class="inp" list="dlMat" name="m" placeholder="Material (duto, cabo, areia…)" value="${it?esc(it.material_codigo+" · "+((MAT[it.material_codigo]||{}).nome||"")):""}"><input class="inp n" name="x" value="${it?it.multiplicador:1}" placeholder="Mult."><span></span><button type="button" class="btn sm" data-rm>✕</button></div>`;
+    const md=modal(`<h2>${SUBT?"Nova configuração de trecho":"Incluir cabo"}</h2><div class="grid2"><label class="fld">Nome<input name="nome" required value="${pre?esc(pre.nome.replace(/^(CIVIL|MT|BT) · /,"")+" (cópia)"):""}" placeholder="${SUBT?"Ramal 1 duto 2\" (50 mm)":"MT compacta 185 mm² 25 kV"}"></label><label class="fld">Cor no mapa<input type="color" name="cor" value="${pre?pre.cor:["#c2185b","#1565c0","#00897b","#ef6c00","#6a3fbf"][TR.length%5]}"></label></div>
       <datalist id="dlMat">${MATS.map(x=>`<option value="${esc(x.codigo)} · ${esc(x.nome)}">`).join("")}</datalist>
-      <div class="lbl">Materiais por metro de vão</div><div id="ncIts">${linha()}</div><button type="button" class="btn sm" id="ncAdd">+ material</button>
+      <div class="lbl">Materiais por metro de vão</div><div id="ncIts">${pre&&pre.itens&&pre.itens.length?pre.itens.map(linha).join(""):linha()}</div><button type="button" class="btn sm" id="ncAdd">+ material</button>
       <p class="note">Ex.: MT compacta = 3× cabo protegido + 1× cordoalha. A quantidade é vão × multiplicador × (1 + sobra).</p>
       <p class="note">O cabo fica no cadastro geral e aparece em todos os orçamentos.</p>`,async(f,mm)=>{
       const L=$$(".tl2",mm).map(r=>({c:r.querySelector("[name=m]").value.split(" · ")[0].trim(),x:pnum(r.querySelector("[name=x]").value)})).filter(r=>r.c);
