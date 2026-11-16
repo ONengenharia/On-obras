@@ -1421,10 +1421,12 @@ async function editor(id){
       const r=ex||await chk(O.from("orc_segmentos").insert({orcamento_id:ORC.id,nome,cor:f.cor,ordem:SEGS.length}).select("*").single());if(!ex)SEGS.push(r);
       sel.innerHTML=segOpts(r.id);sel.value=r.id;sel.dispatchEvent(new Event("change",{bubbles:true}));toast(ex?"Segmento já existia.":"Segmento criado.")},"Criar")},true);
   const segTag=id=>{const s=SEGM()[id];return s?`<span class="segtag" style="background:${s.cor}">${esc(s.nome)}</span>`:""};
-  function ramaisHtml(pt){const L=RAM.filter(r=>r.ponto_id===pt.id);const tot=L.reduce((a,r)=>a+(+r.metros)*(+r.quantidade),0);
+  const ramUlt=v=>{try{if(v){localStorage.setItem("orc_ramal_ult",JSON.stringify(v));return v}return JSON.parse(localStorage.getItem("orc_ramal_ult")||"{}")}catch(e){return v||{}}};
+  const ramTipos=()=>TR.filter(t=>/^CIVIL|^MT|^BT/i.test(t.nome));
+  function ramaisHtml(pt){const U=ramUlt();const L=RAM.filter(r=>r.ponto_id===pt.id);const tot=L.reduce((a,r)=>a+(+r.metros)*(+r.quantidade),0);
     return `<div class="lbl">Ramais (por metragem)${L.length?` · ${num(tot)} m`:""}</div>
       ${L.map(r=>{const t=TRM[r.tipo_rede_id];return `<div class="gl" style="grid-template-columns:1fr 74px 64px auto;gap:6px;align-items:center;margin-bottom:4px"><span style="font-size:12.5px">${esc(t?t.nome.replace(/^(CIVIL|MT|BT) · /,""):"?")}</span><input class="inp n" data-rm="${r.id}" data-f="metros" value="${num(r.metros)}" title="Metros por ramal" inputmode="decimal"><input class="inp n" data-rm="${r.id}" data-f="quantidade" value="${num(r.quantidade)}" title="Quantidade de ramais" inputmode="decimal"><button class="btn sm del" data-rd="${r.id}" title="Remover">✕</button></div>`}).join("")||'<p class="note">Nenhum. Informe a metragem do ramal até o lote, sem desenhar.</p>'}
-      <div class="row" style="gap:6px;flex-wrap:wrap"><select class="inp" id="rTipo" style="flex:1;min-width:140px">${TR.filter(t=>/^CIVIL|^MT|^BT/i.test(t.nome)).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</select><input class="inp n" id="rM" placeholder="m" style="width:64px" inputmode="decimal" title="Metros por ramal"><input class="inp n" id="rQ" value="1" style="width:56px" inputmode="decimal" title="Quantidade de ramais"><button class="btn sm pri" id="rAdd">+ Ramal</button></div>
+      <div class="row" style="gap:6px;flex-wrap:wrap"><select class="inp" id="rTipo" style="flex:1;min-width:140px">${ramTipos().map(t=>`<option value="${t.id}" ${String(t.id)===String(U.t)?"selected":""}>${esc(t.nome)}</option>`).join("")}</select><input class="inp n" id="rM" placeholder="m" value="${U.m||""}" style="width:64px" inputmode="decimal" title="Metros por ramal"><input class="inp n" id="rQ" value="${U.q||1}" style="width:56px" inputmode="decimal" title="Quantidade de ramais"><button class="btn sm pri" id="rAdd">+ Ramal</button></div>
       <p class="note">m por ramal × quantidade. Ex.: 12 m × 8 lotes.</p>`}
   function renderSide(){const a=$("#side"),pn=$("#ptpanel");if(!a)return;
     const v=selV&&VAOS.find(x=>x.id===selV),p=!v&&selP&&ptById(selP);if(!v)selV=null;if(!p)selP=null;
@@ -1440,7 +1442,7 @@ async function editor(id){
     const cf=conflitos();
     a.innerHTML=`<div class="ah">${cf.length?`<div class="kvwarn one" title="${esc(cf.map(x=>(MAT[x.c]||{}).nome).join(" · "))}"><b>⚠ ${cf.length} fora da classe ${ORC.tensao_kv} kV</b><button class="lnk" id="cfVer">${fKV?"mostrar todos":"ver os pontos"}</button></div>`:""}<div class="row"><b>Lista de postes</b><span class="note">${L.length} de ${PTS.length}${SOVER?"":` · <button class="lnk" id="bXlPt" title="Criar pontos a partir de uma lista do Excel">⬆ Importar Excel</button>`}</span></div>
       <input class="inp" id="fPt" placeholder="Buscar ponto, estrutura ou poste" value="${esc(fPt)}">
-      ${marcados.size?`<div class="bulk"><b>${marcados.size} marcado(s)</b> → segmento <select class="inp" id="bSeg" style="padding:3px 6px">${segOpts("","— escolher —")}</select><button class="lnk" id="bClr">limpar</button></div>`
+      ${marcados.size?`<div class="bulk"><b>${marcados.size} marcado(s)</b> → segmento <select class="inp" id="bSeg" style="padding:3px 6px">${segOpts("","— escolher —")}</select>${SUBT?`<button class="btn sm pri" id="bRam" title="Lança o mesmo ramal (configuração, metros, quantidade) em todos os pontos marcados">＋ Ramal nos marcados</button>`:""}<button class="lnk" id="bClr">limpar</button></div>`
         :`<div class="row"><span class="note">Marque as caixas para aplicar segmento em lote.</span><button class="lnk" id="bAll">Marcar os ${L.length}</button></div>`}</div>
      <div class="pane"><div class="plist">${L.map(p=>{const ps=POM[p.poste_id],ne=PE.filter(e=>e.ponto_id===p.id).length;
         return `<div class="pl ${p.id===selP?"sel":""}" data-p="${p.id}"><input type="checkbox" data-ck="${p.id}" ${marcados.has(p.id)?"checked":""} aria-label="Marcar ponto ${p.numero}"><span class="n ${ps?"":"v"}">${p.numero}</span><span class="t">${esc(nomePonto(p))}${segTag(p.segmento_id)}<small>${ps?esc(ps.codigo):"sem poste"}${temIP(p)?" · 💡":""}</small><span class="ec">${PE.filter(e=>e.ponto_id===p.id).sort((x,y)=>x.ordem-y.ordem).map(e=>`<i class="${ehIP(e.estrutura_id)?"ip":""}">${esc((ESTM[e.estrutura_id]||{}).codigo||"?")}</i>`).join("")||'<i class="nada">sem estruturas</i>'}</span></span><span class="r">${num(soma(linhasPonto(p)),0)}<small>R$</small></span></div>`}).join("")||'<p class="note">Nenhum ponto ainda. Clique com o botão direito na planta para lançar.</p>'}</div></div>`;
@@ -1454,6 +1456,12 @@ async function editor(id){
     const sel=a.querySelector(".pl.sel");sel&&!rolou&&(rolou=1,sel.scrollIntoView({block:"nearest"}));
     $("#bAll")&&($("#bAll").onclick=()=>{L.forEach(p=>marcados.add(p.id));sideLista(a)});
     $("#bClr")&&($("#bClr").onclick=()=>{marcados.clear();sideLista(a)});
+    $("#bRam")&&($("#bRam").onclick=()=>{const U=ramUlt(),ids=[...marcados];
+      modal(`<h2>Ramal em ${ids.length} ponto(s)</h2><p class="note">Lança o mesmo ramal em cada ponto marcado. Metros são por ramal; a quantidade é de ramais em cada ponto.</p><label class="fld">Configuração<select name="t">${ramTipos().map(t=>`<option value="${t.id}" ${String(t.id)===String(U.t)?"selected":""}>${esc(t.nome)}</option>`).join("")}</select></label><div class="grid2"><label class="fld">Metros por ramal<input name="m" value="${U.m||""}" inputmode="decimal" required></label><label class="fld">Quantidade por ponto<input name="q" value="${U.q||1}" inputmode="decimal"></label></div>`,async f=>{
+        const m=pnum(f.m),q=pnum(f.q)||1;if(!(m>0)){toast("Informe os metros do ramal.");return false}
+        const rows=ids.map(pid=>({ponto_id:pid,tipo_rede_id:+f.t,metros:m,quantidade:q}));
+        const r=await chk(O.from("orc_ponto_ramais").insert(rows).select("*"));r.forEach(x=>RAM.push(x));ramUlt({t:f.t,m,q});
+        marcados.clear();renderHead();sideLista(a);toast(`Ramal lançado em ${r.length} ponto(s).`)},"Lançar")});
     $("#bSeg")&&($("#bSeg").onchange=async e=>{const s=e.target.value||null;const ids=[...marcados];
       await chk(O.from("orc_pontos").update({segmento_id:s}).in("id",ids));PTS.forEach(p=>{if(marcados.has(p.id))p.segmento_id=s});
       toast(`Segmento aplicado em ${ids.length} ponto(s).`);marcados.clear();renderHead();renderPins();sideLista(a)});
@@ -1497,7 +1505,7 @@ async function editor(id){
       ${avulsos.length?`<table class="its">${avulsos.map(itRow).join("")}</table>`:'<p class="note">Nenhum.</p>'}
       <div class="row"><button class="lnk" data-addm="">+ material avulso</button><span class="tools"><button class="btn sm" id="pDup" title="Copiar este ponto e colar em outros lugares da planta (Ctrl+C / Ctrl+V)">⧉ Duplicar</button><button class="btn del sm" id="pDel">Excluir ponto</button></span></div></div>`;
     $("#rAdd")&&($("#rAdd").onclick=async()=>{const m=pnum($("#rM").value),q=pnum($("#rQ").value)||1;if(!(m>0)){toast("Informe os metros do ramal.");return}
-      const r=await chk(O.from("orc_ponto_ramais").insert({ponto_id:pt.id,tipo_rede_id:+$("#rTipo").value,metros:m,quantidade:q}).select("*").single());RAM.push(r);renderHead();renderSide()});
+      const r=await chk(O.from("orc_ponto_ramais").insert({ponto_id:pt.id,tipo_rede_id:+$("#rTipo").value,metros:m,quantidade:q}).select("*").single());RAM.push(r);ramUlt({t:r.tipo_rede_id,m,q});renderHead();renderSide()});
     $$("[data-rm]").forEach(i=>i.onchange=async()=>{const r=RAM.find(x=>x.id===i.dataset.rm);const v=pnum(i.value);if(!(v>=0)){return}r[i.dataset.f]=v;await chk(O.from("orc_ponto_ramais").update({[i.dataset.f]:v}).eq("id",r.id));renderHead();renderSide()});
     $$("[data-rd]").forEach(b=>b.onclick=async()=>{await chk(O.from("orc_ponto_ramais").delete().eq("id",b.dataset.rd));RAM=RAM.filter(x=>x.id!==b.dataset.rd);renderHead();renderSide()});
     $("#pBack").onclick=()=>{selP=null;renderPins();renderSide()};$("#pSimb")&&($("#pSimb").onclick=()=>escolheSimbolo("p:"+pt.id));$("#pLeg")&&($("#pLeg").onclick=()=>legendaPonto(pt));$("#pLeg2")&&($("#pLeg2").onclick=()=>legendaPonto(pt));
