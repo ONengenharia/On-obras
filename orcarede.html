@@ -121,6 +121,7 @@ tr.fc td{background:var(--danger-soft)}
 .vt td{padding:5px 4px;border-top:1px solid var(--line)}.vt select{width:100%;padding:5px;border:1px solid var(--line);border-radius:5px;background:var(--bg)}
 .st{font-size:10.5px;font-weight:700;border-radius:8px;padding:1px 7px;white-space:nowrap}.st.ok{background:var(--ok-soft);color:var(--ok)}.st.no{background:var(--danger-soft);color:var(--danger)}.st.m{background:var(--accent-soft);color:var(--accent)}
 .leg{position:absolute;left:10px;bottom:10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;display:grid;gap:4px;font-size:12px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.leg.lot{bottom:46px;max-height:48%;overflow:auto}
 .leg div{display:flex;align-items:center;gap:6px}.leg b{font-family:var(--f-mono);font-weight:500;margin-left:auto;padding-left:12px}
 .trl{display:grid;gap:6px}.trl label{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;font-weight:600}
 .trl label small{display:block;font-weight:400;color:var(--muted);font-size:11.5px}.trl label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
@@ -2035,6 +2036,12 @@ async function editor(id){
     const TRK={};let nTR=0;IT.forEach(i=>{const nm=String((MAT[i.material_codigo]||{}).nome||"").toUpperCase();if(!/^\s*(TRANSFORMADOR|TRAFO)\b/.test(nm))return;const m=nm.match(/(\d+(?:[.,]\d+)?)\s*KVA/);const k=m?m[1].replace(".",",")+" kVA":"?";const q=Math.round(+i.quantidade||1);TRK[k]=(TRK[k]||0)+q;nTR+=q});
     el.hidden=!ks.length&&!PTS.length;el.innerHTML=ks.map(k=>{const t=TRM[k]||{cor:"#555",nome:"?"};const of=redeOc.has(k);return `<div style="${of?"opacity:.5":""}"><span class="dot" style="border-color:${t.cor};border-top-width:4px;width:20px"></span>${esc(t.nome)}<b>${num(A[k],0)} m</b><button type="button" class="xb" data-redeoc="${k}" title="${of?"Mostrar":"Ocultar"} esta rede no mapa" aria-label="${of?"Mostrar":"Ocultar"} ${esc(t.nome)}" style="margin-left:6px;cursor:pointer">${of?"🙈":"👁"}</button></div>`}).join("")+
       `<div class="legtot"><div style="${redeOc.has('_po')?'opacity:.5':''}"><span>Postes</span><b>${nPo}</b><button type="button" class="xb" data-redeoc="_po" title="${redeOc.has('_po')?'Mostrar':'Ocultar'} postes no mapa" aria-label="postes" style="margin-left:6px;cursor:pointer">${redeOc.has('_po')?'🙈':'👁'}</button></div><div><span>Luminárias</span><b>${nIP}</b></div><div style="${redeOc.has('_tr')?'opacity:.5':''}"><span>Transformadores</span><b>${nTR}</b><button type="button" class="xb" data-redeoc="_tr" title="${redeOc.has('_tr')?'Mostrar':'Ocultar'} transformadores no mapa" aria-label="transformadores" style="margin-left:6px;cursor:pointer">${redeOc.has('_tr')?'🙈':'👁'}</button></div>${nTR?`<div class="legtr">${Object.entries(TRK).sort((a,b)=>pnum(a[0])-pnum(b[0])).map(([k,q])=>`${q} × ${esc(k)}`).join(" · ")}</div>`:""}</div>`;
+    el.classList.toggle("lot",!!LOT);
+    {let mn=false;try{mn=localStorage.getItem("orc_legmin")==="1"}catch(e){}
+      const tg=v=>{try{localStorage.setItem("orc_legmin",v?"1":"0")}catch(e){}renderLegenda()};
+      if(mn){el.innerHTML=`<button type="button" class="xb" id="legT" style="font-size:12px;cursor:pointer;font-weight:600">▸ Legenda</button>`}
+      else el.insertAdjacentHTML("afterbegin",`<button type="button" class="xb" id="legT" title="Recolher a legenda" style="font-size:11px;cursor:pointer;opacity:.75;justify-self:end">▾ recolher</button>`);
+      const lt=$("#legT",el);if(lt){lt.onpointerdown=e=>e.stopPropagation();lt.onclick=e=>{e.stopPropagation();tg(!mn)}}}
     $$("[data-redeoc]",el).forEach(b=>{b.onpointerdown=e=>e.stopPropagation();b.onclick=e=>{e.stopPropagation();const k=b.dataset.redeoc;redeOc.has(k)?redeOc.delete(k):redeOc.add(k);renderPins()}})}
   async function traceTap(pid){
     if(!anchor||anchor===pid){anchor=pid;renderPins();updHint();return}
