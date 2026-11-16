@@ -81,6 +81,8 @@ header .btn.on{background:#e8f1f9;color:#1e2f40}
 .et .d{font-size:11px;color:var(--muted)}
 .et.done{border-color:var(--ok)} .et.done .p{color:var(--ok)}
 .et.doing .bar>b{background:var(--warn)}
+.et.par{border:2px solid var(--accent);background:var(--panel)} .et.par .tg{font-size:10px;letter-spacing:.06em;color:var(--accent);font-weight:600}
+.exsub{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
 .et.add{flex:0 0 auto;min-width:0;place-items:center;color:var(--accent);border-style:dashed;font-weight:600}
 /* lateral com abas */
 aside{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:0;display:flex;flex-direction:column;overflow:hidden}
@@ -392,11 +394,18 @@ function renderKpis(){
 }
 function renderEtapas(){
   const edit=admEd();
-  const done=S.marcos.filter(m=>mpct(m)>=100).length;
-  $("#mcount").textContent=done+" de "+S.marcos.length+" concluídas";
-  $("#track").innerHTML=S.marcos.map(m=>{const pc=mpct(m),st=pc>=100?"done":pc>0?"doing":"todo";
-    return `<button class="et ${st}" data-id="${m.id}" ${edit?"":'tabindex="-1" style="cursor:default"'}><span class="n">${edit?'<span class="grip" aria-hidden="true">⋮⋮ </span>':""}${esc(m.nome)}</span><span class="r"><span class="bar ${pc>=100?"full":""}"><b style="width:${pc}%"></b></span><span class="p">${Math.round(pc)}%</span></span><span class="d">${m.data?fdate(m.data):"Sem data"}${m.link?` · <span class="lk">auto: ${esc(linkName(m.link))}</span>`:""}</span></button>`}).join("")+(edit?'<button class="et add" id="mAdd">+ Etapa</button>':"");
-  if(edit){$("#track").querySelectorAll(".et[data-id]").forEach(b=>{b.onclick=()=>editMarco(b.dataset.id)});$("#mAdd").onclick=()=>editMarco(null)}
+  const EX=S.marcos.filter(m=>m.link),VIS=S.marcos.filter(m=>!m.link),temEx=EX.length>0;
+  const pcEx=temEx?overall():0;
+  const done=VIS.filter(m=>mpct(m)>=100).length+(temEx&&pcEx>=100?1:0);
+  $("#mcount").textContent=done+" de "+(VIS.length+(temEx?1:0))+" concluídas";
+  const card=m=>{const pc=mpct(m),st=pc>=100?"done":pc>0?"doing":"todo";
+    return `<button class="et ${st}" data-id="${m.id}" ${edit?"":'tabindex="-1" style="cursor:default"'}><span class="n">${edit&&!m.link?'<span class="grip" aria-hidden="true">⋮⋮ </span>':""}${esc(m.nome)}</span><span class="r"><span class="bar ${pc>=100?"full":""}"><b style="width:${pc}%"></b></span><span class="p">${Math.round(pc)}%</span></span><span class="d">${m.data?fdate(m.data):"Sem data"}${m.link?` · <span class="lk">auto: ${esc(linkName(m.link))}</span>`:""}</span></button>`};
+  const par=`<div class="et par ${pcEx>=100?"done":pcEx>0?"doing":"todo"}" title="Puxa o avanço físico da obra"><span class="tg">PUXA DA OBRA</span><span class="n">Execução particular</span><span class="r"><span class="bar ${pcEx>=100?"full":""}"><b style="width:${pcEx}%"></b></span><span class="p">${Math.round(pcEx)}%</span></span><span class="d">auto: avanço físico</span></div>`;
+  const i0=temEx?S.marcos.findIndex(m=>m.link):-1,antes=i0<0?VIS:S.marcos.slice(0,i0).filter(m=>!m.link),depois=i0<0?[]:S.marcos.slice(i0).filter(m=>!m.link);
+  $("#track").innerHTML=antes.map(card).join("")+(temEx?par:"")+depois.map(card).join("")+(edit?'<button class="et add" id="mAdd">+ Etapa</button>':"");
+  let sub=$("#exsub");if(!sub){sub=document.createElement("div");sub.id="exsub";sub.className="exsub";$("#track").after(sub)}
+  sub.style.display=temEx?"":"none";sub.innerHTML=temEx?EX.map(card).join(""):"";
+  if(edit){$(".etapas").querySelectorAll(".et[data-id]").forEach(b=>{b.onclick=()=>editMarco(b.dataset.id)});$("#mAdd").onclick=()=>editMarco(null)}
   $(".app").classList.toggle("editing",edit);
   enableSort();
 }
@@ -408,7 +417,7 @@ async function enableSort(){
   try{const Sortable=await sortLib();if(!admEd())return;
     sortInst=Sortable.create($("#track"),{animation:160,draggable:".et[data-id]",filter:".add",delay:180,delayOnTouchOnly:true,forceFallback:true,fallbackOnBody:true,ghostClass:"dragging",scroll:true,scrollSensitivity:60,scrollSpeed:14,
       onEnd:()=>{const order=[...$("#track").querySelectorAll(".et[data-id]")].map(x=>x.dataset.id);const before=S.marcos.map(m=>m.id).join();
-        S.marcos.sort((a,b)=>order.indexOf(a.id)-order.indexOf(b.id));if(S.marcos.map(m=>m.id).join()!==before){touch();toast("Ordem alterada. Clique em Salvar.")}}});
+        const vis=order.map(id=>S.marcos.find(m=>m.id===id)).filter(Boolean);let k=0;S.marcos=S.marcos.map(m=>m.link?m:vis[k++]);if(S.marcos.map(m=>m.id).join()!==before){touch();toast("Ordem alterada. Clique em Salvar.")}}});
   }catch(e){toast("Não consegui ativar o arrastar das etapas.")}
 }
 /* ---------- abas ---------- */
