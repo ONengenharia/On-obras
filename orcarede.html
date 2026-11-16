@@ -1134,12 +1134,14 @@ async function novoOrc(pre){
    <div class="grid2"><label class="fld">Cliente<input name="cliente" value="${esc(pre.cliente||"")}"></label><label class="fld">Cidade<input name="cidade" value="${esc(pre.cidade||"")}"></label></div>
    <div class="grid2"><label class="fld">Concessionária<select name="conc">${CONCS.map(c=>`<option value="${c.id}" ${pre.conc==c.id?"selected":""}>${esc(c.sigla)}</option>`).join("")}</select></label>
    <label class="fld">Classe de tensão da rede<select name="kv" required><option value="">— escolher —</option><option value="15">15 kV</option><option value="25">25 kV</option></select></label></div>
+   <label class="fld" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="lot" value="1" ${pre.lot?"checked":""} style="width:auto"> Loteamento subterrâneo (várias plantas por disciplina)</label>
    <p class="note">É criada uma pasta com este nome, e o orçamento entra nela como versão 1.</p>`,
   async f=>{
     const pasta=await chk(O.from("pastas").insert({nome:f.titulo.trim(),pai_id:pre.pasta||null,negocio_id:pre.negocio||null}).select("*").single());
     if(f.mod){const nid=await chk(O.rpc("orcamento_de_modelo",{p_modelo:f.mod,p_pasta:pasta.id,p_titulo:f.titulo.trim(),p_cliente:f.cliente.trim()||null,p_cidade:f.cidade.trim()||null,p_negocio:pre.negocio||null}));location.href="orcarede.html?id="+nid;return}
     const r=await chk(O.from("orcamentos").insert({titulo:f.titulo.trim(),cliente:f.cliente.trim()||null,cidade:f.cidade.trim()||null,concessionaria_id:+f.conc,tensao_kv:+f.kv,negocio_id:pre.negocio||null,pasta_id:pasta.id,versao:1,vigente:true,status:"andamento",sobra_condutor_pct:4,criado_por:perfil.id}).select("id").single());
     await chk(O.from("orc_segmentos").insert(SEG_PADRAO.map(([nome,cor],i)=>({orcamento_id:r.id,nome,cor,ordem:i}))));
+    if(f.lot){await chk(O.from("orcamentos").update({loteamento:true}).eq("id",r.id));await chk(O.from("orc_plantas").insert({orcamento_id:r.id,disciplina:"mt",nome:"Planta 1",ordem:0}))}
     location.href="orcarede.html?id="+r.id},"Criar");
   const sm=md0.querySelector("[name=mod]");if(sm)sm.onchange=()=>{const k=md0.querySelector("[name=kv]");k.required=!sm.value;k.closest("label").style.opacity=sm.value?".5":"";const m=MD.find(x=>x.id===sm.value);if(m){const c=md0.querySelector("[name=conc]");c.value=m.concessionaria_id;if(m.tensao_kv)k.value=String(m.tensao_kv)}};
 }
@@ -1149,11 +1151,11 @@ async function deNegocio(nid){
     if(new URLSearchParams(location.search).get("etapa")==="proposta"){const ov=await O.from("orcamentos").select("id,vigente,versao").eq("pasta_id",ja.data[0].id).order("versao",{ascending:false});const L2=ov.data||[];const o=L2.find(x=>x.vigente!==false)||L2[0];if(o){location.replace("orcarede.html?id="+o.id+"&etapa=proposta");return}}
     location.replace("orcarede.html?pasta="+ja.data[0].id);return}
   if(SOVER){falha("Este negócio ainda não tem orçamento vinculado. Peça para a engenharia vincular ou criar.");return}
-  const {data:n}=await sb.from("negocios").select("id,titulo,cliente,cidade,conc").eq("id",nid).single();
+  const {data:n}=await sb.from("negocios").select("id,titulo,cliente,cidade,conc,cadastro").eq("id",nid).single();
   await lista(null);
   if(!n){toast("Negócio não encontrado.");return}
   const c=CONCS.find(c=>n.conc&&n.conc.toUpperCase().includes(c.sigla.toUpperCase()));
-  const novo=()=>novoOrc({titulo:n.titulo,cliente:n.cliente,cidade:n.cidade,conc:c&&c.id,negocio:n.id});
+  const novo=()=>novoOrc({titulo:n.titulo,cliente:n.cliente,cidade:n.cidade,conc:c&&c.id,negocio:n.id,lot:((n.cadastro||{}).tipo_projeto==="lot")});
   const {data:os}=await O.from("orcamentos").select("id,titulo,cliente,cidade,versao,vigente,pasta_id,negocio_id,atualizado_em").order("atualizado_em",{ascending:false});
   const {data:ps}=await O.from("pastas").select("id,nome,negocio_id");const PS={};(ps||[]).forEach(p=>PS[p.id]=p);
   const L=(os||[]).filter(o=>o.vigente!==false);
