@@ -43,6 +43,7 @@ window.propMerge = function m(a, b) {   // b sobrepõe a; objetos mesclam, array
 // Página "Sistema ON": só aparece quando paginas.sistema === true (propostas novas); textos padrão abaixo
 window.PROP_SISTEMA = {
   kicker: "Tecnologia ON · OrçaRede",
+  mapa: "https://qphayphqrwyvhesykpmb.supabase.co/storage/v1/object/public/negocios/orcarede/5c2c218e-9853-4590-aa0d-3b3a85b47a1d/mwdmrh4i-sat.jpg",  // satélite de um projeto da base (troque ou remova no editor)
   titulo: "Do orçamento à obra, <b>no mesmo sistema</b>",
   texto: "Desenvolvemos o <b>OrçaRede</b>, nosso sistema próprio: o projeto é desenhado sobre a planta ou o satélite, e a lista de materiais, as metragens e o valor saem dele. Depois, a mesma planta vira o controle da obra.",
   t1: "1 · Orçamento direto na planta",
