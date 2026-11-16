@@ -321,7 +321,7 @@ tr.org-base td:first-child{box-shadow:inset 3px 0 #4a90d9}tr.org-cotacao td:firs
 <script src="js/config.js"></script>
 <script src="js/db.js"></script>
 <script src="js/proposta-padrao.js"></script>
-<script src="js/atalhos.js?v=5"></script>
+<script src="js/atalhos.js?v=6"></script>
 <script>
 (async()=>{
 const sb=DB.sb, O=sb.schema("orcarede");
@@ -1141,7 +1141,7 @@ async function novoOrc(pre){
     if(f.mod){const nid=await chk(O.rpc("orcamento_de_modelo",{p_modelo:f.mod,p_pasta:pasta.id,p_titulo:f.titulo.trim(),p_cliente:f.cliente.trim()||null,p_cidade:f.cidade.trim()||null,p_negocio:pre.negocio||null}));location.href="orcarede.html?id="+nid;return}
     const r=await chk(O.from("orcamentos").insert({titulo:f.titulo.trim(),cliente:f.cliente.trim()||null,cidade:f.cidade.trim()||null,concessionaria_id:+f.conc,tensao_kv:+f.kv,negocio_id:pre.negocio||null,pasta_id:pasta.id,versao:1,vigente:true,status:"andamento",sobra_condutor_pct:4,criado_por:perfil.id}).select("id").single());
     await chk(O.from("orc_segmentos").insert(SEG_PADRAO.map(([nome,cor],i)=>({orcamento_id:r.id,nome,cor,ordem:i}))));
-    if(f.lot){await chk(O.from("orcamentos").update({loteamento:true}).eq("id",r.id));await chk(O.from("orc_plantas").insert({orcamento_id:r.id,disciplina:"mt",nome:"Planta 1",ordem:0}))}
+    if(f.lot){await chk(O.from("orcamentos").update({loteamento:true}).eq("id",r.id));{const cc=await chk(O.from("concessionarias").select("sigla").eq("id",+f.conc).maybeSingle());const sub=cc&&/SUBTERRANE/i.test(cc.sigla||"");await chk(O.from("orc_plantas").insert((sub?[["civil","Civil"],["mt","Primária"],["bt","Secundária"]]:[["mt","Planta 1"]]).map(([d,n],i)=>({orcamento_id:r.id,disciplina:d,nome:n,ordem:i}))))}}
     location.href="orcarede.html?id="+r.id},"Criar");
   const sm=md0.querySelector("[name=mod]");if(sm)sm.onchange=()=>{const k=md0.querySelector("[name=kv]");k.required=!sm.value;k.closest("label").style.opacity=sm.value?".5":"";const m=MD.find(x=>x.id===sm.value);if(m){const c=md0.querySelector("[name=conc]");c.value=m.concessionaria_id;if(m.tensao_kv)k.value=String(m.tensao_kv)}};
 }
@@ -1188,8 +1188,8 @@ async function editor(id){
     todos(()=>O.from("orc_ponto_estruturas").select("id,ponto_id,estrutura_id,ordem,segmento_id,orc_pontos!inner(orcamento_id)").eq("orc_pontos.orcamento_id",id)),
     todos(()=>O.from("orc_ponto_itens").select("id,ponto_id,ponto_estrutura_id,material_codigo,quantidade,editado,auto,orc_pontos!inner(orcamento_id)").eq("orc_pontos.orcamento_id",id)),
     todos(()=>O.from("orc_vaos").select("*").eq("orcamento_id",id)),
-    (async()=>{const [a,ec]=await Promise.all([todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo").eq("concessionaria_id",conc)),todos(()=>O.from("estrutura_conc").select("estrutura_id").eq("concessionaria_id",conc))]);
-      const ids=ec.map(x=>x.estrutura_id).filter(i=>!a.some(e=>e.id===i));let b=[];for(let i=0;i<ids.length;i+=200)b=b.concat(await todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo").in("id",ids.slice(i,i+200))));
+    (async()=>{const [a,ec]=await Promise.all([todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo,rede,un").eq("concessionaria_id",conc)),todos(()=>O.from("estrutura_conc").select("estrutura_id").eq("concessionaria_id",conc))]);
+      const ids=ec.map(x=>x.estrutura_id).filter(i=>!a.some(e=>e.id===i));let b=[];for(let i=0;i<ids.length;i+=200)b=b.concat(await todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo,rede,un").in("id",ids.slice(i,i+200))));
       return a.concat(b).filter(e=>e.ativo!==false).sort((x,y)=>x.codigo.localeCompare(y.codigo))})(),
     todos(()=>O.from("postes").select("id,codigo,material_codigo,altura_m,esforco_kn,tipo").order("altura_m")),
     todos(()=>O.from("tipos_rede").select("*").order("ordem")),
@@ -1206,6 +1206,7 @@ async function editor(id){
   [PE,IT].forEach(a=>a.forEach(r=>delete r.orc_pontos));
   /* ---- loteamento subterrâneo: várias plantas por orçamento ---- */
   const LOT=!!ORC.loteamento;let PLS=[],PLA=null;
+  const REDE_DISC={civil:"C",mt:"P",bt:"S"},DISC_NOME={civil:"Civil",mt:"Primária",bt:"Secundária"};
   const DISC={mt:["Média tensão","#1d3bff"],bt:["Baixa tensão","#2aa58a"],civil:["Civil","#b06ad9"],ip:["Iluminação pública","#e3a94b"],dados:["Dados","#d6119c"]};
   const PFIELDS=["planta_url","planta_tipo","planta_w","planta_h","escala_m_por_unid","planta_textos","planta_pdf","planta_pdf_pag","planta_pdf_k","planta_off_x","planta_off_y"];
   const swapPlanta=pl=>{PFIELDS.forEach(k=>{ORC[k]=pl&&pl[k]!==undefined?pl[k]:null})};
@@ -1269,8 +1270,11 @@ async function editor(id){
   async function cintasManual(pt,v){await chk(O.from("orc_pontos").update({cintas_manual:v}).eq("id",pt.id));pt.cintas_manual=v;if(!v)await recalcCintas(pt);renderHead();renderSide()}
 
   function frequentes(pt){const C={};PTS.forEach(p=>{if(p.id===pt.id)return;const s=seqDoPonto(p);if(s.includes(";"))C[s]=(C[s]||0)+1});return Object.entries(C).filter(([s,n])=>n>=2&&!PADS.some(x=>x.sequencia===s)).sort((a,b)=>b[1]-a[1]).slice(0,4)}
-  {const ja=new Set(EST.map(e=>e.id));(await todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo").eq("categoria","IP"))).forEach(e=>{if(!ja.has(e.id)&&e.ativo!==false)EST.push(e)})}
+  {const ja=new Set(EST.map(e=>e.id));(await todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo,rede,un").eq("categoria","IP"))).forEach(e=>{if(!ja.has(e.id)&&e.ativo!==false)EST.push(e)})}
   TR.forEach(t=>t.itens=TRI.filter(i=>i.tipo_rede_id===t.id));const TRM=Object.fromEntries(TR.map(t=>[t.id,t]));
+  const SUBT=TR.some(t=>/^CIVIL/i.test(t.nome));
+  const trDisc=(cur)=>{if(!LOT||!SUBT||!PLA)return TR;const p={civil:/^CIVIL/i,mt:/^MT/i,bt:/^BT/i}[PLA.disciplina];if(!p)return TR;const L=TR.filter(t=>p.test(t.nome)||t.id===cur);return L.length?L:TR};
+  const dk=pid=>{if(!LOT||!SUBT)return"";const pl=PLS.find(x=>x.id===pid);return pl&&DISC_NOME[pl.disciplina]?DISC_NOME[pl.disciplina]+" · ":""};
   const SEGM=()=>Object.fromEntries(SEGS.map(s=>[s.id,s]));
   const ehIP=eid=>{const e=ESTM[eid];return !!e&&(e.categoria==="IP"||/^(CONJ_IP|FIX_IP)/i.test(e.codigo))};
   const temIP=p=>PE.some(e=>e.ponto_id===p.id&&ehIP(e.estrutura_id));
@@ -1289,8 +1293,8 @@ async function editor(id){
   const sobra=v=>v.sobra_pct??ORC.sobra_condutor_pct;
   const segVao=v=>{if(v.segmento_id)return v.segmento_id;const t=TRM[v.tipo_rede_id];if(!t)return null;const k=/^MT/i.test(t.nome)?"MT":/^BT/i.test(t.nome)?"BT":"";const s=SEGS.find(s=>s.nome===k);return s?s.id:null};
   let _IX=null;const ix=()=>{if(_IX)return _IX;const byP={},peM={};for(const i of IT)(byP[i.ponto_id]=byP[i.ponto_id]||[]).push(i);const peP={};for(const e of PE){peM[e.id]=e;(peP[e.ponto_id]=peP[e.ponto_id]||[]).push(e)}_IX={byP,peM,peP};setTimeout(()=>{_IX=null},0);return _IX};
-  function linhasPonto(p){const X=ix();const L=(X.byP[p.id]||[]).map(i=>{const e=i.ponto_estrutura_id&&X.peM[i.ponto_estrutura_id];const k=i.auto==="cinta"?"Cintas":e?((ESTM[e.estrutura_id]||{}).categoria||"Grupos sem categoria"):"Avulsos";return{c:i.material_codigo,q:+i.quantidade,s:(e&&e.segmento_id)||p.segmento_id,k}});if(p.poste_id&&POM[p.poste_id])L.push({c:POM[p.poste_id].material_codigo,q:1,s:p.segmento_id,poste:1,k:"Postes"});return L}
-  function linhasVao(v){const k=(1+sobra(v)/100)*(+v.comprimento_m);const t=TRM[v.tipo_rede_id];const s=segVao(v);if(t)return t.itens.map(i=>({c:i.material_codigo,q:k*i.multiplicador,s,k:"Condutores / Rede"}));return v.material_codigo?[{c:v.material_codigo,q:k,s,k:"Condutores / Rede"}]:[]}
+  function linhasPonto(p){const X=ix();const L=(X.byP[p.id]||[]).map(i=>{const e=i.ponto_estrutura_id&&X.peM[i.ponto_estrutura_id];const k=i.auto==="cinta"?"Cintas":e?((ESTM[e.estrutura_id]||{}).categoria||"Grupos sem categoria"):"Avulsos";return{c:i.material_codigo,q:+i.quantidade,s:(e&&e.segmento_id)||p.segmento_id,k:dk(p.planta_id)+k}});if(p.poste_id&&POM[p.poste_id])L.push({c:POM[p.poste_id].material_codigo,q:1,s:p.segmento_id,poste:1,k:dk(p.planta_id)+"Postes"});return L}
+  function linhasVao(v){const _pa=ptById(v.ponto_a),dkv=dk(_pa&&_pa.planta_id);const k=(1+sobra(v)/100)*(+v.comprimento_m);const t=TRM[v.tipo_rede_id];const s=segVao(v);if(t)return t.itens.map(i=>({c:i.material_codigo,q:k*i.multiplicador,s,k:dkv+(/^CIVIL/i.test(t.nome)?"Banco de dutos":"Condutores / Rede")}));return v.material_codigo?[{c:v.material_codigo,q:k,s,k:dkv+"Condutores / Rede"}]:[]}
   let _TD=null,_TK="";const todas=()=>{const k=IT.length+"|"+PE.length+"|"+PTS.length+"|"+VAOS.length+"|"+EXT.length;if(_TD&&_TK===k)return _TD;_TK=k;_IX=null;_TD=todas0();setTimeout(()=>{_TD=null},0);return _TD};
   const todas0=()=>PTS.flatMap(linhasPonto).concat(VAOS.flatMap(linhasVao),EXT.map(x=>({c:x.material_codigo,q:+x.quantidade,s:x.segmento_id,extra:1,k:"Avulsos"})));
   function porCategoria(){const R={};todas().forEach(l=>{R[l.k]=(R[l.k]||0)+l.q*(preco(l.c)||0)});return R}
@@ -1318,7 +1322,7 @@ async function editor(id){
        <h1><span id="hT"></span>${vers}${ORC.vigente&&IRMAS.length>1?"":""}<span class="chip" id="hSt"></span></h1><div class="sub" id="hS"></div></div>
       <div class="hmix" id="hMix"></div>
       <div class="tot"><div class="eye">Material</div><div class="v" id="hTot"></div></div>
-      <div class="tools"><span class="navb"><button class="btn" data-nav="-1" title="Voltar" aria-label="Voltar">←</button><button class="btn" data-nav="1" title="Avançar" aria-label="Avançar">→</button></span>${LOT?`<a class="btn" id="lnkSub" href="subterraneo.html?orc=${ORC.id}" title="Orçar estruturas, materiais e mão de obra subterrâneos">🕳️ Orçador subterrâneo</a>`:""}<button class="btn" id="bVer">+ Nova versão</button>${ORC.vigente?"":'<button class="btn" id="bVig">Tornar vigente</button>'}<button class="btn" id="bFin"></button><button class="btn" id="bDados">Dados</button><button class="btn" id="bCompras" title="Abrir o painel de compras desta obra com o previsto deste orçamento">🛒 Compras</button></div>
+      <div class="tools"><span class="navb"><button class="btn" data-nav="-1" title="Voltar" aria-label="Voltar">←</button><button class="btn" data-nav="1" title="Avançar" aria-label="Avançar">→</button></span><button class="btn" id="bVer">+ Nova versão</button>${ORC.vigente?"":'<button class="btn" id="bVig">Tornar vigente</button>'}<button class="btn" id="bFin"></button><button class="btn" id="bDados">Dados</button><button class="btn" id="bCompras" title="Abrir o painel de compras desta obra com o previsto deste orçamento">🛒 Compras</button></div>
       <nav class="steps">${[["projeto","1","Projeto"],["materiais","2","Materiais"],["precificacao","3","Precificação"],["proposta","4","Proposta"]].map(([k,n,l])=>`<button data-e="${k}" class="${etapa===k?"on":""}" ><b>${n}</b>${l}</button>`).join("")}</nav></header>
      ${etapa==="projeto"?`<div class="proj" id="proj"><aside id="side"></aside><div class="split" id="split" title="Arraste para ajustar a largura · duplo clique volta ao padrão"><button class="spbtn" id="sp1b" title="Recolher/expandir a lista">«</button></div>
       <div class="mapwrap" id="map"><div class="stage" id="stage"><img id="img" alt="" hidden><div class="blank" id="blank"></div><svg class="net" id="lbls"></svg><svg class="net" id="net"></svg><div id="pins"></div></div><svg class="net kscr" id="kml"></svg>
@@ -1486,7 +1490,7 @@ async function editor(id){
      const chips=()=>{selB.innerHTML=[...SEL].map(([k,q])=>`<span class="esChip"><b>${esc(k)}</b><input class="inp n" data-esq="${esc(k)}" value="${q}" inputmode="numeric" title="Quantidade"><button class="xb" data-esx="${esc(k)}" title="Tirar">×</button></span>`).join("");
        selB.querySelectorAll("[data-esq]").forEach(i=>i.onchange=()=>SEL.set(i.dataset.esq,Math.max(1,parseInt(i.value)||1)));selB.querySelectorAll("[data-esx]").forEach(b=>b.onclick=()=>{SEL.delete(b.dataset.esx);chips();lista()});$("#pEstOk").textContent=SEL.size?`Adicionar (${SEL.size})`:"Adicionar"};
      let posBox=null;const centra=()=>Object.assign(box.style,posBox?{position:"fixed",left:posBox.x+"px",top:posBox.y+"px",right:"auto",bottom:"auto",transform:"none"}:{position:"fixed",left:"50%",top:"50%",right:"auto",bottom:"auto",transform:"translate(-50%,-50%)"},{width:"min(620px,94vw)",maxHeight:"70vh",zIndex:2000,boxShadow:"0 12px 48px rgba(0,0,0,.45)"});
-     const lista=()=>{const t=norm(inp.value);if(/[;,]/.test(inp.value)){box.hidden=true;return}const L=EST.filter(e=>!t||norm(e.codigo+" "+(e.descricao||"")).includes(t)).slice(0,120);
+     const lista=()=>{const t=norm(inp.value);if(/[;,]/.test(inp.value)){box.hidden=true;return}const _rd=LOT&&PLA?REDE_DISC[PLA.disciplina]:null;const L=EST.filter(e=>(!e.rede||e.un!=="m")&&(!_rd||!e.rede||e.rede===_rd)&&(!t||norm(e.codigo+" "+(e.descricao||"")).includes(t))).slice(0,120);
        centra();box.innerHTML=`<div class="row" style="padding:8px 12px;position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--line)"><b style="cursor:move;flex:1;user-select:none" data-mover title="Arraste para mover">⠿ Escolha as estruturas</b><button type="button" class="btn sm" data-fecha>Fechar</button></div>`+L.map(e=>`<label class="aci esopt"><input type="checkbox" data-esc="${esc(e.codigo)}" ${SEL.has(e.codigo)?"checked":""}><span><b class="mono">${esc(e.codigo)}</b> <span class="sm">${esc(e.descricao||"")}</span></span></label>`).join("")||'<div class="aci note">Nada encontrado.</div>';box.hidden=false;
        box.querySelector("[data-fecha]").onclick=()=>{box.hidden=true};
        {const hd=box.querySelector("[data-mover]");let st=null;hd.style.touchAction="none";
@@ -1675,7 +1679,7 @@ async function editor(id){
       if(t)t.itens.forEach(i=>{o.cab[i.material_codigo]=(o.cab[i.material_codigo]||0)+(+x.comprimento_m)*(+i.multiplicador)*(1+sobra(x)/100)})});
     const tv=TRM[v.tipo_rede_id],kv=(+v.comprimento_m)*(1+sobra(v)/100);
     a.innerHTML=`<div class="ah"><div class="row"><span class="lbl">Vão · ${brl(soma(linhasVao(v)))}</span><button class="x" id="vBack" aria-label="Fechar" title="Fechar">×</button></div><div style="font-weight:700;font-size:15px">Vão ${ptById(v.ponto_a)?.numero} → ${ptById(v.ponto_b)?.numero}</div></div>
-     <div class="pane"><label class="fld">Tipo de rede<select id="vTipo">${TR.map(t=>`<option value="${t.id}" ${t.id===v.tipo_rede_id?"selected":""}>${esc(t.nome)}</option>`).join("")}</select></label>
+     <div class="pane"><label class="fld">Tipo de rede<select id="vTipo">${trDisc(v.tipo_rede_id).map(t=>`<option value="${t.id}" ${t.id===v.tipo_rede_id?"selected":""}>${esc(t.nome)}</option>`).join("")}</select></label>
       <div class="grid2"><label class="fld">Comprimento (m)${v.manual?' · <b style="color:var(--warn)">manual</b>':""}<input id="vLen" value="${num(v.comprimento_m,2)}" inputmode="decimal"></label>
        <label class="fld">Sobra % (vazio = ${num(ORC.sobra_condutor_pct)}%)<input id="vSob" value="${v.sobra_pct??""}" inputmode="decimal"></label></div>
       <label class="fld">Segmento<select id="vSeg">${segOpts(v.segmento_id,"automático pelo tipo de rede")}</select></label>
@@ -1707,6 +1711,7 @@ async function editor(id){
   function centrar(p){if(!p||!wrap)return;const r=wrap.getBoundingClientRect();T.x=r.width/2-p.x*T.s;T.y=r.height/2-p.y*T.s;apply()}
   function zoomAt(f,cx,cy){const r=wrap.getBoundingClientRect();const minS=Math.min(r.width/D.w,r.height/D.h)*.5;const ns=Math.max(minS,Math.min(12,T.s*f));f=ns/T.s;T.x=cx-(cx-T.x)*f;T.y=cy-(cy-T.y)*f;T.s=ns;apply()}
   function renderPlantas(){const el=$("#platabs");if(!el)return;if(!LOT){el.innerHTML="";return}
+    if(!el._ps){el._ps=1;["pointerdown","wheel","contextmenu","mousedown","touchstart"].forEach(t=>el.addEventListener(t,e=>e.stopPropagation()))}
     
     el.innerHTML=PLS.map(pl=>{const d=DISC[pl.disciplina]||["",""];const n=PTS.filter(p=>p.planta_id===pl.id).length;return `<button class="${PLA&&PLA.id===pl.id?"on":""}" data-pl="${pl.id}" title="${esc(d[0])} · ${n} pontos"><span class="d" style="background:${d[1]}"></span>${esc(pl.nome)}${PLA&&PLA.id===pl.id?` <span data-prn="${pl.id}" title="Renomear / disciplina">✎</span> <span data-pdel="${pl.id}" title="Excluir planta">🗑</span>`:""}</button>`}).join("")+(!SOVER?`<button class="add" id="plAdd">+ Planta</button>`:"");
     $$("[data-pl]",el).forEach(b=>b.onclick=e=>{if(e.target.closest("[data-prn],[data-pdel]"))return;ativaPlanta(b.dataset.pl)});
@@ -1727,7 +1732,7 @@ async function editor(id){
     $("#mRede").onclick=()=>{if(tracing){tracing=null;anchor=null;renderMapbar();updHint();renderPins();return}
       if(!escala){toast("Calibre a escala da planta antes de traçar a rede.");return}
       const m=modal(`<h2>Traçar rede</h2><p class="note">Escolha o condutor e a sobra. Depois clique nos postes em sequência; cada vão é medido pela escala.</p>
-        <div class="trl">${TR.map((t,i)=>`<label><input type="radio" name="t" value="${t.id}" ${i===0?"checked":""}><span class="dot" style="border-color:${t.cor};border-top-width:4px;width:22px"></span><span>${esc(t.nome)}<small>${t.itens.map(x=>(x.multiplicador>1?num(x.multiplicador)+"× ":"")+esc((MAT[x.material_codigo]||{}).nome||x.material_codigo)).join(" + ")}</small></span><span class="note">${/^MT/i.test(t.nome)?"centro do poste":"lateral"}</span></label>`).join("")}</div>
+        <div class="trl">${trDisc().map((t,i)=>`<label><input type="radio" name="t" value="${t.id}" ${i===0?"checked":""}><span class="dot" style="border-color:${t.cor};border-top-width:4px;width:22px"></span><span>${esc(t.nome)}<small>${t.itens.map(x=>(x.multiplicador>1?num(x.multiplicador)+"× ":"")+esc((MAT[x.material_codigo]||{}).nome||x.material_codigo)).join(" + ")}</small></span><span class="note">${/^MT/i.test(t.nome)?"centro do poste":"lateral"}</span></label>`).join("")}</div>
         <div class="row"><button type="button" class="lnk" id="tNovoCabo">+ incluir cabo</button><span></span></div>
         <label class="fld" style="max-width:200px">Sobra deste trecho (%)<input name="sob" value="${num(ORC.sobra_condutor_pct)}" inputmode="decimal"></label>`,f=>{
         if(!f.t){toast("Escolha ou inclua um cabo.");return false}tracing=+f.t;const sv=pnum(f.sob);traceSobra=Math.abs(sv-ORC.sobra_condutor_pct)<1e-9?null:sv;anchor=null;placing=false;calib=null;renderMapbar();updHint();renderPins()},"Começar a traçar");
