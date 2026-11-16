@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Padrões de montagem · ON Engenharia</title>
+<link rel="icon" href="assets/on-logo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef2f6; --panel:#ffffff; --ink:#1e2f40; --muted:#5a6f83; --line:#d6e1ea;
+  --accent:#2f6f9f; --accent-soft:#e8f1f9; --navy:#1e2f40; --navy2:#2b4157; --onblue:#62a8dc;
+  --ok:#1f8a4c; --ok-soft:#e2f4e9; --warn:#b7791f; --warn-soft:#fbf0dc; --idle-soft:#edf1f5; --danger:#b3261e; --danger-soft:#fbe9e7;
+  --f-body:Montserrat,system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101b26; --panel:#172534; --ink:#e8f1f9; --muted:#9fb8cc; --line:#2b4157;
+  --accent:#62a8dc; --accent-soft:#1d3a52; --navy:#0b141d; --navy2:#1e2f40;
+  --ok:#52c47f; --ok-soft:#173326; --warn:#e3a94b; --warn-soft:#3a2d16; --idle-soft:#1e2f40; --danger:#f2867d; --danger-soft:#3a1d1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101b26; --panel:#172534; --ink:#e8f1f9; --muted:#9fb8cc; --line:#2b4157;
+  --accent:#62a8dc; --accent-soft:#1d3a52; --navy:#0b141d; --navy2:#1e2f40;
+  --ok:#52c47f; --ok-soft:#173326; --warn:#e3a94b; --warn-soft:#3a2d16; --idle-soft:#1e2f40; --danger:#f2867d; --danger-soft:#3a1d1b; color-scheme:dark}
+*{box-sizing:border-box} [hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:7px 12px;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:inherit}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.inp{padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:13.5px;width:100%}
+.note{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--idle-soft);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.w{background:var(--warn-soft);color:var(--warn)}
+.erro{max-width:440px;margin:12vh auto;padding:24px;text-align:center}.erro img{height:56px;border-radius:6px}.erro a{color:var(--accent);font-weight:600}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;background:var(--navy);color:#e8f1f9;border-radius:12px;padding:12px 16px}
+header.top img{height:44px;border-radius:4px;display:block}
+.ttl{min-width:0;flex:1 1 260px}
+.eye{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9fb8cc}
+.eye a{color:#9fb8cc;text-decoration:none}.eye a:hover{color:#fff}
+.ttl h1{font-weight:700;font-size:19px;margin:3px 0 1px}
+.ttl .sub{color:#9fb8cc;font-size:12.5px}
+.page{max-width:1280px;margin:0 auto;padding:12px 16px 40px;display:grid;gap:12px}
+.lay{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:860px){.lay{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.lista{display:grid;gap:2px;max-height:calc(100vh - 240px);overflow:auto;margin-top:8px}
+.lista button{display:block;text-align:left;border:0;background:none;padding:8px 8px;border-radius:8px;width:100%}
+.lista button:hover{background:var(--accent-soft)}.lista button.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.lista b{display:block;font-size:12.5px;line-height:1.3}.lista small{color:var(--muted);font-size:11px;font-family:var(--f-mono)}
+.grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:10px 8px 2px}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th,.tbl td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top}
+.tbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--bg)}
+.tbl td.n{font-family:var(--f-mono);white-space:nowrap}
+.tbl tr.alt td{color:var(--muted)}
+.img{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:zoom-in;display:block}
+.dois{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:12px;align-items:start}
+@media (max-width:1000px){.dois{grid-template-columns:1fr}}
+.row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+textarea.inp{min-height:84px;resize:vertical}
+.lnk{background:none;border:0;color:var(--accent);padding:0;font-size:12px;font-weight:600}
+.modal{position:fixed;inset:0;background:rgba(10,20,30,.6);display:grid;place-items:center;z-index:50;padding:16px}
+.mbox{background:var(--panel);border-radius:12px;padding:16px;width:min(560px,100%);max-height:88vh;overflow:auto;display:grid;gap:10px}
+.mbox.big{width:min(1100px,100%)}
+.busca{display:grid;gap:2px;max-height:300px;overflow:auto}.busca button{border:0;background:none;text-align:left;padding:6px 8px;border-radius:6px;font-size:12.5px}.busca button:hover{background:var(--accent-soft)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:9px 14px;border-radius:8px;font-size:13px;z-index:99}
+</style>
+</head>
+<body>
+<div id="root"><p class="note" style="padding:24px">Carregando…</p></div>
+<script src="vendor/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/atalhos.js?v=4"></script>
+<script>
+(async()=>{
+const sb=DB.sb, O=sb.schema("orcarede");
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/[^A-Z0-9,./]+/g," ").replace(/\s+/g," ").trim();
+const brl=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const root=$("#root");
+function toast(t){$$(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
+function falha(msg){root.innerHTML=`<div class="erro"><img src="assets/on-logo.png" alt="ON Engenharia"><h1>Padrões de montagem</h1><p>${esc(msg)}</p><a href="index.html">Ir para o início</a></div>`}
+async function todos(q){let out=[],i=0;for(;;){const {data,error}=await q().range(i,i+999);if(error)throw error;out=out.concat(data);if(data.length<1000)return out;i+=1000}}
+
+const sess=await DB.sessao();if(!sess){location.href="index.html?volta="+encodeURIComponent(location.pathname);return}
+const perfil=await DB.meuPerfil();
+const ADM=!!perfil&&perfil.papel==="admin";
+let P,I,M={},PR={};
+try{
+  P=await todos(()=>O.from("padroes").select("*").eq("ativo",true).order("ged").order("pagina"));
+  I=await todos(()=>O.from("padrao_itens").select("*").order("padrao_id").order("item",{nullsFirst:false}));
+}catch(e){falha("Não foi possível carregar: "+(e.message||e));return}
+const cods=[...new Set(I.map(i=>i.material_codigo).filter(Boolean))];
+if(cods.length){
+  const m=await todos(()=>O.from("materiais").select("codigo,nome,unidade").in("codigo",cods));m.forEach(x=>M[x.codigo]=x);
+  const pr=await todos(()=>O.from("v_preco_vigente").select("material_codigo,valor,fornecedor").in("material_codigo",cods));pr.forEach(x=>PR[x.material_codigo]=x);
+}
+const GEDS={"4104":"GED-4104 · Estruturas básicas (montagem)","4105":"GED-4105 · Instalações elétricas (montagem)","4106":"GED-4106 · Obras civis (montagem)"};
+let sel=P[0]?.id,q="";
+const itensDe=id=>I.filter(i=>i.padrao_id===id);
+
+function lista(){
+  const t=norm(q);
+  const F=P.filter(p=>!t||norm([p.ged,p.secao,p.titulo,...itensDe(p.id).map(i=>i.descricao+" "+(i.doc_cpfl||""))].join(" ")).includes(t));
+  let h="",g="";
+  F.forEach(p=>{if(p.ged!==g){g=p.ged;h+=`<div class="grp">${esc(GEDS[g]||"GED-"+g)}</div>`}
+    h+=`<button data-id="${p.id}" class="${p.id===sel?"on":""}"><b>${esc(p.titulo)}</b><small>${esc(p.secao||"")} · pág. ${p.pagina} · ${itensDe(p.id).length} itens</small></button>`});
+  $("#lst").innerHTML=h||`<p class="note" style="padding:8px">Nada encontrado.</p>`;
+  $$("#lst button").forEach(b=>b.onclick=()=>{sel=b.dataset.id;lista();detalhe()});
+}
+function detalhe(){
+  const p=P.find(x=>x.id===sel);const box=$("#det");
+  if(!p){box.innerHTML=`<div class="card"><p class="note">Selecione um padrão.</p></div>`;return}
+  const its=itensDe(p.id);
+  box.innerHTML=`<div class="card"><div class="row"><div><span class="chip">GED-${esc(p.ged)} · ${esc(p.secao||"")}</span><h2 style="margin:6px 0 0;font-size:17px">${esc(p.titulo)}</h2></div>
+    <span class="note">${esc(p.categoria||"")} · pág. ${p.pagina} do PDF</span></div>
+    <div class="dois" style="margin-top:12px">
+     <div><img class="img" id="im" src="${esc(p.imagem_url)}" alt="Montagem ${esc(p.titulo)}" loading="lazy"><p class="note" style="margin-top:4px">Clique na imagem para ampliar.</p></div>
+     <div><div class="lbl note" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Relação de materiais</div>
+      <table class="tbl"><thead><tr><th>Item</th><th>Qtd.</th><th>Descrição</th><th>CPFL</th><th>Catálogo</th></tr></thead><tbody>
+      ${its.map(i=>{const m=M[i.material_codigo],pr=PR[i.material_codigo];
+        return `<tr class="${i.item==null?"alt":""}"><td class="n">${i.item??"ou"}</td><td class="n">${esc(i.qtd_txt||"")}</td><td>${esc(i.descricao)}</td><td class="n">${esc(i.doc_cpfl||"")}</td>
+        <td>${m?`<b style="font-size:12px">${esc(m.nome)}</b>${pr?`<br><span class="mono note">${brl(pr.valor)}${pr.fornecedor?" · "+esc(pr.fornecedor):""}</span>`:""}`:`<span class="note">—</span>`}${ADM?`<br><button class="lnk" data-v="${i.id}">${m?"trocar":"vincular"}</button>`:""}</td></tr>`}).join("")}
+      </tbody></table></div></div>
+    <div style="margin-top:12px"><div class="row"><b style="font-size:12.5px">Observações de projeto</b>${ADM?`<button class="btn sm pri" id="so">Salvar</button>`:""}</div>
+     <textarea class="inp" id="ob" ${ADM?"":"readonly"} placeholder="${ADM?"Distâncias, profundidade, cuidados, quando usar este padrão…":""}">${esc(p.obs_projeto||"")}</textarea></div></div>`;
+  $("#im").onclick=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="mbox big"><img class="img" style="cursor:default" src="${esc(p.imagem_url)}"><button class="btn" data-x>Fechar</button></div>`;m.onclick=e=>{if(e.target===m||e.target.dataset.x!==undefined)m.remove()};document.body.appendChild(m)};
+  const so=$("#so");if(so)so.onclick=async()=>{const v=$("#ob").value;const r=await O.from("padroes").update({obs_projeto:v||null}).eq("id",p.id);if(r.error){toast("Erro: "+r.error.message);return}p.obs_projeto=v;toast("Observações salvas.")};
+  $$("[data-v]").forEach(b=>b.onclick=()=>vincular(b.dataset.v));
+}
+function vincular(iid){
+  const it=I.find(x=>x.id===iid);
+  const m=document.createElement("div");m.className="modal";
+  m.innerHTML=`<div class="mbox"><b>Vincular ao catálogo</b><p class="note">${esc(it.descricao)}</p><input class="inp" id="bq" placeholder="Buscar material (nome ou código)" autofocus><div class="busca" id="bl"></div><div class="row"><button class="btn sm" data-n>Remover vínculo</button><button class="btn" data-x>Fechar</button></div></div>`;
+  document.body.appendChild(m);
+  m.onclick=e=>{if(e.target===m||e.target.dataset.x!==undefined)m.remove()};
+  async function grava(cod){const r=await O.from("padrao_itens").update({material_codigo:cod}).eq("id",iid);if(r.error){toast("Erro: "+r.error.message);return}it.material_codigo=cod;
+    if(cod&&!M[cod]){const {data}=await O.from("materiais").select("codigo,nome,unidade").eq("codigo",cod).maybeSingle();if(data)M[cod]=data;const pr=await O.from("v_preco_vigente").select("material_codigo,valor,fornecedor").eq("material_codigo",cod).maybeSingle();if(pr.data)PR[cod]=pr.data}
+    m.remove();detalhe();toast("Vínculo salvo.")}
+  m.querySelector("[data-n]").onclick=()=>grava(null);
+  let tm;$("#bq",m).oninput=e=>{clearTimeout(tm);const v=e.target.value.trim();tm=setTimeout(async()=>{if(v.length<2){$("#bl",m).innerHTML="";return}
+    const pal=v.split(/\s+/).filter(Boolean);let qq=O.from("materiais").select("codigo,nome,unidade").eq("ativo",true).limit(40);pal.forEach(w=>{qq=qq.ilike("nome","%"+w.replace(/[%,]/g,"")+"%")});
+    const {data,error}=await qq;if(error){$("#bl",m).innerHTML=`<p class="note">${esc(error.message)}</p>`;return}
+    $("#bl",m).innerHTML=(data||[]).map(x=>`<button data-c="${esc(x.codigo)}">${esc(x.nome)} <span class="note mono">${esc(x.codigo)}</span></button>`).join("")||`<p class="note">Nenhum material.</p>`;
+    $$("#bl button",m).forEach(b=>b.onclick=()=>grava(b.dataset.c))},250)};
+}
+root.innerHTML=`<div class="page"><header class="top"><img src="assets/on-logo.png" alt="ON Engenharia"><div class="ttl"><div class="eye"><a href="index.html#painel">Início</a> › <a href="orcarede.html">OrçaRede</a> › Padrões</div><h1>Padrões de montagem</h1><div class="sub">Normas RGE/CPFL · ${P.length} montagens · ${I.length} itens de material</div></div></header>
+ <div class="lay"><div class="card"><input class="inp" id="q" placeholder="Buscar por nome, GED, código CPFL ou material"><div class="lista" id="lst"></div></div><div id="det"></div></div></div>`;
+$("#q").oninput=e=>{q=e.target.value;lista()};
+lista();detalhe();
+})();
+</script>
+</body>
+</html>
