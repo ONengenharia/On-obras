@@ -83,6 +83,7 @@ const sb=DB.sb, O=sb.schema("orcarede");
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toUpperCase().replace(/[^A-Z0-9,./]+/g," ").replace(/\s+/g," ").trim();
+const num=n=>Number(n||0).toLocaleString("pt-BR",{maximumFractionDigits:3});
 const brl=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const root=$("#root");
 function toast(t){$$(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
@@ -94,65 +95,49 @@ const perfil=await DB.meuPerfil();
 const ADM=!!perfil&&perfil.papel==="admin";
 let P,I,M={},PR={};
 try{
-  P=await todos(()=>O.from("padroes").select("*").eq("ativo",true).order("ged").order("pagina"));
-  I=await todos(()=>O.from("padrao_itens").select("*").order("padrao_id").order("item",{nullsFirst:false}));
+  const con=await O.from("concessionarias").select("id").eq("sigla","SUBTERRANE RGE").single();if(con.error)throw con.error;
+  P=await todos(()=>O.from("estruturas").select("*").eq("concessionaria_id",con.data.id).eq("ativo",true).order("ged").order("secao"));
+  I=await todos(()=>O.from("estrutura_itens").select("*").in("estrutura_id",P.map(p=>p.id)).order("id"));
+  const m=await todos(()=>O.from("materiais").select("codigo,nome,unidade,doc_cpfl").like("codigo","SUB-%"));m.forEach(x=>M[x.codigo]=x);
+  const pr=await todos(()=>O.from("v_preco_vigente").select("material_codigo,valor,fornecedor").like("material_codigo","SUB-%"));pr.forEach(x=>PR[x.material_codigo]=x);
 }catch(e){falha("Não foi possível carregar: "+(e.message||e));return}
-const cods=[...new Set(I.map(i=>i.material_codigo).filter(Boolean))];
-if(cods.length){
-  const m=await todos(()=>O.from("materiais").select("codigo,nome,unidade").in("codigo",cods));m.forEach(x=>M[x.codigo]=x);
-  const pr=await todos(()=>O.from("v_preco_vigente").select("material_codigo,valor,fornecedor").in("material_codigo",cods));pr.forEach(x=>PR[x.material_codigo]=x);
-}
-const GEDS={"4104":"GED-4104 · Estruturas básicas (montagem)","4105":"GED-4105 · Instalações elétricas (montagem)","4106":"GED-4106 · Obras civis (montagem)"};
+const GEDS={"4101":"GED-4101 · Projeto e critérios","4102":"GED-4102 · Obras civis / dutos","4104":"GED-4104 · Estruturas básicas (montagem)","4105":"GED-4105 · Instalações elétricas (montagem)","4106":"GED-4106 · Obras civis (montagem)"};
 let sel=P[0]?.id,q="";
-const itensDe=id=>I.filter(i=>i.padrao_id===id);
+const itensDe=id=>I.filter(i=>i.estrutura_id===id);
+const img=(p,n)=>`assets/ged/${p.ged}-${n}.jpg`;
 
 function lista(){
   const t=norm(q);
-  const F=P.filter(p=>!t||norm([p.ged,p.secao,p.titulo,...itensDe(p.id).map(i=>i.descricao+" "+(i.doc_cpfl||""))].join(" ")).includes(t));
+  const F=P.filter(p=>!t||norm([p.ged,p.secao,p.codigo,p.descricao,p.categoria,...itensDe(p.id).map(i=>(M[i.material_codigo]||{}).nome||"")].join(" ")).includes(t));
   let h="",g="";
   F.forEach(p=>{if(p.ged!==g){g=p.ged;h+=`<div class="grp">${esc(GEDS[g]||"GED-"+g)}</div>`}
-    h+=`<button data-id="${p.id}" class="${p.id===sel?"on":""}"><b>${esc(p.titulo)}</b><small>${esc(p.secao||"")} · pág. ${p.pagina} · ${itensDe(p.id).length} itens</small></button>`});
+    h+=`<button data-id="${p.id}" class="${p.id===sel?"on":""}"><b>${esc(p.descricao)}</b><small>${esc(p.secao||"")} · ${itensDe(p.id).length} itens</small></button>`});
   $("#lst").innerHTML=h||`<p class="note" style="padding:8px">Nada encontrado.</p>`;
-  $$("#lst button").forEach(b=>b.onclick=()=>{sel=b.dataset.id;lista();detalhe()});
+  $$("#lst button").forEach(b=>b.onclick=()=>{sel=Number(b.dataset.id);lista();detalhe()});
 }
 function detalhe(){
   const p=P.find(x=>x.id===sel);const box=$("#det");
-  if(!p){box.innerHTML=`<div class="card"><p class="note">Selecione um padrão.</p></div>`;return}
-  const its=itensDe(p.id);
-  box.innerHTML=`<div class="card"><div class="row"><div><span class="chip">GED-${esc(p.ged)} · ${esc(p.secao||"")}</span><h2 style="margin:6px 0 0;font-size:17px">${esc(p.titulo)}</h2></div>
-    <span class="note">${esc(p.categoria||"")} · pág. ${p.pagina} do PDF</span></div>
+  if(!p){box.innerHTML=`<div class="card"><p class="note">Selecione uma estrutura.</p></div>`;return}
+  const its=itensDe(p.id),pg=p.paginas||[],sv=p.servicos||[];
+  box.innerHTML=`<div class="card"><div class="row"><div><span class="chip">GED-${esc(p.ged)} · ${esc(p.secao||"")}</span> <span class="chip">${esc(p.codigo)}</span><h2 style="margin:6px 0 0;font-size:17px">${esc(p.descricao)}</h2></div>
+    <span class="note">${esc(p.categoria||"")} · por ${esc(p.un||"un")}</span></div>
+    ${p.nota?`<p class="note" style="margin-top:8px;background:var(--warn-soft);padding:8px 10px;border-radius:8px">${esc(p.nota)}</p>`:""}
     <div class="dois" style="margin-top:12px">
-     <div><img class="img" id="im" src="${esc(p.imagem_url)}" alt="Montagem ${esc(p.titulo)}" loading="lazy"><p class="note" style="margin-top:4px">Clique na imagem para ampliar.</p></div>
-     <div><div class="lbl note" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Relação de materiais</div>
-      <table class="tbl"><thead><tr><th>Item</th><th>Qtd.</th><th>Descrição</th><th>CPFL</th><th>Catálogo</th></tr></thead><tbody>
-      ${its.map(i=>{const m=M[i.material_codigo],pr=PR[i.material_codigo];
-        return `<tr class="${i.item==null?"alt":""}"><td class="n">${i.item??"ou"}</td><td class="n">${esc(i.qtd_txt||"")}</td><td>${esc(i.descricao)}</td><td class="n">${esc(i.doc_cpfl||"")}</td>
-        <td>${m?`<b style="font-size:12px">${esc(m.nome)}</b>${pr?`<br><span class="mono note">${brl(pr.valor)}${pr.fornecedor?" · "+esc(pr.fornecedor):""}</span>`:""}`:`<span class="note">—</span>`}${ADM?`<br><button class="lnk" data-v="${i.id}">${m?"trocar":"vincular"}</button>`:""}</td></tr>`}).join("")}
-      </tbody></table></div></div>
+     <div>${pg.length?pg.map(n=>`<img class="img" data-im="${n}" style="margin-bottom:8px" src="${img(p,n)}" alt="GED-${esc(p.ged)} pág. ${n}" loading="lazy">`).join("")+`<p class="note">Clique na imagem para ampliar.</p>`:`<p class="note">Sem desenho no padrão (critério do GED-${esc(p.ged)}).</p>`}</div>
+     <div><div class="note" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em">Relação de materiais</div>
+      <table class="tbl"><thead><tr><th>Qtd.</th><th>Material</th><th>CPFL</th><th>Preço</th></tr></thead><tbody>
+      ${its.map(i=>{const m=M[i.material_codigo]||{},pr=PR[i.material_codigo];
+        return `<tr><td class="n">${i.adequada?"adequada":num(i.quantidade)}</td><td>${esc(m.nome||i.material_codigo)}${i.tensao?` <span class="chip">${esc(i.tensao)} kV</span>`:""}${i.rede?` <span class="chip">rede ${esc(i.rede)}</span>`:""}${i.obs?`<br><span class="note">${esc(i.obs)}</span>`:""}</td><td class="n">${esc(m.doc_cpfl||"")}</td><td class="n">${pr?brl(pr.valor):'<span class="note">—</span>'}</td></tr>`}).join("")}
+      </tbody></table>
+      ${sv.length?`<div class="note" style="font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-top:12px">Serviços (por ${esc(p.un||"un")})</div><table class="tbl"><tbody>${sv.map(([n,u,qq])=>`<tr><td>${esc(n)}</td><td class="n">${num(qq)} ${esc(u)}</td></tr>`).join("")}</tbody></table>`:""}
+     </div></div>
     <div style="margin-top:12px"><div class="row"><b style="font-size:12.5px">Observações de projeto</b>${ADM?`<button class="btn sm pri" id="so">Salvar</button>`:""}</div>
-     <textarea class="inp" id="ob" ${ADM?"":"readonly"} placeholder="${ADM?"Distâncias, profundidade, cuidados, quando usar este padrão…":""}">${esc(p.obs_projeto||"")}</textarea></div></div>`;
-  $("#im").onclick=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="mbox big"><img class="img" style="cursor:default" src="${esc(p.imagem_url)}"><button class="btn" data-x>Fechar</button></div>`;m.onclick=e=>{if(e.target===m||e.target.dataset.x!==undefined)m.remove()};document.body.appendChild(m)};
-  const so=$("#so");if(so)so.onclick=async()=>{const v=$("#ob").value;const r=await O.from("padroes").update({obs_projeto:v||null}).eq("id",p.id);if(r.error){toast("Erro: "+r.error.message);return}p.obs_projeto=v;toast("Observações salvas.")};
-  $$("[data-v]").forEach(b=>b.onclick=()=>vincular(b.dataset.v));
-}
-function vincular(iid){
-  const it=I.find(x=>x.id===iid);
-  const m=document.createElement("div");m.className="modal";
-  m.innerHTML=`<div class="mbox"><b>Vincular ao catálogo</b><p class="note">${esc(it.descricao)}</p><input class="inp" id="bq" placeholder="Buscar material (nome ou código)" autofocus><div class="busca" id="bl"></div><div class="row"><button class="btn sm" data-n>Remover vínculo</button><button class="btn" data-x>Fechar</button></div></div>`;
-  document.body.appendChild(m);
-  m.onclick=e=>{if(e.target===m||e.target.dataset.x!==undefined)m.remove()};
-  async function grava(cod){const r=await O.from("padrao_itens").update({material_codigo:cod}).eq("id",iid);if(r.error){toast("Erro: "+r.error.message);return}it.material_codigo=cod;
-    if(cod&&!M[cod]){const {data}=await O.from("materiais").select("codigo,nome,unidade").eq("codigo",cod).maybeSingle();if(data)M[cod]=data;const pr=await O.from("v_preco_vigente").select("material_codigo,valor,fornecedor").eq("material_codigo",cod).maybeSingle();if(pr.data)PR[cod]=pr.data}
-    m.remove();detalhe();toast("Vínculo salvo.")}
-  m.querySelector("[data-n]").onclick=()=>grava(null);
-  let tm;$("#bq",m).oninput=e=>{clearTimeout(tm);const v=e.target.value.trim();tm=setTimeout(async()=>{if(v.length<2){$("#bl",m).innerHTML="";return}
-    const pal=v.split(/\s+/).filter(Boolean);let qq=O.from("materiais").select("codigo,nome,unidade").eq("ativo",true).limit(40);pal.forEach(w=>{qq=qq.ilike("nome","%"+w.replace(/[%,]/g,"")+"%")});
-    const {data,error}=await qq;if(error){$("#bl",m).innerHTML=`<p class="note">${esc(error.message)}</p>`;return}
-    $("#bl",m).innerHTML=(data||[]).map(x=>`<button data-c="${esc(x.codigo)}">${esc(x.nome)} <span class="note mono">${esc(x.codigo)}</span></button>`).join("")||`<p class="note">Nenhum material.</p>`;
-    $$("#bl button",m).forEach(b=>b.onclick=()=>grava(b.dataset.c))},250)};
+     <textarea class="inp" id="ob" ${ADM?"":"readonly"} placeholder="${ADM?"Distâncias, profundidade, cuidados, quando usar esta estrutura…":""}">${esc(p.obs_projeto||"")}</textarea></div></div>`;
+  $$("[data-im]").forEach(im=>im.onclick=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="mbox big"><img class="img" style="cursor:default" src="${img(p,im.dataset.im)}"><button class="btn" data-x>Fechar</button></div>`;m.onclick=e=>{if(e.target===m||e.target.dataset.x!==undefined)m.remove()};document.body.appendChild(m)});
+  const so=$("#so");if(so)so.onclick=async()=>{const v=$("#ob").value;const r=await O.from("estruturas").update({obs_projeto:v||null}).eq("id",p.id);if(r.error){toast("Erro: "+r.error.message);return}p.obs_projeto=v;toast("Observações salvas.")};
 }
 root.innerHTML=`<div class="page"><header class="top"><img src="assets/on-logo.png" alt="ON Engenharia"><div class="ttl"><div class="eye"><a href="index.html#painel">Início</a> › <a href="orcarede.html">OrçaRede</a> › Padrões</div><h1>Padrões de montagem</h1><div class="sub">Normas RGE/CPFL · ${P.length} montagens · ${I.length} itens de material</div></div></header>
- <div class="lay"><div class="card"><input class="inp" id="q" placeholder="Buscar por nome, GED, código CPFL ou material"><div class="lista" id="lst"></div></div><div id="det"></div></div></div>`;
+ <div class="lay"><div class="card"><input class="inp" id="q" placeholder="Buscar por nome, GED, código ou material"><div class="lista" id="lst"></div></div><div id="det"></div></div></div>`;
 $("#q").oninput=e=>{q=e.target.value;lista()};
 lista();detalhe();
 })();
