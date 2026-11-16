@@ -13,7 +13,7 @@
 @media (max-width:700px){.atl .rot{display:none}.atl a{padding:7px 9px}}
 .atl .grip{cursor:grab;color:#9fb8cc;padding:7px 4px 7px 8px;user-select:none;touch-action:none}.atl .grip:active{cursor:grabbing}
 .atl.solto{transform:none}.atl.vert{flex-direction:column;border-radius:22px}.atl.vert .rot{display:none}.atl.vert .grip{padding:6px 7px 2px}
-.atl .fundo{font-size:13px}
+.atl .fundo{font-size:13px}.atl.oculta{opacity:.55;padding:2px}.atl.oculta:hover{opacity:1}.atl.oculta button{padding:5px 10px}
 .fpop{position:fixed;z-index:950;background:#1e2f40;color:#e8f1f9;border:1px solid #3b5670;border-radius:12px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.35);font:500 13px Montserrat,system-ui,sans-serif;display:flex;flex-direction:column;gap:10px;width:280px;box-sizing:border-box;text-align:left}
 .fpop *{box-sizing:border-box}.fpop .fp-r{display:flex!important;justify-content:space-between;align-items:center;gap:8px;margin:0;padding:0;width:100%}
 .fpop .fp-r>span{flex:1;white-space:nowrap}.fpop input[type=color]{width:44px!important;height:28px!important;min-width:0!important;flex:none!important;padding:0!important;border:1px solid #3b5670!important;border-radius:6px;background:none}
@@ -27,6 +27,7 @@
   const L = [["🏠", "Início", "index.html#painel", pg === "index.html" && (!hash || hash === "#painel")], ["💼", "Negócios", "negocios.html", pg === "negocios.html"], ["🗂", "Obras", "index.html#kanban", pg === "index.html" && hash === "#kanban" || pg === "obra.html"]];
   const nav = document.createElement("nav"); nav.className = "atl"; nav.setAttribute("aria-label", "Atalhos");
   let min = true; try { min = localStorage.getItem("atl.min") !== "0" } catch (e) {}
+  let oculto = false; try { oculto = localStorage.getItem("atl.oculto") === "1" } catch (e) {}
   let pos = null; try { pos = JSON.parse(localStorage.getItem("atl.pos") || "null") } catch (e) {}
   const aplicaPos = () => {
     if (!pos) { nav.classList.remove("solto", "vert"); Object.assign(nav.style, { left: "", top: "", bottom: "", right: "" }); return }
@@ -37,9 +38,11 @@
   };
   const draw = (extra) => {
     nav.className = "atl" + (min ? " min" : "");
+    if (oculto) { nav.classList.add("oculta"); nav.innerHTML = `<button type="button" class="mostrar" title="Mostrar atalhos" aria-label="Mostrar atalhos">☰</button>`; nav.querySelector(".mostrar").onclick = () => { oculto = false; try { localStorage.setItem("atl.oculto", "0") } catch (e) {} draw(extra) }; requestAnimationFrame(aplicaPos); return }
     nav.innerHTML = `<span class="grip" title="Arraste para mover · duplo clique volta ao lugar">⠿</span>` + [...L, ...extra].map(([i, t, h, on]) => `<a href="${h}" class="${on ? "on" : ""}" title="${t}">${i}<span class="rot">${t}</span></a>`).join("") +
-      `<button type="button" class="fundo" title="Fundo de tela">🎨</button><button type="button" class="tam" title="${min ? "Mostrar nomes" : "Só ícones"}" aria-label="Alternar tamanho">${min ? "»" : "«"}</button>`;
+      `<button type="button" class="fundo" title="Fundo de tela">🎨</button><button type="button" class="ocultar" title="Ocultar a barra" aria-label="Ocultar a barra">✕</button><button type="button" class="tam" title="${min ? "Mostrar nomes" : "Só ícones"}" aria-label="Alternar tamanho">${min ? "»" : "«"}</button>`;
     nav.querySelector(".tam").onclick = () => { min = !min; try { localStorage.setItem("atl.min", min ? "1" : "0") } catch (e) {} draw(extra) };
+    nav.querySelector(".ocultar").onclick = () => { oculto = true; try { localStorage.setItem("atl.oculto", "1") } catch (e) {} draw(extra) };
     nav.querySelector(".fundo").onclick = e => { e.stopPropagation(); popFundo() };
     const g = nav.querySelector(".grip");
     g.onpointerdown = e => { e.preventDefault(); const r = nav.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; g.setPointerCapture(e.pointerId);
