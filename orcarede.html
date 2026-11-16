@@ -1189,6 +1189,7 @@ async function editor(id){
     todos(()=>O.from("orc_ponto_itens").select("id,ponto_id,ponto_estrutura_id,material_codigo,quantidade,editado,auto,orc_pontos!inner(orcamento_id)").eq("orc_pontos.orcamento_id",id)),
     todos(()=>O.from("orc_vaos").select("*").eq("orcamento_id",id)),
     (async()=>{const [a,ec]=await Promise.all([todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo,rede,un").eq("concessionaria_id",conc)),todos(()=>O.from("estrutura_conc").select("estrutura_id").eq("concessionaria_id",conc))]);
+  let RAM=[];try{RAM=await todos(()=>O.from("orc_ponto_ramais").select("*,orc_pontos!inner(orcamento_id)").eq("orc_pontos.orcamento_id",id))}catch(e){RAM=[]}
       const ids=ec.map(x=>x.estrutura_id).filter(i=>!a.some(e=>e.id===i));let b=[];for(let i=0;i<ids.length;i+=200)b=b.concat(await todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo,rede,un").in("id",ids.slice(i,i+200))));
       return a.concat(b).filter(e=>e.ativo!==false).sort((x,y)=>x.codigo.localeCompare(y.codigo))})(),
     todos(()=>O.from("postes").select("id,codigo,material_codigo,altura_m,esforco_kn,tipo").order("altura_m")),
@@ -1295,9 +1296,10 @@ async function editor(id){
   const segVao=v=>{if(v.segmento_id)return v.segmento_id;const t=TRM[v.tipo_rede_id];if(!t)return null;const k=/^MT/i.test(t.nome)?"MT":/^BT/i.test(t.nome)?"BT":"";const s=SEGS.find(s=>s.nome===k);return s?s.id:null};
   let _IX=null;const ix=()=>{if(_IX)return _IX;const byP={},peM={};for(const i of IT)(byP[i.ponto_id]=byP[i.ponto_id]||[]).push(i);const peP={};for(const e of PE){peM[e.id]=e;(peP[e.ponto_id]=peP[e.ponto_id]||[]).push(e)}_IX={byP,peM,peP};setTimeout(()=>{_IX=null},0);return _IX};
   function linhasPonto(p){const X=ix();const L=(X.byP[p.id]||[]).map(i=>{const e=i.ponto_estrutura_id&&X.peM[i.ponto_estrutura_id];const k=i.auto==="cinta"?"Cintas":e?((ESTM[e.estrutura_id]||{}).categoria||"Grupos sem categoria"):"Avulsos";return{c:i.material_codigo,q:+i.quantidade,s:(e&&e.segmento_id)||p.segmento_id,k:dk(p.planta_id)+k}});if(p.poste_id&&POM[p.poste_id])L.push({c:POM[p.poste_id].material_codigo,q:1,s:p.segmento_id,poste:1,k:dk(p.planta_id)+"Postes"});return L}
+  function linhasRamal(r){const pt=ptById(r.ponto_id),t=TRM[r.tipo_rede_id];if(!t||!pt)return[];const k=(1+(r.sobra_pct??ORC.sobra_condutor_pct)/100)*(+r.metros)*(+r.quantidade),s=pt.segmento_id,d=dk(pt.planta_id);return t.itens.map(i=>({c:i.material_codigo,q:k*i.multiplicador,s,k:d+(/^CIVIL/i.test(t.nome)||/duto/i.test(t.nome)?"Ramais · Dutos":"Ramais · Cabos")}))}
   function linhasVao(v){const _pa=ptById(v.ponto_a),dkv=dk(_pa&&_pa.planta_id);const k=(1+sobra(v)/100)*(+v.comprimento_m);const t=TRM[v.tipo_rede_id];const s=segVao(v);if(t)return t.itens.map(i=>({c:i.material_codigo,q:k*i.multiplicador,s,k:dkv+(/^CIVIL/i.test(t.nome)?"Banco de dutos":"Condutores / Rede")}));return v.material_codigo?[{c:v.material_codigo,q:k,s,k:dkv+"Condutores / Rede"}]:[]}
-  let _TD=null,_TK="";const todas=()=>{const k=IT.length+"|"+PE.length+"|"+PTS.length+"|"+VAOS.length+"|"+EXT.length;if(_TD&&_TK===k)return _TD;_TK=k;_IX=null;_TD=todas0();setTimeout(()=>{_TD=null},0);return _TD};
-  const todas0=()=>PTS.flatMap(linhasPonto).concat(VAOS.flatMap(linhasVao),EXT.map(x=>({c:x.material_codigo,q:+x.quantidade,s:x.segmento_id,extra:1,k:"Avulsos"})));
+  let _TD=null,_TK="";const todas=()=>{const k=IT.length+"|"+PE.length+"|"+PTS.length+"|"+VAOS.length+"|"+EXT.length+"|"+RAM.length+"|"+RAM.reduce((a,r)=>a+(+r.metros)*(+r.quantidade),0)+"|"+RAM.map(r=>r.tipo_rede_id).join(",");if(_TD&&_TK===k)return _TD;_TK=k;_IX=null;_TD=todas0();setTimeout(()=>{_TD=null},0);return _TD};
+  const todas0=()=>PTS.flatMap(linhasPonto).concat(VAOS.flatMap(linhasVao),RAM.flatMap(linhasRamal),EXT.map(x=>({c:x.material_codigo,q:+x.quantidade,s:x.segmento_id,extra:1,k:"Avulsos"})));
   function porCategoria(){const R={};todas().forEach(l=>{R[l.k]=(R[l.k]||0)+l.q*(preco(l.c)||0)});return R}
 
   const soma=L=>L.reduce((s,l)=>s+l.q*(preco(l.c)||0),0);
@@ -1419,6 +1421,11 @@ async function editor(id){
       const r=ex||await chk(O.from("orc_segmentos").insert({orcamento_id:ORC.id,nome,cor:f.cor,ordem:SEGS.length}).select("*").single());if(!ex)SEGS.push(r);
       sel.innerHTML=segOpts(r.id);sel.value=r.id;sel.dispatchEvent(new Event("change",{bubbles:true}));toast(ex?"Segmento já existia.":"Segmento criado.")},"Criar")},true);
   const segTag=id=>{const s=SEGM()[id];return s?`<span class="segtag" style="background:${s.cor}">${esc(s.nome)}</span>`:""};
+  function ramaisHtml(pt){const L=RAM.filter(r=>r.ponto_id===pt.id);const tot=L.reduce((a,r)=>a+(+r.metros)*(+r.quantidade),0);
+    return `<div class="lbl">Ramais (por metragem)${L.length?` · ${num(tot)} m`:""}</div>
+      ${L.map(r=>{const t=TRM[r.tipo_rede_id];return `<div class="gl" style="grid-template-columns:1fr 74px 64px auto;gap:6px;align-items:center;margin-bottom:4px"><span style="font-size:12.5px">${esc(t?t.nome.replace(/^(CIVIL|MT|BT) · /,""):"?")}</span><input class="inp n" data-rm="${r.id}" data-f="metros" value="${num(r.metros)}" title="Metros por ramal" inputmode="decimal"><input class="inp n" data-rm="${r.id}" data-f="quantidade" value="${num(r.quantidade)}" title="Quantidade de ramais" inputmode="decimal"><button class="btn sm del" data-rd="${r.id}" title="Remover">✕</button></div>`}).join("")||'<p class="note">Nenhum. Informe a metragem do ramal até o lote, sem desenhar.</p>'}
+      <div class="row" style="gap:6px;flex-wrap:wrap"><select class="inp" id="rTipo" style="flex:1;min-width:140px">${TR.filter(t=>/^CIVIL|^MT|^BT/i.test(t.nome)).map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join("")}</select><input class="inp n" id="rM" placeholder="m" style="width:64px" inputmode="decimal" title="Metros por ramal"><input class="inp n" id="rQ" value="1" style="width:56px" inputmode="decimal" title="Quantidade de ramais"><button class="btn sm pri" id="rAdd">+ Ramal</button></div>
+      <p class="note">m por ramal × quantidade. Ex.: 12 m × 8 lotes.</p>`}
   function renderSide(){const a=$("#side"),pn=$("#ptpanel");if(!a)return;
     const v=selV&&VAOS.find(x=>x.id===selV),p=!v&&selP&&ptById(selP);if(!v)selV=null;if(!p)selP=null;
     sideLista(a);
@@ -1485,9 +1492,14 @@ async function editor(id){
       <div class="esSel" id="pEstSel"></div>
       <div class="seq acw"><input class="inp" id="pEst" placeholder="Adicionar estruturas: digite, marque várias (ou cole CE3-2;IT_50)" aria-label="Adicionar estrutura" autocomplete="off"><button class="btn" id="pEstOk">Adicionar</button><div class="acl" id="pEstAc" hidden></div></div>
       ${cintaHtml(pt)}
+      ${SUBT?ramaisHtml(pt):""}
       <div class="lbl">Materiais avulsos</div>
       ${avulsos.length?`<table class="its">${avulsos.map(itRow).join("")}</table>`:'<p class="note">Nenhum.</p>'}
       <div class="row"><button class="lnk" data-addm="">+ material avulso</button><span class="tools"><button class="btn sm" id="pDup" title="Copiar este ponto e colar em outros lugares da planta (Ctrl+C / Ctrl+V)">⧉ Duplicar</button><button class="btn del sm" id="pDel">Excluir ponto</button></span></div></div>`;
+    $("#rAdd")&&($("#rAdd").onclick=async()=>{const m=pnum($("#rM").value),q=pnum($("#rQ").value)||1;if(!(m>0)){toast("Informe os metros do ramal.");return}
+      const r=await chk(O.from("orc_ponto_ramais").insert({ponto_id:pt.id,tipo_rede_id:+$("#rTipo").value,metros:m,quantidade:q}).select("*").single());RAM.push(r);renderHead();renderSide()});
+    $$("[data-rm]").forEach(i=>i.onchange=async()=>{const r=RAM.find(x=>x.id===i.dataset.rm);const v=pnum(i.value);if(!(v>=0)){return}r[i.dataset.f]=v;await chk(O.from("orc_ponto_ramais").update({[i.dataset.f]:v}).eq("id",r.id));renderHead();renderSide()});
+    $$("[data-rd]").forEach(b=>b.onclick=async()=>{await chk(O.from("orc_ponto_ramais").delete().eq("id",b.dataset.rd));RAM=RAM.filter(x=>x.id!==b.dataset.rd);renderHead();renderSide()});
     $("#pBack").onclick=()=>{selP=null;renderPins();renderSide()};$("#pSimb")&&($("#pSimb").onclick=()=>escolheSimbolo("p:"+pt.id));$("#pLeg")&&($("#pLeg").onclick=()=>legendaPonto(pt));$("#pLeg2")&&($("#pLeg2").onclick=()=>legendaPonto(pt));
     $("#pNum").onchange=async e=>{const n=+e.target.value;if(PTS.some(x=>x.numero===n&&x.id!==pt.id)){toast("Já existe o ponto "+n);e.target.value=pt.numero;return}await chk(O.from("orc_pontos").update({numero:n}).eq("id",pt.id));pt.numero=n;PTS.sort((x,y)=>x.numero-y.numero);renderPins();renderSide()};
     $("#pPoste").onchange=async e=>{const v=e.target.value?+e.target.value:null;await chk(O.from("orc_pontos").update({poste_id:v}).eq("id",pt.id));pt.poste_id=v;await recalcCintas(pt);renderHead();renderPins();renderSide()};
