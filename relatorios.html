@@ -101,7 +101,7 @@ NEG.forEach(n=>{const c=n.cadastro||{};const ng=c.negociada;const dv=(ng&&ng.em)
   if(n.motivo_tipo&&/^perdido/i.test(n.motivo_tipo))minD(dPerd,n.id,n.motivo_em||n.atualizado_em)});
 const valN=(n,neg)=>{const c=n.cadastro||{};return neg&&c.negociada&&+c.negociada.valor>0?+c.negociada.valor:(+n.valor||0)};
 const hoje=new Date(),iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-let grupo="mes",quadro="eletrica",ini=iso(new Date(hoje.getFullYear(),hoje.getMonth()-5,1)),fim=iso(new Date(hoje.getFullYear(),hoje.getMonth()+1,0));
+let grupo="dia",quadro="eletrica",perMod="mes",ini=iso(new Date(hoje.getFullYear(),hoje.getMonth(),1)),fim=iso(new Date(hoje.getFullYear(),hoje.getMonth()+1,0));
 const MES=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const chave=d=>grupo==="ano"?String(d.getFullYear()):grupo==="dia"?iso(d):d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
 const rot=k=>grupo==="ano"?k:grupo==="dia"?k.slice(8)+"/"+k.slice(5,7):MES[+k.slice(5,7)-1]+"/"+k.slice(2,4);
@@ -143,12 +143,14 @@ function desenha(){
 root.innerHTML=`<div class="page"><header class="top"><img src="assets/on-logo.png" alt="ON Engenharia"><div style="flex:1"><div class="eye"><a href="index.html">← Início</a></div><h1>📈 Relatórios</h1></div></header>
  <div class="bar"><div class="seg" id="tabs"><button data-t="painel" class="on">📊 Painel</button><button data-t="cons">🧩 Construtor livre</button></div></div>
  <div id="vpainel"><div class="bar"><div class="seg" id="sg">${[["dia","Dia"],["mes","Mês"],["ano","Ano"]].map(([k,l])=>`<button data-g="${k}" class="${k===grupo?"on":""}">${l}</button>`).join("")}</div>
- <label class="note">De <input class="inp" type="date" id="di" value="${ini}"></label><label class="note">Até <input class="inp" type="date" id="df" value="${fim}"></label>
+ <div class="seg" id="sp"><button data-pm="mes" class="on">Mês atual</button><button data-pm="per">Período personalizado</button></div>
+ <span id="pdt" hidden><label class="note">De <input class="inp" type="date" id="di" value="${ini}"></label> <label class="note">Até <input class="inp" type="date" id="df" value="${fim}"></label></span>
  <div class="seg" id="sq">${[["eletrica","Elétrica"],["solar","Solar"],["todos","Todos"]].map(([k,l])=>`<button data-q="${k}" class="${k===quadro?"on":""}">${l}</button>`).join("")}</div></div>
  <div id="rel"></div></div><div id="vcons" hidden></div></div>`;
 document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-t]").forEach(x=>x.classList.toggle("on",x===b));$("#vpainel").hidden=b.dataset.t!=="painel";$("#vcons").hidden=b.dataset.t!=="cons";if(b.dataset.t==="cons")construtor()});
 document.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{grupo=b.dataset.g;document.querySelectorAll("[data-g]").forEach(x=>x.classList.toggle("on",x===b));desenha()});
 document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{quadro=b.dataset.q;document.querySelectorAll("[data-q]").forEach(x=>x.classList.toggle("on",x===b));desenha()});
+document.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{perMod=b.dataset.pm;document.querySelectorAll("[data-pm]").forEach(x=>x.classList.toggle("on",x===b));$("#pdt").hidden=perMod!=="per";if(perMod==="mes"){const h=new Date();ini=iso(new Date(h.getFullYear(),h.getMonth(),1));fim=iso(new Date(h.getFullYear(),h.getMonth()+1,0));$("#di").value=ini;$("#df").value=fim;grupo="dia";document.querySelectorAll("[data-g]").forEach(x=>x.classList.toggle("on",x.dataset.g===grupo))}desenha()});
 $("#di").onchange=e=>{if(e.target.value){ini=e.target.value;desenha()}};$("#df").onchange=e=>{if(e.target.value){fim=e.target.value;desenha()}};
 
 /* ============ CONSTRUTOR LIVRE ============ */
