@@ -65,6 +65,23 @@ button{background:var(--blue);color:#0d1a26;border:0;border-radius:20px;padding:
 .wmveil{position:absolute;inset:0;background:linear-gradient(180deg,#1e2f40d0 0%,#1e2f40e6 45%,#1e2f40f5 100%)}
 .wmtxt{position:absolute!important;left:0;right:0;bottom:7cqh}.wmtxt p,.wmtxt .svl li{text-shadow:0 1px 4px #0008}
 .wm .svl li{border-top-color:#ffffff30}
+
+/* página Sistema ON (animação) */
+.sim{margin-top:3cqw;background:#0e1a27;border:.4cqw solid #2c4660;border-radius:2.6cqw;padding:2.2cqw;overflow:hidden}
+.sim h3{font-size:3.1cqw;margin:0 0 .8cqw;color:#e8f1f9}.sim p.sd{font-size:2.3cqw;line-height:1.35;color:#b9cddd;margin:0 0 1.6cqw}
+.sim .gr{display:grid;grid-template-columns:1.55fr 1fr;gap:2cqw;align-items:stretch}
+.sim svg{width:100%;height:auto;display:block;border-radius:1.6cqw}
+.sim .lst{background:#122233;border:.3cqw solid #2c4660;border-radius:1.6cqw;padding:1.4cqw 1.6cqw;font-size:2.1cqw;position:relative;min-height:26cqw}
+.sim .lst b.h{display:block;font-size:2cqw;letter-spacing:.12em;text-transform:uppercase;color:#62a8dc;margin-bottom:1cqw}
+.sim .rw{display:flex;justify-content:space-between;gap:1cqw;padding:.7cqw 0;border-top:.2cqw solid #243b52;opacity:0}
+.sim .tt{position:absolute;left:1.6cqw;right:1.6cqw;bottom:1.2cqw;display:flex;justify-content:space-between;font-weight:800;font-size:2.5cqw;border-top:.3cqw solid #62a8dc;padding-top:.8cqw}
+.sim .tt span{position:absolute;right:0;opacity:0}.sim .tt em{font-style:normal}
+.sim .bars{display:grid;gap:1.4cqw}.sim .br{font-size:2.1cqw}.sim .br .bb{height:1.5cqw;background:#2a3f55;border-radius:1cqw;overflow:hidden;margin-top:.5cqw}
+.sim .br .bb i{display:block;height:100%;width:0;background:#62a8dc;border-radius:1cqw}.sim .br .bb i.g{background:#2fa36b}.sim .br b{float:right;position:relative;min-width:7cqw;text-align:right}
+.sim .br b span{position:absolute;right:0;opacity:0}.sim .br b span.z{opacity:1}
+.sim .ev{margin-top:1.4cqw;background:#16324a;border:.3cqw solid #62a8dc;border-radius:1.4cqw;padding:1cqw 1.4cqw;font-size:2cqw;opacity:0}
+.sim.fin *{animation:none!important}
+@media print{.sim *{animation:none!important}}
 /* animação: foto inteira primeiro, depois véu + textos */
 .book-ready .wm:has(video) .wmveil{transition-delay:2s}
 .book-ready .wm.show:has(video) .wmtxt>*:nth-child(1){transition-delay:6.38s!important}
@@ -531,13 +548,56 @@ return `<div class="pad" style="padding-top:8cqw"><div class="kicker">${esc(a.ki
 <div class="pdfsign"><div class="f"><span>Valor acordado: R$</span><i></i></div><div class="f d"><span>Data:</span><i></i><span>/</span><i style="flex:0 0 14cqw"></i><span>/</span><i style="flex:0 0 20cqw"></i></div>
 <div class="sg"><i></i><small>Assinatura do cliente${d.cliente.nome?' · '+esc(d.cliente.nome):''}</small></div></div>
 <p style="text-align:center;font-size:2.3cqw;margin-top:8cqw;opacity:.7">${esc(a.fone)} · ${esc(a.email)}</p></div>`};
-const ORDEM=['capa','projeto','resumo','materiais','mao','escopo','valores','curva','cron','fotos','acomp','clientes','aceite','fim'];
+
+const SIMC=(()=>{const T=12,o=[];
+  const kf=(n,pairs)=>`@keyframes ${n}{${pairs.map(([p,v])=>`${p}%{${v}}`).join('')}}`;
+  const on=(sel,n,pairs)=>{o.push(kf(n,pairs));o.push(`.page.show ${sel}{animation:${n} ${T}s linear infinite both}`)};
+  const show=(a,b,hold=true)=>[[0,'opacity:0'],[a,'opacity:0'],[a+3,'opacity:1'],[96,'opacity:1'],[100,'opacity:0']];
+  const pop=(a)=>[[0,'opacity:0;transform:scale(0)'],[a,'opacity:0;transform:scale(0)'],[a+3,'opacity:1;transform:scale(1.25)'],[a+5,'opacity:1;transform:scale(1)'],[96,'opacity:1;transform:scale(1)'],[100,'opacity:0;transform:scale(1)']];
+  const wipe=(a,b)=>[[0,'stroke-dashoffset:var(--L)'],[a,'stroke-dashoffset:var(--L)'],[b,'stroke-dashoffset:0'],[96,'stroke-dashoffset:0;opacity:1'],[100,'stroke-dashoffset:0;opacity:0']];
+  const bar=(a,b,w)=>[[0,'width:0'],[a,'width:0'],[b,`width:${w}%`],[96,`width:${w}%`],[100,'width:0']];
+  const cyc=[[0,'opacity:0'],[2,'opacity:1'],[93,'opacity:1'],[98,'opacity:0'],[100,'opacity:0']];
+  /* cena 1 */
+  on('.s1','s1c',cyc);
+  for(let i=0;i<5;i++)on(`.s1 .p${i}`,`s1p${i}`,pop(8+i*10));
+  for(let i=0;i<4;i++)on(`.s1 .l${i}`,`s1l${i}`,wipe(13+i*10,20+i*10));
+  on('.s1 .meda','s1m',show(58));
+  for(let i=0;i<4;i++)on(`.s1 .rw${i}`,`s1r${i}`,show(36+i*9));
+  [['0',0,36],['1',36,45],['2',45,54],['3',54,63]].forEach(([k,a,b])=>on(`.s1 .tt .t${k}`,`s1t${k}`,[[0,k==='0'?'opacity:1':'opacity:0'],[a,k==='0'?'opacity:1':'opacity:0'],[a+1,'opacity:1'],[b,'opacity:1'],[b+1,k==='3'?'opacity:1':'opacity:0'],[96,k==='3'?'opacity:1':'opacity:0'],[100,k==='3'?'opacity:0':'opacity:0']]));
+  /* cena 2 */
+  on('.s2','s2c',cyc);
+  on('.s2 .pole','s2pole',[[0,'transform:rotate(-72deg)'],[8,'transform:rotate(-72deg)'],[30,'transform:rotate(0deg)'],[33,'transform:rotate(1.5deg)'],[36,'transform:rotate(0deg)'],[96,'transform:rotate(0deg)'],[100,'transform:rotate(-72deg)']]);
+  on('.s2 .okb','s2ok',[[0,'opacity:0'],[36,'opacity:0'],[40,'opacity:1'],[96,'opacity:1'],[100,'opacity:0']]);
+  for(let i=0;i<5;i++){const a=40+i*11;
+    o.push(kf(`s2g${i}`,[[0,'opacity:0'],[a,'opacity:0'],[a+2,'opacity:1;transform:scale(1.3)'],[a+4,'opacity:1;transform:scale(1)'],[96,'opacity:1;transform:scale(1)'],[100,'opacity:0']]));
+    o.push(`.page.show .s2 .g${i}{animation:s2g${i} ${T}s linear infinite both;transform-box:fill-box;transform-origin:center}`);
+    if(i>0)on(`.s2 .m${i}`,`s2m${i}`,wipe(a-8,a));}
+  on('.s2 .ev','s2ev',[[0,'opacity:0'],[40,'opacity:0'],[44,'opacity:1'],[66,'opacity:1'],[70,'opacity:0'],[100,'opacity:0']]);on('.s2 .ev2','s2ev2',[[0,'opacity:0'],[70,'opacity:0'],[74,'opacity:1'],[92,'opacity:1'],[96,'opacity:0'],[100,'opacity:0']]);
+  on('.s2 .b1 i','s2b1',bar(40,80,63));on('.s2 .b2 i','s2b2',bar(52,84,48));on('.s2 .b3 i','s2b3',bar(60,88,35));
+  [['.b1',63],['.b2',48],['.b3',35]].forEach(([c,v],k)=>on(`.s2 ${c} b .z`,`s2z${k}`,[[0,'opacity:1'],[40+k*8,'opacity:1'],[41+k*8,'opacity:0'],[100,'opacity:0']]));
+  [['.b1',63,80],['.b2',48,84],['.b3',35,88]].forEach(([c,v,b],k)=>on(`.s2 ${c} b .f`,`s2f${k}`,[[0,'opacity:0'],[b,'opacity:0'],[b+1,'opacity:1'],[96,'opacity:1'],[100,'opacity:0']]));
+  return o.join('');
+})();
+G.sistema=d=>{const x=Object.assign({},window.PROP_SISTEMA||{},d.sistema||{}),pts=[[34,150],[100,125],[170,108],[245,84],[330,52]],L=pts.map(([a,b])=>`${a},${b}`);
+  const seg=(i,cls)=>`<line class="${cls}${i}" x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${pts[i+1][0]}" y2="${pts[i+1][1]}" stroke="#d6119c" stroke-width="3.2" stroke-linecap="round" style="--L:100;stroke-dasharray:100;stroke-dashoffset:100"/>`;
+  const bg=`<defs><linearGradient id="sg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a6a3a"/><stop offset=".5" stop-color="#5f7a46"/><stop offset="1" stop-color="#3d5530"/></linearGradient></defs><rect width="400" height="190" fill="url(#sg1)"/><path d="M0 40 Q120 70 220 50 T400 70" stroke="#d8d2bf" stroke-width="9" fill="none" opacity=".85"/><path d="M60 0 Q80 100 50 190" stroke="#cfc8b3" stroke-width="7" fill="none" opacity=".8"/><rect x="262" y="120" width="38" height="26" fill="#b9a68f" opacity=".85"/><rect x="305" y="132" width="30" height="22" fill="#a9553e" opacity=".85"/><rect x="140" y="150" width="34" height="22" fill="#c9b8a3" opacity=".85"/>`;
+  const pole=(cls,x,y)=>`<g class="${cls}" style="transform-box:fill-box;transform-origin:center"><circle cx="${x}" cy="${y}" r="7" fill="#fff" stroke="#16324a" stroke-width="2.2"/><circle cx="${x}" cy="${y}" r="2.6" fill="#16324a"/></g>`;
+  const s1=`<div class="sim s1"><h3>${rich(x.t1)}</h3><p class="sd">${rich(x.d1)}</p><div class="gr"><svg viewBox="0 0 400 190">${bg}${[0,1,2,3].map(i=>seg(i,'l')).join('')}${pts.map((p,i)=>pole('p'+i,p[0],p[1])).join('')}<g class="meda"><rect x="150" y="14" width="102" height="22" rx="5" fill="#fff" stroke="#16324a"/><text x="201" y="29" font-size="12" font-weight="700" text-anchor="middle" fill="#16324a" font-family="Arial">Rede BT · 296 m</text></g></svg>
+  <div class="lst"><b class="h">Materiais do orçamento</b><div class="rw rw0"><span>Poste DT 11/300</span><b>5 un</b></div><div class="rw rw1"><span>Cabo multiplexado 3×50</span><b>296 m</b></div><div class="rw rw2"><span>Ferragens e isoladores</span><b>1 jg</b></div><div class="rw rw3"><span>Mão de obra</span><b>1 vb</b></div>
+  <div class="tt"><em>Total</em><span class="t0" style="opacity:1">R$ 0,00</span><span class="t1">R$ 9.870</span><span class="t2">R$ 18.340</span><span class="t3">R$ 24.610</span></div></div></div></div>`;
+  const pole2=`<svg viewBox="0 0 120 190" style="background:#2a3b2a"><rect x="0" y="150" width="120" height="40" fill="#6b5a45"/><rect x="0" y="146" width="120" height="6" fill="#7e6c55"/><rect x="50" y="150" width="20" height="26" fill="#4a3d2e"/><g class="pole" style="transform-origin:60px 150px;transform-box:view-box"><rect x="56" y="26" width="8" height="140" rx="2" fill="#b9b2a3"/><rect x="42" y="40" width="36" height="4" fill="#8a8272"/><rect x="46" y="56" width="28" height="3" fill="#8a8272"/></g><rect x="52" y="160" width="16" height="6" fill="#4a3d2e" opacity=".0"/><g class="okb"><rect x="14" y="8" width="92" height="20" rx="5" fill="#2fa36b"/><text x="60" y="22" font-size="10.5" font-weight="700" text-anchor="middle" fill="#fff" font-family="Arial">Poste executado ✓</text></g></svg>`;
+  const map2=`<svg viewBox="0 0 400 190">${bg}<polyline points="${L.join(' ')}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.4" stroke-dasharray="6 5" stroke-linecap="round"/>${[1,2,3,4].map(i=>`<line class="m${i}" x1="${pts[i-1][0]}" y1="${pts[i-1][1]}" x2="${pts[i][0]}" y2="${pts[i][1]}" stroke="#1d3bff" stroke-width="3.4" stroke-linecap="round" style="--L:100;stroke-dasharray:100;stroke-dashoffset:100"/>`).join('')}${pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="#fff" fill-opacity=".6" stroke="#16324a" stroke-width="1.6" stroke-dasharray="3 2"/><circle class="g${i}" cx="${p[0]}" cy="${p[1]}" r="7" fill="#2fa36b" stroke="#fff" stroke-width="2"/>`).join('')}<g><rect x="8" y="166" width="118" height="18" rx="4" fill="#0e1a27" fill-opacity=".85"/><text x="14" y="179" font-size="9.5" fill="#fff" font-family="Arial">⬜ previsto   <tspan fill="#7bd9a6">● executado</tspan></text></g></svg>`;
+  const s2=`<div class="sim s2"><h3>${rich(x.t2)}</h3><p class="sd">${rich(x.d2)}</p><div class="gr" style="grid-template-columns:.8fr 1.35fr 1fr">${pole2}<div>${map2}<div style="position:relative;min-height:9cqw"><div class="ev">📍 Poste P1 instalado · foto anexada ao diário</div><div class="ev ev2" style="position:absolute;left:0;right:0;top:0">🔌 Rede BT lançada · 296 m · avanço atualizado</div></div></div>
+  <div class="bars"><div class="br b1"><b><span class="z">0%</span><span class="f">63%</span></b>Postes<div class="bb"><i></i></div></div><div class="br b2"><b><span class="z">0%</span><span class="f">48%</span></b>Rede BT<div class="bb"><i></i></div></div><div class="br b3"><b><span class="z">0%</span><span class="f">35%</span></b>Obra particular<div class="bb"><i class="g"></i></div></div></div></div></div>`;
+  return `<style>${SIMC}</style><div class="pad" style="padding-top:5cqw"><div class="kicker">${esc(x.kicker)}</div><h2 style="margin-bottom:1.5cqw">${rich(x.titulo)}</h2><p style="font-size:2.7cqw;margin-bottom:1cqw">${rich(x.texto)}</p>${s1}${s2}</div>`};
+const ORDEM=['capa','projeto','resumo','materiais','mao','escopo','valores','curva','cron','fotos','sistema','acomp','clientes','aceite','fim'];
 window.__ORDEM=ORDEM;
 function elDe(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild}
 function paginas(d){
   const out=[];
   ORDEM.forEach(id=>{
     if(d.paginas&&d.paginas[id]===false&&id!=='fim'&&id!=='aceite')return;
+    if(id==='sistema'&&!(d.paginas&&d.paginas.sistema===true))return;
     let el;
     if(id==='clientes')el=elDe(document.getElementById('tCli').innerHTML.replace(/^<div class="page /,'<div data-gen="1" data-id="clientes" class="page '));
     else if(id==='fim')el=elDe(document.getElementById('tFim').innerHTML.replace(/^<div class="page /,'<div data-gen="1" data-id="fim" class="page '));

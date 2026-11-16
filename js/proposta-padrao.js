@@ -33,9 +33,20 @@ window.PROP_PADRAO = {
   obs: {}        // observações internas por página (nunca aparecem para o cliente)
 };
 // Páginas da proposta, na ordem: id → rótulo
-window.PROP_PAGINAS = [["capa", "Capa"], ["projeto", "Projeto (planta e satélite)"], ["resumo", "Resumo da obra"], ["materiais", "Materiais"], ["mao", "Mão de obra"], ["escopo", "Escopo e responsabilidades"], ["valores", "Valores globais"], ["curva", "Curva de preços"], ["cron", "Cronogramas"], ["fotos", "Fotos executivas"], ["acomp", "Acompanhamento da obra"], ["clientes", "Nossos clientes"], ["aceite", "Termo de aceite"]];
+window.PROP_PAGINAS = [["capa", "Capa"], ["projeto", "Projeto (planta e satélite)"], ["resumo", "Resumo da obra"], ["materiais", "Materiais"], ["mao", "Mão de obra"], ["escopo", "Escopo e responsabilidades"], ["valores", "Valores globais"], ["curva", "Curva de preços"], ["cron", "Cronogramas"], ["fotos", "Fotos executivas"], ["sistema", "Sistema ON (animação)"], ["acomp", "Acompanhamento da obra"], ["clientes", "Nossos clientes"], ["aceite", "Termo de aceite"]];
 window.propMerge = function m(a, b) {   // b sobrepõe a; objetos mesclam, arrays e valores substituem
   if (b === undefined || b === null) return a;
   if (Array.isArray(a) || Array.isArray(b) || typeof a !== "object" || typeof b !== "object" || a === null) return b;
   const o = { ...a }; for (const k of Object.keys(b)) o[k] = m(a[k], b[k]); return o;
+};
+
+// Página "Sistema ON": só aparece quando paginas.sistema === true (propostas novas); textos padrão abaixo
+window.PROP_SISTEMA = {
+  kicker: "Tecnologia ON · OrçaRede",
+  titulo: "Do orçamento à obra, <b>no mesmo sistema</b>",
+  texto: "Desenvolvemos o <b>OrçaRede</b>, nosso sistema próprio: o projeto é desenhado sobre a planta ou o satélite, e a lista de materiais, as metragens e o valor saem dele. Depois, a mesma planta vira o controle da obra.",
+  t1: "1 · Orçamento direto na planta",
+  d1: "Cada poste e cada trecho de rede lançado já gera a metragem e os materiais, sem planilha paralela.",
+  t2: "2 · Execução acompanhada em tempo real",
+  d2: "Poste instalado e rede lançada são marcados no mapa pela equipe, e o avanço da obra se atualiza para você."
 };
