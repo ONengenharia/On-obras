@@ -1189,7 +1189,6 @@ async function editor(id){
     todos(()=>O.from("orc_ponto_itens").select("id,ponto_id,ponto_estrutura_id,material_codigo,quantidade,editado,auto,orc_pontos!inner(orcamento_id)").eq("orc_pontos.orcamento_id",id)),
     todos(()=>O.from("orc_vaos").select("*").eq("orcamento_id",id)),
     (async()=>{const [a,ec]=await Promise.all([todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo,rede,un").eq("concessionaria_id",conc)),todos(()=>O.from("estrutura_conc").select("estrutura_id").eq("concessionaria_id",conc))]);
-  let RAM=[];try{RAM=await todos(()=>O.from("orc_ponto_ramais").select("*,orc_pontos!inner(orcamento_id)").eq("orc_pontos.orcamento_id",id))}catch(e){RAM=[]}
       const ids=ec.map(x=>x.estrutura_id).filter(i=>!a.some(e=>e.id===i));let b=[];for(let i=0;i<ids.length;i+=200)b=b.concat(await todos(()=>O.from("estruturas").select("id,codigo,descricao,categoria,ativo,rede,un").in("id",ids.slice(i,i+200))));
       return a.concat(b).filter(e=>e.ativo!==false).sort((x,y)=>x.codigo.localeCompare(y.codigo))})(),
     todos(()=>O.from("postes").select("id,codigo,material_codigo,altura_m,esforco_kn,tipo").order("altura_m")),
@@ -1204,6 +1203,7 @@ async function editor(id){
     todos(()=>O.from("modelos_ip").select("*").order("nome")),
     todos(()=>O.from("apelidos_estrutura").select("*").eq("concessionaria_id",conc)),
     todos(()=>O.from("orc_itens_extra").select("*").eq("orcamento_id",id))]);
+  let RAM=[];try{RAM=await todos(()=>O.from("orc_ponto_ramais").select("*,orc_pontos!inner(orcamento_id)").eq("orc_pontos.orcamento_id",id))}catch(e){RAM=[]}
   [PE,IT].forEach(a=>a.forEach(r=>delete r.orc_pontos));
   /* ---- loteamento subterrâneo: várias plantas por orçamento ---- */
   const LOT=!!ORC.loteamento;let PLS=[],PLA=null;
