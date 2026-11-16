@@ -95,7 +95,7 @@ const perfil=await DB.meuPerfil();
 const ADM=!!perfil&&perfil.papel==="admin";
 let P,I,M={},PR={};
 try{
-  const con=await O.from("concessionarias").select("id").eq("sigla","SUBTERRANE RGE").single();if(con.error)throw con.error;
+  const con=await O.from("concessionarias").select("id").ilike("sigla","%SUBTERR%").limit(1).single();if(con.error)throw con.error;
   P=await todos(()=>O.from("estruturas").select("*").eq("concessionaria_id",con.data.id).eq("ativo",true).order("ged").order("secao"));
   I=await todos(()=>O.from("estrutura_itens").select("*").in("estrutura_id",P.map(p=>p.id)).order("id"));
   const m=await todos(()=>O.from("materiais").select("codigo,nome,unidade,doc_cpfl").like("codigo","SUB-%"));m.forEach(x=>M[x.codigo]=x);
