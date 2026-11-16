@@ -232,7 +232,7 @@
       <div class="card">💼 ${esc((l.negocios || {}).titulo || "Negócio")}${(l.negocios || {}).cliente ? " · " + esc(l.negocios.cliente) : ""}<br>Marcado para ${fdt(l.quando)}${l.criado_por && l.criado_por !== eu ? " por " + esc(l.criado_nome) : ""}</div>
       ${atraso > 3600e3 ? `<div class="qt">Atrasado há ${Math.round(atraso / 3600e3) >= 24 ? Math.round(atraso / 86400e3) + " dia(s)" : Math.round(atraso / 3600e3) + " hora(s)"}</div>` : ""}
       <div class="lb-acts"><a class="pri" href="negocios.html?n=${l.negocio_id}">Abrir card</a><button data-a="1h">Adiar 1 hora</button><button data-a="am">Amanhã 8h</button><button class="ok" data-a="ok">Concluído ✓</button></div>
-      <div class="lb-acts" style="margin-top:8px;align-items:center"><span style="font-size:13px;opacity:.8">ou adiar para</span><input type="datetime-local" id="lbDt" style="padding:6px 8px;border-radius:8px;border:1px solid #9aa9b8;font:inherit"><button data-a="dt">Adiar</button></div>
+      <div class="lb-acts" style="margin-top:8px;align-items:center"><span style="font-size:13px;opacity:.8">ou adiar para</span><input type="datetime-local" id="lbDt" style="padding:6px 8px;border-radius:8px;border:1px solid #9aa9b8;font:inherit;background:#fff;color:#1e2f40;color-scheme:light"><button data-a="dt">Adiar</button></div>
       ${L.length > 1 ? `<div class="lb-mais">+ ${L.length - 1} outro(s) lembrete(s) na fila</div>` : ""}</div>`;
     document.body.appendChild(ov);
     const fim = () => { ov.remove(); mostrando = false; setTimeout(checarLembretes, 400); };
