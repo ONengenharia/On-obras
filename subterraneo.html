@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orçador subterrâneo · ON Engenharia</title>
+<link rel="icon" href="assets/on-logo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef2f6; --panel:#ffffff; --ink:#1e2f40; --muted:#5a6f83; --line:#d6e1ea;
+  --accent:#2f6f9f; --accent-soft:#e8f1f9; --navy:#1e2f40; --navy2:#2b4157; --onblue:#62a8dc;
+  --ok:#1f8a4c; --ok-soft:#e2f4e9; --warn:#b7791f; --warn-soft:#fbf0dc; --idle-soft:#edf1f5; --danger:#b3261e; --danger-soft:#fbe9e7;
+  --f-body:Montserrat,system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,monospace; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101b26; --panel:#172534; --ink:#e8f1f9; --muted:#9fb8cc; --line:#2b4157;
+  --accent:#62a8dc; --accent-soft:#1d3a52; --navy:#0b141d; --navy2:#1e2f40;
+  --ok:#52c47f; --ok-soft:#173326; --warn:#e3a94b; --warn-soft:#3a2d16; --idle-soft:#1e2f40; --danger:#f2867d; --danger-soft:#3a1d1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101b26; --panel:#172534; --ink:#e8f1f9; --muted:#9fb8cc; --line:#2b4157;
+  --accent:#62a8dc; --accent-soft:#1d3a52; --navy:#0b141d; --navy2:#1e2f40;
+  --ok:#52c47f; --ok-soft:#173326; --warn:#e3a94b; --warn-soft:#3a2d16; --idle-soft:#1e2f40; --danger:#f2867d; --danger-soft:#3a1d1b; color-scheme:dark}
+*{box-sizing:border-box} [hidden]{display:none!important}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:7px 12px;font-weight:600;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:inherit}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:default}
+.inp{padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:13.5px;width:100%}
+.note{font-size:12px;color:var(--muted);margin:0;line-height:1.45}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.chip{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--idle-soft);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}.chip.w{background:var(--warn-soft);color:var(--warn)}
+.erro{max-width:440px;margin:12vh auto;padding:24px;text-align:center}.erro img{height:56px;border-radius:6px}.erro a{color:var(--accent);font-weight:600}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;background:var(--navy);color:#e8f1f9;border-radius:12px;padding:12px 16px}
+header.top img{height:44px;border-radius:4px;display:block}
+.ttl{min-width:0;flex:1 1 260px}
+.eye{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#9fb8cc}
+.eye a{color:#9fb8cc;text-decoration:none}.eye a:hover{color:#fff}
+.ttl h1{font-weight:700;font-size:19px;margin:3px 0 1px}
+.ttl .sub{color:#9fb8cc;font-size:12.5px}
+.page{max-width:1280px;margin:0 auto;padding:12px 16px 40px;display:grid;gap:12px}
+.lay{display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:860px){.lay{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.lista{display:grid;gap:2px;max-height:calc(100vh - 240px);overflow:auto;margin-top:8px}
+.lista button{display:block;text-align:left;border:0;background:none;padding:8px 8px;border-radius:8px;width:100%}
+.lista button:hover{background:var(--accent-soft)}.lista button.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.lista b{display:block;font-size:12.5px;line-height:1.3}.lista small{color:var(--muted);font-size:11px;font-family:var(--f-mono)}
+.grp{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding:10px 8px 2px}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th,.tbl td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top}
+.tbl th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--bg)}
+.tbl td.n{font-family:var(--f-mono);white-space:nowrap}
+.tbl tr.alt td{color:var(--muted)}
+.img{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:zoom-in;display:block}
+.dois{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:12px;align-items:start}
+@media (max-width:1000px){.dois{grid-template-columns:1fr}}
+.row{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+textarea.inp{min-height:84px;resize:vertical}
+.lnk{background:none;border:0;color:var(--accent);padding:0;font-size:12px;font-weight:600}
+.modal{position:fixed;inset:0;background:rgba(10,20,30,.6);display:grid;place-items:center;z-index:50;padding:16px}
+.mbox{background:var(--panel);border-radius:12px;padding:16px;width:min(560px,100%);max-height:88vh;overflow:auto;display:grid;gap:10px}
+.mbox.big{width:min(1100px,100%)}
+.busca{display:grid;gap:2px;max-height:300px;overflow:auto}.busca button{border:0;background:none;text-align:left;padding:6px 8px;border-radius:6px;font-size:12.5px}.busca button:hover{background:var(--accent-soft)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:9px 14px;border-radius:8px;font-size:13px;z-index:99}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:9px 14px;font-weight:700;font-size:13px;color:var(--muted);border-bottom:3px solid transparent}
+.tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.pl{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pl button{border:1px solid var(--line);background:var(--panel);border-radius:16px;padding:4px 11px;font-size:12px;font-weight:600}
+.pl button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tot{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.tot div{display:grid}.tot small{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.tot b{font-family:var(--f-mono);font-size:16px}
+.qin{width:84px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);text-align:right;font-family:var(--f-mono)}
+tr.falta td{background:var(--warn-soft)}
+.cat{max-height:60vh;overflow:auto}
+</style>
+</head>
+<body>
+<div id="root"><p class="note" style="padding:24px">Carregando…</p></div>
+<script src="vendor/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/db.js"></script>
+<script src="js/atalhos.js?v=5"></script>
+<script>
+(async()=>{
+const sb=DB.sb, O=sb.schema("orcarede");
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9,./]+/g," ").replace(/\s+/g," ").trim();
+const brl=n=>Number(n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const num=n=>Number(n||0).toLocaleString("pt-BR",{maximumFractionDigits:3});
+const root=$("#root");
+function toast(t){$$(".toast").forEach(x=>x.remove());const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
+function falha(msg){root.innerHTML=`<div class="erro"><img src="assets/on-logo.png" alt="ON Engenharia"><h1>Orçador subterrâneo</h1><p>${esc(msg)}</p><a href="orcarede.html">Voltar ao OrçaRede</a></div>`}
+async function todos(q){let out=[],i=0;for(;;){const {data,error}=await q().range(i,i+999);if(error)throw error;out=out.concat(data);if(data.length<1000)return out;i+=1000}}
+const chk=async p=>{const r=await p;if(r.error){toast("Erro: "+r.error.message);throw r.error}return r.data};
+const sess=await DB.sessao();if(!sess){location.href="index.html?volta="+encodeURIComponent(location.pathname+location.search);return}
+const oid=new URLSearchParams(location.search).get("orc");
+if(!oid){
+  const L=await chk(O.from("orcamentos").select("id,titulo").eq("loteamento",true).order("criado_em",{ascending:false}).limit(100));
+  root.innerHTML=`<div class="page"><header class="top"><img src="assets/on-logo.png" alt="ON"><div class="ttl"><div class="eye"><a href="orcarede.html">OrçaRede</a> › Subterrâneo</div><h1>Orçador subterrâneo</h1><div class="sub">Escolha um orçamento de loteamento</div></div></header><div class="card"><div class="lista" style="max-height:none">${L.map(o=>`<button onclick="location.href='subterraneo.html?orc=${o.id}'"><b>${esc(o.titulo||"Sem título")}</b></button>`).join("")||'<p class="note">Nenhum orçamento marcado como loteamento. Crie um no OrçaRede marcando “Loteamento subterrâneo”.</p>'}</div></div></div>`;
+  return}
+let ORC,PL,EST,ITM,MAT={},PRC={},LIN,AVU,CFG,SRV={};
+const hoje=()=>new Date().toISOString().slice(0,10);
+try{
+  ORC=(await chk(O.from("orcamentos").select("id,titulo").eq("id",oid).single()));
+  PL=await chk(O.from("orc_plantas").select("id,nome,disciplina,ordem").eq("orcamento_id",oid).order("ordem"));
+  const con=await chk(O.from("concessionarias").select("id").eq("sigla","SUBTERRANE RGE").single());
+  EST=await todos(()=>O.from("estruturas").select("*").eq("concessionaria_id",con.id).eq("ativo",true).order("ged").order("secao"));
+  const ids=EST.map(e=>e.id);
+  ITM=await todos(()=>O.from("estrutura_itens").select("*").in("estrutura_id",ids));
+  const mats=await todos(()=>O.from("materiais").select("codigo,nome,unidade").like("codigo","SUB-%"));mats.forEach(m=>MAT[m.codigo]=m);
+  const pr=await todos(()=>O.from("v_preco_vigente").select("material_codigo,valor,fornecedor").like("material_codigo","SUB-%"));pr.forEach(p=>PRC[p.material_codigo]=p);
+  (await chk(O.from("sub_servicos").select("*"))).forEach(s=>SRV[s.nome]=s);
+  await load();
+}catch(e){falha("Não foi possível carregar: "+(e.message||e));return}
+async function load(){
+  LIN=await chk(O.from("orc_sub_itens").select("*").eq("orcamento_id",oid).order("id"));
+  AVU=await chk(O.from("orc_sub_avulsos").select("*").eq("orcamento_id",oid).order("id"));
+  CFG=(await chk(O.from("orc_sub_cfg").select("*").eq("orcamento_id",oid).maybeSingle()))||(await chk(O.from("orc_sub_cfg").insert({orcamento_id:oid}).select().single()));
+}
+const E={};EST.forEach(e=>E[e.id]=e);
+let tab="est",plSel="",q="",TOT={};
+const LK=k=>"sub."+oid+"."+k;
+try{tab=localStorage.getItem(LK("tab"))||"est";plSel=localStorage.getItem(LK("pl"))||""}catch(e){}
+const linhas=()=>LIN.filter(l=>!plSel||l.planta_id===plSel);
+const avul=()=>AVU.filter(a=>!plSel||a.planta_id===plSel);
+function calc(){
+  const mat={}; // codigo -> {q, adeq}
+  linhas().forEach(l=>{ITM.filter(i=>i.estrutura_id===l.estrutura_id).forEach(i=>{
+    if(i.tensao&&i.tensao!==(l.tensao||CFG.tensao))return;
+    const m=mat[i.material_codigo]=mat[i.material_codigo]||{q:0,adeq:false,obs:new Set()};
+    if(i.adequada)m.adeq=true;else m.q+=Number(i.quantidade)*Number(l.quantidade);
+    if(i.obs)m.obs.add(i.obs)})});
+  const man={};avul().filter(a=>a.tipo==="mat"&&a.material_codigo).forEach(a=>man[a.material_codigo]=(man[a.material_codigo]||0)+Number(a.quantidade));
+  const rows=Object.keys({...mat,...man}).map(c=>{const m=mat[c]||{q:0,adeq:false,obs:new Set()};const total=m.q+(man[c]||0);const pr=PRC[c];
+    return {c,nome:(MAT[c]||{}).nome||c,un:(MAT[c]||{}).unidade||"",q:m.q,man:man[c]||0,adeq:m.adeq,total,vu:pr?Number(pr.valor):0,forn:pr&&pr.fornecedor,tem:!!pr,custo:total*(pr?Number(pr.valor):0)}});
+  rows.sort((a,b)=>a.nome.localeCompare(b.nome));
+  const mo=[];linhas().forEach(l=>{const e=E[l.estrutura_id];const v=Number(e.mo_unit||0);if(v)mo.push({d:e.descricao+" ("+e.codigo+")",un:e.un,q:Number(l.quantidade),vu:v,t:v*Number(l.quantidade)})});
+  const sv={};linhas().forEach(l=>(E[l.estrutura_id].servicos||[]).forEach(([n,u,q])=>{sv[n]=(sv[n]||0)+q*Number(l.quantidade)}));
+  const srv=Object.entries(sv).map(([n,q])=>({n,un:(SRV[n]||{}).un||"",q,vu:Number((SRV[n]||{}).valor||0),t:q*Number((SRV[n]||{}).valor||0)}));
+  const mav=avul().filter(a=>a.tipo==="mo");
+  const M=rows.reduce((s,r)=>s+r.custo,0)+avul().filter(a=>a.tipo==="mat"&&!a.material_codigo).reduce((s,a)=>s+a.quantidade*a.valor_unit,0);
+  const MO=mo.reduce((s,r)=>s+r.t,0)+srv.reduce((s,r)=>s+r.t,0)+mav.reduce((s,a)=>s+a.quantidade*a.valor_unit,0);
+  const bdi=Number(CFG.bdi||0);TOT={rows,mo,srv,mav,M,MO,sub:M+MO,bdi:(M+MO)*bdi/100,total:(M+MO)*(1+bdi/100)};
+}
+function totais(){return `<div class="tot"><div><small>Materiais</small><b>${brl(TOT.M)}</b></div><div><small>Mão de obra</small><b>${brl(TOT.MO)}</b></div><div><small>BDI ${num(CFG.bdi)}%</small><b>${brl(TOT.bdi)}</b></div><div><small>Total</small><b style="color:var(--accent)">${brl(TOT.total)}</b></div></div>`}
+function tabEst(){
+  const t=norm(q);const F=EST.filter(e=>!t||norm(e.codigo+" "+e.descricao+" "+e.categoria+" "+e.ged).includes(t));
+  let h="",g="";F.forEach(e=>{if(e.categoria!==g){g=e.categoria;h+=`<div class="grp">${esc(g)}</div>`}
+    h+=`<button data-add="${e.id}"><b>${esc(e.descricao)}</b><small>GED-${esc(e.ged)} · ${esc(e.secao||"")} · ${esc(e.un||"")}</small></button>`});
+  const L=linhas();
+  return `<div class="lay"><div class="card"><b style="font-size:12.5px">Catálogo SUBTERRANE RGE</b><input class="inp" id="q" value="${esc(q)}" placeholder="Buscar estrutura, GED…" style="margin-top:6px"><div class="lista cat" id="cat">${h||'<p class="note">Nada.</p>'}</div></div>
+  <div class="card"><b style="font-size:12.5px">Estruturas do orçamento${plSel?" (planta selecionada)":""}</b>
+  <table class="tbl"><thead><tr><th>Estrutura</th><th>Planta</th><th>Qtd.</th><th>Un.</th><th></th></tr></thead><tbody>
+  ${L.map(l=>{const e=E[l.estrutura_id];return `<tr><td><b>${esc(e.descricao)}</b><br><span class="note mono">GED-${esc(e.ged)} ${esc(e.secao||"")}</span></td>
+   <td><select class="inp" data-pl="${l.id}" style="padding:3px">${`<option value="">—</option>`+PL.map(p=>`<option value="${p.id}" ${p.id===l.planta_id?"selected":""}>${esc(p.nome)}</option>`).join("")}</select></td>
+   <td><input class="qin" data-q="${l.id}" type="number" step="any" min="0" value="${l.quantidade}"></td><td class="n">${esc(e.un||"")}</td><td><button class="lnk" data-del="${l.id}">remover</button></td></tr>`}).join("")||`<tr><td colspan="5" class="note">Clique numa estrutura do catálogo para adicionar.</td></tr>`}
+  </tbody></table>${totais()}</div></div>`}
+function tabMat(){
+  return `<div class="card"><div class="row"><b style="font-size:12.5px">Lista de materiais consolidada</b><button class="btn sm" id="csvm">Exportar CSV</button></div>
+  <p class="note">Linhas em amarelo: sem preço ou “quantidade adequada” — informe o valor/quantidade nos campos.</p>
+  <table class="tbl"><thead><tr><th>Material</th><th>Un.</th><th>Qtd. estruturas</th><th>Qtd. adequada/manual</th><th>Total</th><th>Preço unit.</th><th>Custo</th></tr></thead><tbody>
+  ${TOT.rows.map(r=>`<tr class="${!r.tem||(r.adeq&&!r.man)?"falta":""}"><td>${esc(r.nome)}<br><span class="note mono">${esc(r.c)}${r.forn?" · "+esc(r.forn):""}</span></td><td>${esc(r.un)}</td><td class="n">${num(r.q)}</td>
+   <td>${r.adeq||r.man?`<input class="qin" data-man="${esc(r.c)}" type="number" step="any" min="0" value="${r.man||""}" placeholder="adeq.">`:""}</td>
+   <td class="n"><b>${num(r.total)}</b></td><td><input class="qin" data-pr="${esc(r.c)}" type="number" step="any" min="0" value="${r.tem?r.vu:""}" placeholder="R$"></td><td class="n">${brl(r.custo)}</td></tr>`).join("")||`<tr><td colspan="7" class="note">Adicione estruturas na aba Estruturas.</td></tr>`}
+  </tbody></table>${totais()}</div>`}
+function tabMo(){
+  return `<div class="card"><b style="font-size:12.5px">Mão de obra</b>
+  <table class="tbl"><thead><tr><th>Serviço</th><th>Un.</th><th>Qtd.</th><th>Valor unit.</th><th>Total</th></tr></thead><tbody>
+  ${TOT.mo.map(r=>`<tr><td>${esc(r.d)}</td><td>${esc(r.un||"")}</td><td class="n">${num(r.q)}</td><td class="n">${brl(r.vu)}</td><td class="n">${brl(r.t)}</td></tr>`).join("")}
+  ${TOT.srv.map(r=>`<tr><td>${esc(r.n)}</td><td>${esc(r.un)}</td><td class="n">${num(r.q)}</td><td><input class="qin" data-sv="${esc(r.n)}" type="number" step="any" min="0" value="${r.vu}"></td><td class="n">${brl(r.t)}</td></tr>`).join("")}
+  ${TOT.mav.map(a=>`<tr><td>${esc(a.descricao)}</td><td>${esc(a.un||"")}</td><td class="n">${num(a.quantidade)}</td><td class="n">${brl(a.valor_unit)}</td><td class="n">${brl(a.quantidade*a.valor_unit)}</td></tr>`).join("")}
+  ${!TOT.mo.length&&!TOT.srv.length&&!TOT.mav.length?'<tr><td colspan="5" class="note">Sem mão de obra ainda.</td></tr>':""}
+  </tbody></table><p class="note">Valores de vala/serviços valem para todos os orçamentos. Mão de obra por estrutura (caixas, bases) vem da R03.</p>${totais()}</div>`}
+function tabAvu(){
+  return `<div class="card"><div class="row"><b style="font-size:12.5px">Itens avulsos (transformador, cabos, mão de obra extra…)</b><button class="btn sm pri" id="avn">+ Adicionar</button></div>
+  <table class="tbl"><thead><tr><th>Tipo</th><th>Descrição</th><th>Un.</th><th>Qtd.</th><th>Unitário</th><th>Total</th><th></th></tr></thead><tbody>
+  ${avul().filter(a=>!(a.tipo==="mat"&&a.material_codigo)).map(a=>`<tr><td>${a.tipo==="mo"?"Mão de obra":"Material"}</td><td>${esc(a.descricao)}</td><td>${esc(a.un||"")}</td><td class="n">${num(a.quantidade)}</td><td class="n">${brl(a.valor_unit)}</td><td class="n">${brl(a.quantidade*a.valor_unit)}</td><td><button class="lnk" data-dav="${a.id}">remover</button></td></tr>`).join("")||'<tr><td colspan="7" class="note">Nenhum avulso.</td></tr>'}
+  </tbody></table>${totais()}</div>`}
+function render(){
+  calc();
+  const T={est:tabEst,mat:tabMat,mo:tabMo,avu:tabAvu};
+  root.innerHTML=`<div class="page"><header class="top"><img src="assets/on-logo.png" alt="ON"><div class="ttl"><div class="eye"><a href="index.html#painel">Início</a> › <a href="orcarede.html">OrçaRede</a> › Subterrâneo</div><h1>${esc(ORC.titulo||"Loteamento")}</h1><div class="sub">Orçador subterrâneo · concessionária SUBTERRANE RGE</div></div>
+   <label class="note" style="color:#9fb8cc">Tensão <select id="tn" class="inp" style="width:auto"><option value="15" ${CFG.tensao==="15"?"selected":""}>15 kV</option><option value="25" ${CFG.tensao==="25"?"selected":""}>25 kV</option></select></label>
+   <label class="note" style="color:#9fb8cc">BDI % <input id="bdi" class="qin" type="number" step="any" min="0" value="${CFG.bdi}"></label></header>
+   <div class="pl"><span class="note">Planta:</span><button data-p="" class="${!plSel?"on":""}">Todas</button>${PL.map(p=>`<button data-p="${p.id}" class="${plSel===p.id?"on":""}">${esc(p.nome)}</button>`).join("")}</div>
+   <div class="tabs">${[["est","Estruturas"],["mat","Materiais"],["mo","Mão de obra"],["avu","Avulsos"]].map(([k,n])=>`<button data-t="${k}" class="${tab===k?"on":""}">${n}</button>`).join("")}</div>
+   <div id="tb">${T[tab]()}</div></div>`;
+  liga()}
+function liga(){
+  $$("[data-t]").forEach(b=>b.onclick=()=>{tab=b.dataset.t;try{localStorage.setItem(LK("tab"),tab)}catch(e){}render()});
+  $$("[data-p]").forEach(b=>b.onclick=()=>{plSel=b.dataset.p;try{localStorage.setItem(LK("pl"),plSel)}catch(e){}render()});
+  $("#tn").onchange=async e=>{CFG.tensao=e.target.value;await chk(O.from("orc_sub_cfg").update({tensao:CFG.tensao}).eq("orcamento_id",oid));render()};
+  $("#bdi").onchange=async e=>{CFG.bdi=Number(e.target.value)||0;await chk(O.from("orc_sub_cfg").update({bdi:CFG.bdi}).eq("orcamento_id",oid));render()};
+  const qi=$("#q");if(qi)qi.oninput=e=>{q=e.target.value;const p=e.target.selectionStart;render();const n=$("#q");n.focus();n.setSelectionRange(p,p)};
+  $$("[data-add]").forEach(b=>b.onclick=async()=>{const eid=Number(b.dataset.add);const ex=LIN.find(l=>l.estrutura_id===eid&&(l.planta_id||"")===plSel);
+    if(ex){ex.quantidade=Number(ex.quantidade)+1;await chk(O.from("orc_sub_itens").update({quantidade:ex.quantidade}).eq("id",ex.id))}
+    else{const r=await chk(O.from("orc_sub_itens").insert({orcamento_id:oid,estrutura_id:eid,quantidade:1,planta_id:plSel||null}).select().single());LIN.push(r)}
+    render();toast("Adicionada.")});
+  $$("[data-q]").forEach(i=>i.onchange=async()=>{const l=LIN.find(x=>String(x.id)===i.dataset.q);l.quantidade=Number(i.value)||0;await chk(O.from("orc_sub_itens").update({quantidade:l.quantidade}).eq("id",l.id));render()});
+  $$("[data-pl]").forEach(i=>i.onchange=async()=>{const l=LIN.find(x=>String(x.id)===i.dataset.pl);l.planta_id=i.value||null;await chk(O.from("orc_sub_itens").update({planta_id:l.planta_id}).eq("id",l.id));render()});
+  $$("[data-del]").forEach(b=>b.onclick=async()=>{await chk(O.from("orc_sub_itens").delete().eq("id",b.dataset.del));LIN=LIN.filter(l=>String(l.id)!==b.dataset.del);render()});
+  $$("[data-man]").forEach(i=>i.onchange=async()=>{const c=i.dataset.man,v=Number(i.value)||0;const ex=AVU.find(a=>a.tipo==="mat"&&a.material_codigo===c&&(a.planta_id||"")===plSel);
+    if(ex){if(v){ex.quantidade=v;await chk(O.from("orc_sub_avulsos").update({quantidade:v}).eq("id",ex.id))}else{await chk(O.from("orc_sub_avulsos").delete().eq("id",ex.id));AVU=AVU.filter(a=>a!==ex)}}
+    else if(v){const r=await chk(O.from("orc_sub_avulsos").insert({orcamento_id:oid,planta_id:plSel||null,tipo:"mat",material_codigo:c,descricao:(MAT[c]||{}).nome||c,un:(MAT[c]||{}).unidade,quantidade:v,valor_unit:0}).select().single());AVU.push(r)}
+    render()});
+  $$("[data-pr]").forEach(i=>i.onchange=async()=>{const c=i.dataset.pr,v=Number(i.value);if(!(v>=0)||i.value==="")return;await chk(O.from("precos").insert({material_codigo:c,valor:v,data:hoje(),origem:"manual",documento:"Orçador subterrâneo: "+(ORC.titulo||"")}));PRC[c]={material_codigo:c,valor:v,fornecedor:null};render();toast("Preço salvo no catálogo.")});
+  $$("[data-sv]").forEach(i=>i.onchange=async()=>{const n=i.dataset.sv,v=Number(i.value)||0;await chk(O.from("sub_servicos").update({valor:v}).eq("nome",n));SRV[n].valor=v;render()});
+  $$("[data-dav]").forEach(b=>b.onclick=async()=>{await chk(O.from("orc_sub_avulsos").delete().eq("id",b.dataset.dav));AVU=AVU.filter(a=>String(a.id)!==b.dataset.dav);render()});
+  const an=$("#avn");if(an)an.onclick=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<form class="mbox"><b>Novo item avulso</b><label class="note">Tipo<select class="inp" name="tipo"><option value="mat">Material</option><option value="mo">Mão de obra</option></select></label><label class="note">Descrição<input class="inp" name="d" required></label><label class="note">Unidade<input class="inp" name="u" value="un"></label><label class="note">Quantidade<input class="inp" name="q" type="number" step="any" value="1"></label><label class="note">Valor unitário (R$)<input class="inp" name="v" type="number" step="any" value="0"></label><div class="row"><button type="button" class="btn" data-x>Cancelar</button><button class="btn pri">Adicionar</button></div></form>`;document.body.appendChild(m);
+    m.onclick=e=>{if(e.target===m||e.target.dataset.x!==undefined)m.remove()};
+    m.querySelector("form").onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target));const r=await chk(O.from("orc_sub_avulsos").insert({orcamento_id:oid,planta_id:plSel||null,tipo:f.tipo,descricao:f.d,un:f.u,quantidade:Number(f.q)||0,valor_unit:Number(f.v)||0}).select().single());AVU.push(r);m.remove();render()}};
+  const cv=$("#csvm");if(cv)cv.onclick=()=>{const L=[["Material","Código","Un.","Qtd","Preço unit.","Custo"],...TOT.rows.map(r=>[r.nome,r.c,r.un,r.total,r.vu,r.custo.toFixed(2)])];
+    const s=L.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(";")).join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+s],{type:"text/csv"}));a.download="materiais-"+(ORC.titulo||"loteamento")+".csv";a.click()};
+}
+render();
+})();
+</script>
+</body>
+</html>

@@ -321,7 +321,7 @@ tr.org-base td:first-child{box-shadow:inset 3px 0 #4a90d9}tr.org-cotacao td:firs
 <script src="js/config.js"></script>
 <script src="js/db.js"></script>
 <script src="js/proposta-padrao.js"></script>
-<script src="js/atalhos.js?v=4"></script>
+<script src="js/atalhos.js?v=5"></script>
 <script>
 (async()=>{
 const sb=DB.sb, O=sb.schema("orcarede");
@@ -1707,6 +1707,7 @@ async function editor(id){
   function centrar(p){if(!p||!wrap)return;const r=wrap.getBoundingClientRect();T.x=r.width/2-p.x*T.s;T.y=r.height/2-p.y*T.s;apply()}
   function zoomAt(f,cx,cy){const r=wrap.getBoundingClientRect();const minS=Math.min(r.width/D.w,r.height/D.h)*.5;const ns=Math.max(minS,Math.min(12,T.s*f));f=ns/T.s;T.x=cx-(cx-T.x)*f;T.y=cy-(cy-T.y)*f;T.s=ns;apply()}
   function renderPlantas(){const el=$("#platabs");if(!el)return;if(!LOT){el.innerHTML="";return}
+    if(LOT&&!document.getElementById("lnkSub")){el.insertAdjacentHTML("beforebegin",`<a id="lnkSub" class="btn sm pri" style="margin:4px 0" href="subterraneo.html?orc=${ORC.id}">🕳️ Orçar estruturas subterrâneas</a>`)}
     el.innerHTML=PLS.map(pl=>{const d=DISC[pl.disciplina]||["",""];const n=PTS.filter(p=>p.planta_id===pl.id).length;return `<button class="${PLA&&PLA.id===pl.id?"on":""}" data-pl="${pl.id}" title="${esc(d[0])} · ${n} pontos"><span class="d" style="background:${d[1]}"></span>${esc(pl.nome)}${PLA&&PLA.id===pl.id?` <span data-prn="${pl.id}" title="Renomear / disciplina">✎</span> <span data-pdel="${pl.id}" title="Excluir planta">🗑</span>`:""}</button>`}).join("")+(!SOVER?`<button class="add" id="plAdd">+ Planta</button>`:"");
     $$("[data-pl]",el).forEach(b=>b.onclick=e=>{if(e.target.closest("[data-prn],[data-pdel]"))return;ativaPlanta(b.dataset.pl)});
     $$("[data-prn]",el).forEach(b=>b.onclick=e=>{e.stopPropagation();const pl=PLS.find(x=>x.id===b.dataset.prn);modal(`<h2>Planta</h2><label class="fld">Nome<input name="nome" required value="${esc(pl.nome)}"></label><label class="fld">Disciplina<select name="disc">${Object.entries(DISC).map(([k,v])=>`<option value="${k}" ${pl.disciplina===k?"selected":""}>${v[0]}</option>`).join("")}</select></label>`,async f=>{const u={nome:f.nome.trim()||pl.nome,disciplina:f.disc};await chk(O.from("orc_plantas").update(u).eq("id",pl.id));Object.assign(pl,u);renderPlantas()})});
