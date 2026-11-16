@@ -1274,6 +1274,7 @@ async function editor(id){
   TR.forEach(t=>t.itens=TRI.filter(i=>i.tipo_rede_id===t.id));const TRM=Object.fromEntries(TR.map(t=>[t.id,t]));
   const SUBT=TR.some(t=>/^CIVIL/i.test(t.nome));
   const trDisc=(cur)=>{if(!LOT||!SUBT||!PLA)return TR;const p={civil:/^CIVIL/i,mt:/^MT/i,bt:/^BT/i}[PLA.disciplina];if(!p)return TR;const L=TR.filter(t=>p.test(t.nome)||t.id===cur);return L.length?L:TR};
+  const rotRede=()=>{const d=LOT&&SUBT&&PLA?PLA.disciplina:"";if(d==="civil")return{btn:"⛏ Traçar eletrodutos",tit:"Traçar eletrodutos",txt:"Escolha a configuração do banco de dutos (quantidade de dutos e local: calçada ou via) e a sobra. Depois clique nas caixas em sequência: cada trecho é medido pela escala."};if(d==="mt")return{btn:"〰 Rede subterrânea (MT)",tit:"Traçar rede primária subterrânea",txt:"Escolha a configuração da rede (circuitos e classe de tensão) e a sobra. Depois clique nas caixas em sequência; cada trecho é medido pela escala."};if(d==="bt")return{btn:"〰 Rede secundária (BT)",tit:"Traçar rede secundária",txt:"Escolha o cabo do circuito (fases + neutro) e a sobra. Depois clique nas caixas em sequência; cada trecho é medido pela escala."};return{btn:"〰 Rede",tit:"Traçar rede",txt:"Escolha o condutor e a sobra. Depois clique nos postes em sequência; cada vão é medido pela escala."}};
   const dk=pid=>{if(!LOT||!SUBT)return"";const pl=PLS.find(x=>x.id===pid);return pl&&DISC_NOME[pl.disciplina]?DISC_NOME[pl.disciplina]+" · ":""};
   const SEGM=()=>Object.fromEntries(SEGS.map(s=>[s.id,s]));
   const ehIP=eid=>{const e=ESTM[eid];return !!e&&(e.categoria==="IP"||/^(CONJ_IP|FIX_IP)/i.test(e.codigo))};
@@ -1725,18 +1726,18 @@ async function editor(id){
   function renderMapbar(){
     const b=$("#mapbar");if(!b)return;
     b.innerHTML=(colando?`<button class="btn on" id="mStopCol">⧉ Parar de colar</button>`:"")+`<button class="btn" id="bPlanta">Planta</button>${ORC.planta_url?`<button class="btn ${plantaOculta()?"on":""}" id="bOculta" title="Esconder a imagem da planta para a tela ficar mais leve (os pontos continuam)">${plantaOculta()?"👁 Mostrar planta":"🙈 Ocultar planta"}</button>`:""}<button class="btn ${placing?"on":""}" id="mPlace">${placing?"Cancelar":"+ Ponto"}</button>`
-      +(tracing?`<button class="btn on" id="mRede"><span class="dot" style="border-color:${TRM[tracing].cor}"></span>Concluir ${esc(TRM[tracing].nome)}${traceSobra!=null?` · sobra ${num(traceSobra)}%`:""}</button>`:`<button class="btn" id="mRede">〰 Rede</button>`)
+      +(tracing?`<button class="btn on" id="mRede"><span class="dot" style="border-color:${TRM[tracing].cor}"></span>Concluir ${esc(TRM[tracing].nome)}${traceSobra!=null?` · sobra ${num(traceSobra)}%`:""}</button>`:`<button class="btn" id="mRede">${rotRede().btn}</button>`)
       +`<button class="btn ${calib?"on":""}" id="mCal">${calib?"Cancelar escala":"Escala"}</button><button class="btn" id="mKml" title="Camada KML (traçado importado) e símbolos">🗺 KML</button>${CAM.L.length?`<button class="btn" id="mKmlUn" title="Desfazer a última alteração da camada KML, símbolos e legendas (Ctrl+Z)">↩ Desfazer</button>`:""}`;
     $("#bPlanta").onclick=plantaDialog;$("#bOculta")&&($("#bOculta").onclick=()=>{const v=!plantaOculta();try{localStorage.setItem(ocultaKey(),v?"1":"0")}catch(e){}if(v){img.removeAttribute("src")}setPlanta();renderMapbar();toast(v?"Planta oculta: a tela fica mais leve. Os pontos e a rede continuam.":"Planta visível.")});$("#mStopCol")&&($("#mStopCol").onclick=()=>{colando=null;renderMapbar();updHint()});
     $("#mPlace").onclick=()=>{placing=!placing;tracing=null;anchor=null;calib=null;renderMapbar();updHint();renderPins()};
     $("#mRede").onclick=()=>{if(tracing){tracing=null;anchor=null;renderMapbar();updHint();renderPins();return}
       if(!escala){toast("Calibre a escala da planta antes de traçar a rede.");return}
-      const m=modal(`<h2>Traçar rede</h2><p class="note">Escolha o condutor e a sobra. Depois clique nos postes em sequência; cada vão é medido pela escala.</p>
-        <div class="trl">${trDisc().map((t,i)=>`<label><input type="radio" name="t" value="${t.id}" ${i===0?"checked":""}><span class="dot" style="border-color:${t.cor};border-top-width:4px;width:22px"></span><span>${esc(t.nome)}<small>${t.itens.map(x=>(x.multiplicador>1?num(x.multiplicador)+"× ":"")+esc((MAT[x.material_codigo]||{}).nome||x.material_codigo)).join(" + ")}</small></span><span class="note">${/^MT/i.test(t.nome)?"centro do poste":"lateral"}</span></label>`).join("")}</div>
-        <div class="row"><button type="button" class="lnk" id="tNovoCabo">+ incluir cabo</button><span></span></div>
+      const m=modal(`<h2>${rotRede().tit}</h2><p class="note">${rotRede().txt}</p>
+        <div class="trl">${trDisc().map((t,i)=>`<label><input type="radio" name="t" value="${t.id}" ${i===0?"checked":""}><span class="dot" style="border-color:${t.cor};border-top-width:4px;width:22px"></span><span>${esc(t.nome)}<small>${t.itens.map(x=>(x.multiplicador>1?num(x.multiplicador)+"× ":"")+esc((MAT[x.material_codigo]||{}).nome||x.material_codigo)).join(" + ")}</small></span><span class="note">${SUBT?"":/^MT/i.test(t.nome)?"centro do poste":"lateral"}</span></label>`).join("")}</div>
+        <div class="row">${SUBT?"<span></span>":`<button type="button" class="lnk" id="tNovoCabo">+ incluir cabo</button>`}<span></span></div>
         <label class="fld" style="max-width:200px">Sobra deste trecho (%)<input name="sob" value="${num(ORC.sobra_condutor_pct)}" inputmode="decimal"></label>`,f=>{
         if(!f.t){toast("Escolha ou inclua um cabo.");return false}tracing=+f.t;const sv=pnum(f.sob);traceSobra=Math.abs(sv-ORC.sobra_condutor_pct)<1e-9?null:sv;anchor=null;placing=false;calib=null;renderMapbar();updHint();renderPins()},"Começar a traçar");
-      $("#tNovoCabo",m).onclick=()=>{m.remove();novoCabo()}};
+      const _nc=$("#tNovoCabo",m);if(_nc)_nc.onclick=()=>{m.remove();novoCabo()}};
     $("#mCal").onclick=()=>{calib=calib?null:[];placing=false;tracing=null;anchor=null;renderMapbar();updHint();renderNet()};
     $("#mKml").onclick=()=>camPainel();$("#mKmlUn")&&($("#mKmlUn").onclick=camDesfaz);
     b.onpointerdown=e=>e.stopPropagation();
