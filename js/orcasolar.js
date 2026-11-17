@@ -467,7 +467,7 @@ function compute(){
 }
 
 /* ============ PRECIFICAÇÃO E DRE ============ */
-function lineValue(l,kwp,rec,K,N){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : l.valor/100*rec; }
+function lineValue(l,kwp,rec,K,N){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : l.modo==="pctserv" ? l.valor/100*Math.max(0,rec-(K||0)) : l.valor/100*rec; }
 function fixedOf(l,kwp,K,N){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : 0; }
 function pricing(kwp,desc,Kest,N){
   const cot=v("kitcot"), mt=$("metodo").value, mv=v("margem"), meta=v("meta-liq")/100;
@@ -477,7 +477,7 @@ function pricing(kwp,desc,Kest,N){
   const sec = {}; let fixed = K, pct = 0;
   for (const s of Object.keys(COSTS)){
     sec[s] = COSTS[s].map(l => ({l, val:lineValue(l,kwp,receita,K,N)}));
-    COSTS[s].forEach(l => { if(l.modo==="pct") pct += l.valor/100; else fixed += fixedOf(l,kwp,K,N); });
+    COSTS[s].forEach(l => { if(l.modo==="pct") pct += l.valor/100; else if(l.modo==="pctserv"){ pct += l.valor/100; fixed -= l.valor/100*K; } else fixed += fixedOf(l,kwp,K,N); });
   }
   const priceFor = t => { const d = 1-pct-t; return d>0 ? fixed/d : null; };
   return {K,lista,receita,sec,pct,fixed,kwp,desc,meta,minimo:priceFor(0),alvo:priceFor(meta)};
@@ -494,6 +494,7 @@ function renderEditor(){
           <option value="mod"${l.modo==="mod"?" selected":""}>R$ por módulo (unidade)</option>
           <option value="km"${l.modo==="km"?" selected":""}>R$ por km</option>
           <option value="pctkit"${l.modo==="pctkit"?" selected":""}>% do kit</option>
+          <option value="pctserv"${l.modo==="pctserv"?" selected":""}>% do valor do serviço (venda − kit)</option>
           <option value="pct"${l.modo==="pct"?" selected":""}>% da venda (geral)</option>
         </select>
         <input type="number" step="0.5" min="0" aria-label="Valor" data-sec="${s}" data-i="${i}" data-f="valor" value="${l.valor}">
