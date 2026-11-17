@@ -12,8 +12,14 @@ const DEF = {
     {id:"t4",nome:"Laje",estrutura:160,fatorArea:1.8},
     {id:"t5",nome:"Solo",estrutura:280,fatorArea:2.5}],
   modulos:[
-    {id:"m1",marca:"Exemplo",modelo:"550 Wp",wp:550,comp:2279,larg:1134,voc:49.9,isc:13.9,vmp:41.7,imp:13.2,coefVoc:-0.27,coefP:-0.34,garantia:25,preco:430},
-    {id:"m2",marca:"Exemplo",modelo:"620 Wp",wp:620,comp:2382,larg:1134,voc:56.0,isc:14.0,vmp:46.9,imp:13.2,coefVoc:-0.25,coefP:-0.29,garantia:30,preco:480}],
+    {id:"m1",marca:"Genérico",modelo:"550 Wp",wp:550,comp:2279,larg:1134,voc:49.9,isc:13.9,vmp:41.7,imp:13.2,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:429},
+    {id:"m2",marca:"Genérico",modelo:"585 Wp",wp:585,comp:2278,larg:1134,voc:52.4,isc:14.2,vmp:43.7,imp:13.4,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:456},
+    {id:"m3",marca:"Genérico",modelo:"590 Wp",wp:590,comp:2278,larg:1134,voc:52.6,isc:14.3,vmp:43.9,imp:13.5,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:460},
+    {id:"m4",marca:"Genérico",modelo:"605 Wp",wp:605,comp:2384,larg:1134,voc:53.9,isc:14.1,vmp:45.2,imp:13.4,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:472},
+    {id:"m5",marca:"Genérico",modelo:"610 Wp",wp:610,comp:2384,larg:1134,voc:54.1,isc:14.2,vmp:45.4,imp:13.45,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:476},
+    {id:"m6",marca:"Genérico",modelo:"620 Wp",wp:620,comp:2382,larg:1134,voc:55.4,isc:14.3,vmp:46.3,imp:13.4,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:484},
+    {id:"m7",marca:"Genérico",modelo:"625 Wp",wp:625,comp:2382,larg:1134,voc:55.6,isc:14.35,vmp:46.5,imp:13.45,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:488},
+    {id:"m8",marca:"Genérico",modelo:"630 Wp",wp:630,comp:2382,larg:1134,voc:55.8,isc:14.4,vmp:46.7,imp:13.5,coefVoc:-0.25,coefP:-0.29,garantia:25,preco:491}],
   inversores:[
     {id:"i1",marca:"Exemplo",modelo:"Mono 3 kW",kw:3,fases:1,mppt:2,strMppt:1,vmax:600,vmin:80,iscMax:16,preco:2600},
     {id:"i2",marca:"Exemplo",modelo:"Mono 5 kW",kw:5,fases:1,mppt:2,strMppt:1,vmax:600,vmin:80,iscMax:16,preco:3300},
@@ -125,7 +131,9 @@ const DEF = {
     {"id": "c101", "nome": "Cooperzem", "uf": "", "base": 0.48404, "icms": 17, "tarifa": 0.6139, "fioB": 0.1983, "vig": "29/09/2027", "fonte": "ANEEL; imposto aprox."},
     {"id": "c102", "nome": "Coorsel", "uf": "", "base": 0.58974, "icms": 17, "tarifa": 0.7479, "fioB": 0.2416, "vig": "29/09/2027", "fonte": "ANEEL; imposto aprox."}],
   fioB:[{id:"y1",ano:2026,pct:60},{id:"y2",ano:2027,pct:75},{id:"y3",ano:2028,pct:90}],
-  fioBDemais:90
+  fioBDemais:90,
+  prop:{razao:"Vmc Projetos e Instalações Elétricas Ltda",cnpj:"61.702.854/0001-04",resp:"",crea:"",cpf:"",assin:"",cdi:8.0,cdbPct:100,poup:5.5,ir:15,fe:0.0385,arv:0.14,
+        bancos:[{id:"b1",nome:"Cresol",logo:""},{id:"b2",nome:"Sicoob",logo:""},{id:"b3",nome:"Sicredi",logo:""},{id:"b4",nome:"Banco do Brasil",logo:""},{id:"b5",nome:"Caixa",logo:""},{id:"b6",nome:"Banrisul",logo:""},{id:"b7",nome:"BV Financeira",logo:""}]}
 };
 /* h = irradiação média anual (kWh/m²·dia), lat = latitude, m = valores mensais reais quando conhecidos */
 const CIDADES = {
@@ -137,7 +145,8 @@ const CIDADES = {
   "Brasília (DF)":{h:5.4,lat:-15.8},"Goiânia (GO)":{h:5.4,lat:-16.7},"Cuiabá (MT)":{h:5.4,lat:-15.6},
   "Campo Grande (MS)":{h:5.2,lat:-20.4},"Salvador (BA)":{h:5.4,lat:-13.0},"Recife (PE)":{h:5.5,lat:-8.05},
   "Fortaleza (CE)":{h:5.7,lat:-3.7},"Natal (RN)":{h:5.7,lat:-5.8},"Teresina (PI)":{h:5.6,lat:-5.1},
-  "Belém (PA)":{h:4.7,lat:-1.45},"Manaus (AM)":{h:4.6,lat:-3.1},"Petrolina (PE)":{h:5.9,lat:-9.4}
+  "Belém (PA)":{h:4.7,lat:-1.45},"Manaus (AM)":{h:4.6,lat:-3.1},"Petrolina (PE)":{h:5.9,lat:-9.4},
+  "Cruz Alta (RS)":{h:4.8,lat:-28.64},"Carazinho (RS)":{h:4.7,lat:-28.28},"Santa Rosa (RS)":{h:4.9,lat:-27.87},"Ijuí (RS)":{h:4.8,lat:-28.39},"Santo Ângelo (RS)":{h:4.9,lat:-28.3},"Erechim (RS)":{h:4.6,lat:-27.63},"Caxias do Sul (RS)":{h:4.4,lat:-29.17},"Pelotas (RS)":{h:4.5,lat:-31.77},"Santa Cruz do Sul (RS)":{h:4.6,lat:-29.72},"Lajeado (RS)":{h:4.5,lat:-29.47},"Uruguaiana (RS)":{h:5.0,lat:-29.76},"Santana do Livramento (RS)":{h:5.0,lat:-30.89},"Londrina (PR)":{h:4.9,lat:-23.31},"Maringá (PR)":{h:4.9,lat:-23.42},"Cascavel (PR)":{h:4.8,lat:-24.96},"Chapecó (SC)":{h:4.6,lat:-27.1},"Joinville (SC)":{h:4.2,lat:-26.3},"Blumenau (SC)":{h:4.2,lat:-26.92}
 };
 const MESES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 const DIAS_MES = [31,28,31,30,31,30,31,31,30,31,30,31];
@@ -188,6 +197,7 @@ function loadCfg(){
       }
     }
   }catch(e){}
+  base.prop=Object.assign(clone(DEF.prop),base.prop||{}); if(!(base.prop.bancos||[]).length) base.prop.bancos=clone(DEF.prop.bancos);
   return base;
 }
 let CFG_DIRTY=false;
@@ -330,11 +340,28 @@ function irr(flows){
   return (lo+hi)/2;
 }
 
+const ORI = {N:["Norte",1],NE:["Nordeste",0.97],NO:["Noroeste",0.97],L:["Leste",0.86],O:["Oeste",0.86],SE:["Sudeste",0.78],SO:["Sudoeste",0.78],S:["Sul",0.70]};
+function facesIn(){ return [1,2,3].map(i=>({i,ori:$("fo"+i).value||"N",area:v("fa"+i)})).map(f=>({...f,fat:(ORI[f.ori]||ORI.N)[1]})); }
+function temArea(){ return facesIn().some(f=>f.area>0); }
+function capFace(f,AA){ const c=Math.floor(f.area/AA); return c>=4?c:0; }
+function capTotal(AA){ return facesIn().filter(f=>f.area>0).reduce((s,f)=>s+capFace(f,AA),0); }
+function bestFat(AA){ const fs=facesIn(); const ok=temArea()?fs.filter(f=>f.area>0&&capFace(f,AA)>0):[fs[0]]; return ok.length?Math.max(...ok.map(f=>f.fat)):1; }
+function alloc(N,AA){
+  const fs=facesIn();
+  if(!temArea()){ const f=fs[0]; return {fator:f.fat,ok:true,faces:[{ori:f.ori,n:N,fat:f.fat}]}; }
+  const ord=fs.filter(f=>f.area>0).map(f=>({ori:f.ori,fat:f.fat,cap:capFace(f,AA),n:0})).sort((a,b)=>b.fat-a.fat);
+  let rem=N; ord.forEach(f=>{ const n=Math.min(f.cap,rem); f.n=n; rem-=n; });
+  // faces com menos de 4: realoca para quem ainda tem folga
+  ord.filter(f=>f.n>0&&f.n<4).forEach(f=>{ const o=ord.find(x=>x!==f&&x.n>=4&&x.cap-x.n>=f.n); if(o){ o.n+=f.n; f.n=0; } });
+  const tot=ord.reduce((s,f)=>s+f.n,0);
+  const fator=tot>0?ord.reduce((s,f)=>s+f.n*f.fat,0)/tot:1;
+  return {fator,ok:rem===0,faces:ord};
+}
 function compute(){
   const mod=byId(CONFIG.modulos,$("modsel").value), tel=byId(CONFIG.telhados,$("telsel").value);
   if(!mod || !tel || !HSPM.length) return null;
   const T=CONFIG.tec;
-  const hsp=v("hsp"), cons=v("consumo"), tar=v("tarifa"), fiobKwh=v("fiob"), meta=v("meta")/100;
+  const hsp=v("hsp"), aum=Math.max(0,v("aumcons"))/100, cons=v("consumo")*(1+aum), tar=v("tarifa"), fiobKwh=v("fiob"), meta=v("meta")/100, rateio=Math.max(0,v("rateio"));
   const fase = {"30":1,"50":2,"100":3}[$("padrao").value];
   const fee = +$("padrao").value;
   const preco=v("preco"), desc=v("desc")/100, reaj=v("reaj")/100, om=v("om"), invPct=v("inv")/100;
@@ -342,33 +369,54 @@ function compute(){
   const PR = 1 - v("perdas")/100;
   if (!(hsp>0 && cons>0 && wp>0 && PR>0)) return null;
   const compensavel = Math.max(cons - fee, 0);
-  const alvo = Math.min(cons*meta, compensavel);
+  const alvo = Math.max(0,(meta>1 ? cons*meta : Math.min(cons*meta, compensavel)) - rateio);
   const kwhKwp = hsp*T.dias*PR;
   const areaMod = mod.comp*mod.larg/1e6;
-  const sizeFor = Nf => { const kwp=Nf*wp/1000, ger=kwp*kwhKwp; return {Nf,kwp,ger,pct:ger/cons*100,area:Nf*areaMod*tel.fatorArea}; };
+  const AA = areaMod*tel.fatorArea;
+  const capT = capTotal(AA), comArea = temArea();
+  const sizeFor = Nf => { const kwp=Nf*wp/1000, al=alloc(Math.max(1,Math.ceil(Nf-1e-9)),AA), ger=kwp*kwhKwp*al.fator; return {Nf,kwp,ger,pct:(ger+rateio)/cons*100,area:Nf*AA,fator:al.fator}; };
 
   // opções de sistema
-  const Nx = alvo/kwhKwp*1000/wp;
-  const Nsug = Math.max(1,Math.ceil(Nx));
+  const Nx = alvo/(kwhKwp*bestFat(AA))*1000/wp;
+  let Nsug = Math.max(1,Math.ceil(Nx-1e-9));
+  for(let g=0; g<400 && sizeFor(Nsug).ger<alvo-1e-6 && alvo>0; g++) Nsug++;
+  let limArea=false;
+  if(comArea && capT>0 && Nsug>capT){ Nsug=capT; limArea=true; }
   const pk0 = pickInverter(Nsug*wp/1000,fase);
-  const Nmax = pk0 ? Math.max(Nsug,Math.floor(pk0.inv.kw*pk0.qtd*T.ccaMax*1000/wp)) : Nsug;
+  let Nmax = pk0 ? Math.max(Nsug,Math.floor(pk0.inv.kw*pk0.qtd*T.ccaMax*1000/wp)) : Nsug;
+  if(comArea && capT>0) Nmax=Math.min(Nmax,capT);
   const injmax = v("injmax");
   const opts = [
     {id:"ref",nome:"Resultado exato",desc:"Potência calculada sem arredondar os módulos.",ref:true,...sizeFor(Nx)},
     {id:"sug",nome:"Sistema sugerido",desc:"Módulos inteiros para atingir a meta de compensação.",N:Nsug,...sizeFor(Nsug)},
   ];
+  if(comArea && capT>0 && capT!==Nsug && capT!==Nmax) opts.push({id:"area",nome:"Máximo na área",desc:`Ocupa toda a área informada (${capT} módulos).`,N:capT,...sizeFor(capT)});
   if(Nmax>Nsug) opts.push({id:"max",nome:"Máximo no inversor",desc:`Maior sistema com relação CC/CA até ${num(T.ccaMax,2)}. Gera acima do consumo.`,N:Nmax,...sizeFor(Nmax)});
   if(injmax>0){ const Ni=Math.max(1,Math.ceil(injmax*1000/wp)); opts.push({id:"inj",nome:"Limitado à injeção",desc:`Potência de geração próxima de ${num(injmax,1)} kW injetáveis.`,N:Ni,...sizeFor(Ni)}); }
   let sel = opts.find(o=>o.id===OPT && !o.ref); if(!sel){ sel = opts.find(o=>o.id==="sug"); }
-  const N = sel.N, kwp = sel.kwp, gerMes = sel.ger, areaTotal = sel.area;
+  // ajuste manual de módulos e inversor escolhido
+  const madd=Math.trunc(v("madd")), ovr=$("invsel").value, ovrInv=(ovr&&ovr!=="auto")?CONFIG.inversores.find(i=>i.id===ovr):null;
+  const pickX = k => ovrInv ? {inv:ovrInv, qtd:Math.max(1,Math.ceil(k/(T.ccaMax*ovrInv.kw)))} : pickInverter(k,fase);
+  let N = Math.max(1, sel.N+madd), pkx = pickX(N*wp/1000);
+  const NmaxInv = pkx ? Math.floor(pkx.inv.kw*pkx.qtd*T.ccaMax*1000/wp) : N;
+  let limitado = "";
+  if(N>NmaxInv){ N=NmaxInv; limitado="inversor"; }
+  if(comArea && capT>0 && N>capT){ N=capT; limitado="área"; }
+  N=Math.max(1,N);
+  const sz = sizeFor(N), kwp = sz.kwp, gerMes = sz.ger, areaTotal = sz.area, al = alloc(N,AA);
+  const maisMod = Math.max(0, Math.min(NmaxInv, comArea&&capT>0?capT:Infinity) - N);
 
   // inversor e strings
-  const pk = pickInverter(kwp,fase);
+  const pk = pickX(kwp);
   let inv=null, qtdInv=0, ratio=0, str={checks:[],arranjo:"-"};
   if(pk){ inv=pk.inv; qtdInv=pk.qtd; ratio=kwp/(inv.kw*qtdInv); str=checkStrings(mod,inv,qtdInv,N); }
   const checks = str.checks.slice();
   if(!pk) checks.unshift({ok:false,t:"Nenhum inversor compatível com o padrão de entrada. Cadastre um em Configurações."});
   else checks.unshift({ok:ratio>=T.ccaMin && ratio<=T.ccaMax, t:`Relação CC/CA de ${num(ratio,2)} (faixa ${num(T.ccaMin,2)} a ${num(T.ccaMax,2)}).`});
+  if(comArea){
+    checks.push({ok:N<=capT && al.ok, t:capT>0?`Área informada comporta ${capT} módulos; o sistema usa ${N}.`:"Nenhuma face comporta 4 módulos ou mais."});
+    al.faces.filter(f=>f.n>0).forEach(f=>checks.push({ok:f.n>=4,t:`Face ${ORI[f.ori][0]}: ${f.n} módulos (mínimo 4 por face, fator ${num(f.fat,2)}).`}));
+  }
 
   // kit do catálogo
   const kitItems = [
@@ -382,14 +430,16 @@ function compute(){
   const invest = $("origem").value==="preco" ? P.receita : kwp*1000*preco*(1-desc);
 
   // geração mensal e comparação com o consumo
-  const gerM = HSPM.map((h,i)=>kwp*h*DIAS_MES[i]*PR);
-  const consM = consumoMensal(cons);
+  const gerM = HSPM.map((h,i)=>kwp*h*DIAS_MES[i]*PR*al.fator);
+  const consM = consumoMensal(v("consumo")).map(x=>x*(1+aum));
 
   // conta antes/depois
-  const compMes = Math.min(gerMes, compensavel);
-  const fioMes = compMes*(1-sim)*fioPct(new Date().getFullYear())*fiobKwh;
+  const compRat = Math.min(rateio, compensavel);
+  const compMes = Math.min(gerMes+rateio, compensavel);
+  const fioMes = (compMes-compRat)*(1-sim)*fioPct(new Date().getFullYear())*fiobKwh + compRat*fiobKwh;
+  const ecoRateioMes = compRat*(tar-fiobKwh);
   const contaAntes = cons*tar;
-  const consumoPago = Math.max(cons-gerMes, fee);
+  const consumoPago = Math.max(cons-gerMes-rateio, fee);
   const contaDepois = consumoPago*tar + fioMes;
 
   // projeção
@@ -399,7 +449,8 @@ function compute(){
     const year=y0+a-1;
     const ger = gerMes*12*Math.pow(1-degr,a-1);
     const t = tar*Math.pow(1+reaj,a-1);
-    const comp = Math.min(ger, compensavel*12);
+    const compSis = Math.max(0, Math.min(ger+rateio*12, compensavel*12) - Math.min(rateio*12, compensavel*12));
+    const comp = compSis;
     const fio = comp*(1-sim)*fioPct(year)*fiobKwh*Math.pow(1+reaj,a-1);
     const eco = comp*t - fio;
     let custo = om*Math.pow(1.04,a-1);
@@ -411,7 +462,7 @@ function compute(){
   }
   return {P,mod,tel,inv,qtdInv,ratio,checks,arranjo:str.arranjo,kitItems,Kest,PR,opts,optSel:sel.id,
           hsp,cons,tar,fee,wp,reaj,degr,sim,modulos:N,kwp,gerMes,gerM,consM,invest,contaAntes,contaDepois,fioMes,rows,payback,
-          tir:irr(flows),totalEco:rows.reduce((s,r)=>s+r.liq,0),areaTotal,ecoAno1:rows[0].eco,ecoMes1:rows[0].eco/12,anos,desc};
+          tir:irr(flows),totalEco:rows.reduce((s,r)=>s+r.liq,0),areaTotal,rateio,aum,ecoRateioMes,atend:(gerMes+rateio)/cons*100,maisMod,NmaxInv,capT,comArea,limitado,madd,al,limArea,ecoAno1:rows[0].eco,ecoMes1:rows[0].eco/12,anos,desc};
 }
 
 /* ============ PRECIFICAÇÃO E DRE ============ */
@@ -637,7 +688,9 @@ function render(){
     <tr><td>Inversor</td><td>${r.inv?`${r.qtdInv} × ${esc((r.inv.marca+" "+r.inv.modelo).trim())} (${num(r.inv.kw*r.qtdInv,1)} kW CA)`:"-"}</td></tr>
     <tr><td>Arranjo</td><td>${esc(r.arranjo)}</td></tr>
     <tr><td>Perdas de geração</td><td>${num((1-r.PR)*100,1)}%</td></tr>
-    <tr><td>Área útil (${esc(r.tel.nome)})</td><td>${num(r.areaTotal,1)} m²</td></tr>
+    <tr><td>Área útil necessária (${esc(r.tel.nome)})</td><td>${num(r.areaTotal,1)} m²${r.comArea&&r.capT>0?` de ${num(r.capT*r.areaTotal/r.modulos,1)} m² disponíveis`:""}</td></tr>
+    <tr><td>Orientação</td><td>${r.al.faces.filter(f=>f.n>0).map(f=>`${ORI[f.ori][0]} (${f.n})`).join(" · ")||"Norte"} · fator ${num(r.al.fator,2)}</td></tr>
+    <tr><td>Suporta mais</td><td>${r.maisMod} módulo(s) neste inversor${r.comArea?" e na área":""}</td></tr>
     <tr><td>Verificação</td><td><span class="pill ${okAll?"ok":"warn"}">${okAll?"Dentro dos limites":"Revisar"}</span></td></tr></tbody>`;
   $("checks").innerHTML = r.checks.map(c=>`<li><span class="pill ${c.ok?"ok":"warn"}">${c.ok?"OK":"Atenção"}</span><span>${esc(c.t)}</span></li>`).join("");
 
@@ -653,6 +706,7 @@ function render(){
     <tr><td>Energia paga (kWh/mês)</td><td>${num(r.cons)}</td><td>${num(Math.max(r.cons-r.gerMes,r.fee))}</td></tr>
     <tr><td>Fio B (Lei 14.300)</td><td>-</td><td>${brl2(r.fioMes)}</td></tr>
     <tr><td>Conta mensal estimada</td><td>${brl2(r.contaAntes)}</td><td>${brl2(r.contaDepois)}</td></tr>
+    ${r.rateio>0?`<tr><td>Rateio de energia (Fio B 100%)</td><td>${num(r.rateio)} kWh</td><td>${brl2(r.ecoRateioMes)} de economia</td></tr>`:""}
     <tr><td><strong>Economia mensal</strong></td><td></td><td class="pos"><strong>${brl2(r.contaAntes-r.contaDepois)}</strong></td></tr>
     </tbody>`;
 
@@ -661,6 +715,9 @@ function render(){
     <div class="kpi"><div class="l">Economia no 1º ano</div><div class="v">${brl(r.ecoAno1)}</div><div class="s">${brl(r.ecoMes1)} por mês</div></div>
     <div class="kpi"><div class="l">Retorno (payback)</div><div class="v">${r.payback===null?"> 25 anos":num(r.payback,1)+" anos"}</div><div class="s">${r.tir===null?"TIR indisponível":"TIR de "+num(r.tir*100,1)+"% ao ano"}</div></div>`;
   $("chart").innerHTML = chart(r);
+  $("atend").innerHTML = `<span>O sistema atende <b>${num(r.atend)}%</b> da fatura${r.aum>0?` (consumo com +${num(r.aum*100)}%)`:""}</span><span class="mini">Meta de compensação ${num(v("meta"))}%</span><button class="btn alt small" type="button" data-metabtn="-5">− 5%</button><button class="btn alt small" type="button" data-metabtn="5">+ 5%</button>`;
+  $("sis-info").textContent = (r.limitado?`Ajuste limitado pelo ${r.limitado}. `:"")+`Este inversor suporta mais ${r.maisMod} módulo(s) dentro da relação CC/CA de ${num(CONFIG.tec.ccaMax,2)}${r.comArea?" e da área informada":""}. Use − / + para somar ou tirar módulos, ou escolha um inversor maior.`;
+  { const cur=$("invsel").value; $("invsel").innerHTML='<option value="auto">Automático (menor compatível)</option>'+CONFIG.inversores.map(i=>`<option value="${i.id}">${esc((i.marca+" "+i.modelo).trim())} · ${num(i.kw,1)} kW</option>`).join(""); if([...$("invsel").options].some(o=>o.value===cur)) $("invsel").value=cur; }
   $("chart-note").textContent = `Economia líquida em 25 anos: ${brl(r.totalEco)} (descontados Fio B, manutenção e troca do inversor).`;
   $("tbl-anos").innerHTML = `<thead><tr><th>Ano</th><th>Geração (kWh)</th><th>Tarifa (R$/kWh)</th><th>Fio B</th><th>Economia</th><th>Custos</th><th>Saldo do ano</th><th>Acumulado</th></tr></thead><tbody>`+
     r.rows.map(o=>`<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${num(o.t,2)}</td><td>${o.fio?brl(o.fio):"-"}</td><td>${brl(o.eco)}</td><td>${o.custo?brl(o.custo):"-"}</td><td>${brl(o.liq)}</td><td class="${o.acum>=0?"pos":"neg"}">${brl(o.acum)}</td></tr>`).join("")+`</tbody>`;
@@ -737,7 +794,13 @@ $("metodo").addEventListener("change",()=>{
 });
 
 document.querySelectorAll("#view-ent input:not([data-own]), #view-ent select:not([data-own]), #view-ent textarea, #view-preco .fields input:not([data-own]), #view-preco .fields select:not([data-own])").forEach(e=>e.addEventListener("input",calc));
-$("opts").addEventListener("click",e=>{ const b=e.target.closest("[data-opt]"); if(!b) return; OPT=b.dataset.opt; calc(); });
+$("opts").addEventListener("click",e=>{ const b=e.target.closest("[data-opt]"); if(!b) return; OPT=b.dataset.opt; $("madd").value=0; calc(); });
+document.addEventListener("click",e=>{
+  const m=e.target.closest("[data-metabtn]"); if(m){ const x=Math.min(150,Math.max(10,(v("meta")||100)+(+m.dataset.metabtn))); $("meta").value=x; calc(); return; }
+  const a=e.target.closest("[data-madd]"); if(a){ $("madd").value=(parseInt($("madd").value)||0)+(+a.dataset.madd); calc(); }
+});
+$("madd").addEventListener("input",()=>calc()); $("invsel").addEventListener("change",()=>calc());
+$("irr-tog").onclick=()=>{ const s=$("irr-chart"), on=s.style.display==="none"; s.style.display=on?"block":"none"; $("irr-tog").textContent=on?"Ocultar gráfico de irradiação":"Mostrar gráfico de irradiação"; $("irr-tog").setAttribute("aria-expanded",on); };
 
 const VIEWS = ["ent","sis","preco","prop","conf"];
 function show(which){
@@ -745,6 +808,7 @@ function show(which){
     $("view-"+n).classList.toggle("hidden",n!==which);
     $("tab-"+n).setAttribute("aria-selected",n===which);
   });
+  $("strip").style.display = which==="ent" ? "none" : "";
   if(which==="prop") renderDoc();
   if(which==="preco") renderPreco();
 }
@@ -875,85 +939,185 @@ function paginasSeguro(nome, seg, total, startN, logo){
   return [p1,p2];
 }
 
+/* ================= PROPOSTA v3: completa (uma etapa por página) e resumida ================= */
+function propInfo(){
+  const conc=CONFIG.conc.find(c=>c.id===$("concsel").value);
+  const lig={"30":"Monofásico","50":"Bifásico","100":"Trifásico"}[$("padrao").value];
+  const g=id=>($(id).value||"").trim();
+  return {nome:g("cliente")||"Cliente", end:g("pend")||"", cid:g("pcid")||"", cep:g("pcep")||"", uc:g("ucnum")||"—", dist:conc?conc.nome:"Concessionária", lig, minimo:+$("padrao").value};
+}
+function propRef(){ const d=new Date(), p2=n=>String(n).padStart(2,"0"); return "P"+String(d.getFullYear()).slice(2)+p2(d.getMonth()+1)+"-"+((typeof NEG!=="undefined"&&NEG)?NEG.replace(/-/g,"").slice(0,4).toUpperCase():"0000"); }
+const PP = () => Object.assign({}, DEF.prop, CONFIG.prop||{});
+function tabelaPrice(P,i,n){
+  const pm=i>0?pmt(P,i,n):P/n; let saldo=P, jA=0, aA=0, ini=1; const anos=[];
+  for(let k=1;k<=n;k++){ const j=saldo*i, a=pm-j; saldo-=a; jA+=j; aA+=a;
+    if(k%12===0||k===n){ anos.push({ano:Math.ceil(k/12),parc:k-ini+1,pagto:pm*(k-ini+1),juros:jA,amort:aA,saldo:Math.max(0,saldo)}); jA=0;aA=0;ini=k+1; } }
+  return {pm,anos,total:pm*n,juros:pm*n-P};
+}
+function finOpcoes(r){ return (CONFIG.financeiras||[]).slice(0,3).map(f=>{ const n=Math.max(1,+f.prazo||60), i=(+f.taxa||0)/100, ent=(+f.entrada||0)/100, entV=r.invest*ent, P=r.invest-entV, t=tabelaPrice(P,i,n); return {nome:f.nome,n,i,ent,entV,P,t}; }); }
+function basesTxt(r){ return `<b>Importante:</b> os valores da tabela são estimados. * Inflação anual (reajuste da tarifa): ${num(r.reaj*100,2)}%. ** Simultaneidade de ${num(r.sim*100,2)}%. *** Conforme especificação dos fabricantes, os módulos podem perder até 20% de eficiência em 25 anos (considerado ${num(r.degr*100,2)}% ao ano). **** Após ${CONFIG.fioB.length?Math.max(...CONFIG.fioB.map(x=>+x.ano)):2028}, considera-se a continuidade do pagamento de ${num(CONFIG.fioBDemais,0)}% do Fio B.${r.aum>0?` Considerado aumento de consumo de ${num(r.aum*100,1)}%.`:""}`; }
+function bancosHtml(){ const b=PP().bancos||[]; return `<div class="bks">${b.map(x=>x.logo?`<span class="bk"><img src="${x.logo}" alt="${pesc(x.nome)}"></span>`:`<span class="bk t">${pesc(x.nome)}</span>`).join("")}</div>`; }
+function chartParcela(r,fin){
+  const maxA=Math.min(25,Math.max(5,Math.ceil(r.payback||5)+1,fin?Math.ceil(fin.n/12):0)), W=560,H=215,L=48,B=24,T=10,iw=W-L-8,ih=H-B-T;
+  const eco=[],par=[]; for(let a=1;a<=maxA;a++){ eco.push(r.rows[a-1].eco); par.push(fin&&a<=Math.ceil(fin.n/12)?fin.t.anos[a-1].pagto:0); }
+  const mx=Math.max(...eco,...par,1)*1.1, bw=iw/maxA, x=a=>L+(a-1)*bw, y=v_=>T+ih-(v_/mx)*ih;
+  let s=""; for(let k=0;k<=4;k++){ const yy=T+ih*(1-k/4); s+=`<line x1="${L}" x2="${W-8}" y1="${yy}" y2="${yy}" stroke="#dce8f3"/><text x="${L-4}" y="${yy+3}" text-anchor="end">${num(mx*k/4/1000,1)} mil</text>`; }
+  for(let a=1;a<=maxA;a++){ const h1=ih*eco[a-1]/mx, h2=ih*par[a-1]/mx; s+=`<rect x="${x(a)+bw*.14}" y="${T+ih-h1}" width="${bw*.34}" height="${h1}" fill="#64ABDE"/>`; if(par[a-1]>0) s+=`<rect x="${x(a)+bw*.5}" y="${T+ih-h2}" width="${bw*.34}" height="${h2}" fill="#1D3140"/>`; s+=`<text x="${x(a)+bw/2}" y="${H-8}" text-anchor="middle">${a}</text>`; }
+  return s+`<text x="${L+iw/2}" y="${H}" text-anchor="middle" font-size="9">anos</text>`;
+}
+function chartRetorno(r,pp){
+  const iC=(pp.cdi/100)*(pp.cdbPct/100)*(1-pp.ir/100), iP=pp.poup/100, I0=r.invest, N=25;
+  const solar=[0], cdb=[I0], poup=[I0]; for(let t=1;t<=N;t++){ solar.push(solar[t-1]*(1+iC)+r.rows[t-1].liq); cdb.push(I0*Math.pow(1+iC,t)); poup.push(I0*Math.pow(1+iP,t)); }
+  const W=560,H=215,L=52,B=22,T=10,iw=W-L-8,ih=H-B-T, mx=Math.max(...solar,...cdb,...poup)*1.05, xx=t=>L+t/N*iw, yy=v_=>T+ih-(v_/mx)*ih;
+  const pl=(a,c,dash)=>`<polyline fill="none" stroke="${c}" stroke-width="2.2" ${dash?'stroke-dasharray="5 4"':""} points="${a.map((v_,t)=>xx(t).toFixed(1)+","+yy(v_).toFixed(1)).join(" ")}"/>`;
+  let s=""; for(let k=0;k<=4;k++){ const y_=T+ih*(1-k/4); s+=`<line x1="${L}" x2="${W-8}" y1="${y_}" y2="${y_}" stroke="#dce8f3"/><text x="${L-4}" y="${y_+3}" text-anchor="end">${num(mx*k/4/1000,0)} mil</text>`; }
+  for(let t=0;t<=N;t+=5) s+=`<text x="${xx(t)}" y="${H-6}" text-anchor="middle">${t}</text>`;
+  return {svg:s+pl(poup,"#8aa0b3",true)+pl(cdb,"#1D3140",true)+pl(solar,"#64ABDE"), solar, cdb, poup, iC, iP};
+}
+function paginaAceite(r,I,hoje,validade,ref,pp){
+  return `<h2>Aceite da proposta</h2>
+    <p class="lead">Proposta <b>${ref}</b> · emitida em ${hoje} · válida até ${validade}</p>
+    <table class="kv"><tbody>
+      <tr><td>Contratante</td><td>${pesc(I.nome)}</td></tr>
+      <tr><td>CPF / CNPJ</td><td class="blank"></td></tr>
+      <tr><td>Endereço da instalação</td><td>${pesc([I.end,I.cid,I.cep].filter(Boolean).join(" · "))||"&nbsp;"}</td></tr>
+      <tr><td>Contratada</td><td>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</td></tr>
+      <tr><td>Objeto</td><td>Fornecimento, instalação e homologação de sistema fotovoltaico de ${num(r.kwp,2)} kWp (${r.modulos} módulos de ${r.mod.wp} Wp e ${r.qtdInv} inversor de ${num(r.inv.kw,1)} kW)</td></tr>
+      <tr><td>Valor</td><td><b>${brl2(r.invest)}</b></td></tr>
+      <tr><td>Prazo de entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr>
+    </tbody></table>
+    <p class="small" style="font-size:10.5px;color:#1D3140;margin:12px 0 4px">Declaro que li e estou de acordo com os produtos, quantidades, valores e condições descritos nesta proposta. Estou ciente de que as marcas e modelos finais são confirmados na cotação com o fornecedor antes da assinatura e de que o financiamento, quando escolhido, está sujeito à aprovação de crédito.</p>
+    <p class="chk"><b>Forma de pagamento:</b> <span><i class="bx"></i>À vista</span><span><i class="bx"></i>Financiamento</span><span><i class="bx"></i>Outra: ______________</span></p>
+    <p class="small" style="font-size:10.5px">Local e data: ______________________________, ____ / ____ / ________</p>
+    <div class="sign big"><div><i></i><span>${pesc(I.nome)}<br>Contratante</span></div>
+      <div>${pp.assin?`<img src="${pp.assin}" class="assin" alt="">`:""}<i></i><span>${pesc(pp.resp||"Responsável técnico")}${pp.crea?" · "+pesc(pp.crea):""}<br>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</span></div></div>
+    <p class="small" style="margin-top:14px">Testemunhas (opcional): ______________________ &nbsp; ______________________</p>`;
+}
 function propostaHTML(){
-  const r=R, I=propInfo(), cap=CONFIG.capa||{}, seg=segDados();
+  const modo=($("pr-modo")?$("pr-modo").value:"completa")||"completa";
+  const r=R, I=propInfo(), cap=CONFIG.capa||{}, seg=segDados(), pp=PP(), ref=propRef();
   const _h=new Date(), _v=new Date(_h.getTime()+(+CONFIG.validade||10)*864e5), hoje=_h.toLocaleDateString("pt-BR"), validade=_v.toLocaleDateString("pt-BR");
-  const kwh12=r.gerM.reduce((s,x)=>s+x,0);
-  const sel=[1,5,10,15,20,25];
-  const linhas=sel.map(a=>{const o=r.rows[a-1]; const sem=r.cons*12*o.t; const com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td><b>${brl(o.eco)}</b></td></tr>`}).join("");
-  const fin=(CONFIG.financeiras||[]).slice(0,2).map(f=>{ const n=Math.max(1,+f.prazo||60), i=(+f.taxa||0)/100, ent=(+f.entrada||0)/100, P=r.invest*(1-ent); return {n,i,ent,parc:i>0?pmt(P,i,n):P/n,entV:r.invest*ent}; });
-  const flows=[-r.invest].concat(r.rows.map(x=>x.liq)), vpl=npv(0.06,flows);
+  const nome=I.nome, mod=r.mod, inv=r.inv, kwh12=r.gerM.reduce((s,x)=>s+x,0);
+  const fins=finOpcoes(r), fin1=fins[0];
   const pbMeses=r.payback===null?null:Math.round(r.payback*12), _a=r.payback===null?0:Math.floor(pbMeses/12), _m=r.payback===null?0:pbMeses%12;
   const pbTxt=r.payback===null?"acima de 25 anos":(_a===0?`${_m} meses`:`${_a} ${_a===1?"ano":"anos"}${_m?` e ${_m} ${_m===1?"mês":"meses"}`:""}`);
-  const mod=r.mod, inv=r.inv, nome=I.nome;
   const comSeg=seg.on&&seg.vig.some(x=>x>0);
-  const total=3+(comSeg?2:0);
-  const head=(n)=>`<header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${pesc(nome)}</span></header>`;
-  const foot=(n)=>`<footer class="pf"><span>${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")}</span><span>Folha ${n} de ${total}</span></footer>`;
-  const page=(n,body)=>`<section class="pg">${head(n)}<div class="pb">${body}</div>${foot(n)}</section>`;
-
+  const local=[I.end,I.cid].filter(Boolean).join(" · ");
   const capaHtml=`<section class="pg cover">
-    <div class="cv-top"><img src="${LOGO}" alt="ON Engenharia" class="cv-logo"><span class="cv-badge">Proposta preliminar</span></div>
+    <div class="cv-top"><img src="${LOGO}" alt="ON Engenharia" class="cv-logo"><span class="cv-badge">Proposta ${pesc(ref)}</span></div>
     <div class="cv-main">
       <p class="eyebrow">${pesc(cap.titulo||"Energia solar fotovoltaica")}</p>
       <h1>Proposta<br>comercial</h1>
-      <div class="cv-client"><span>Preparada para</span><strong>${pesc(nome)}</strong><em>${pesc([I.end!=="Endereço a informar"?I.end:"",I.cid!=="—"?I.cid:""].filter(Boolean).join(" · "))}</em></div>
+      <div class="cv-client"><span>Preparada para</span><strong>${pesc(nome)}</strong><em>${pesc(local)}</em></div>
     </div>
     ${capaArte(cap.estilo||"aneis",cap.imagem)}
     ${cap.campanha?`<div class="camp"><b>${pesc(cap.campanha)}</b>${cap.detalhe?`<span>${pesc(cap.detalhe)}</span>`:""}</div>`:""}
     <div class="cv-foot"><span>Emitida em ${hoje} · válida até ${validade}</span><span>${pesc(CONFIG.empresa||"ON Engenharia")}</span><span>${pesc(CONFIG.contato||"")}</span></div>
   </section>`;
-
-  const p2=`<h2>Seu sistema e sua economia</h2>
-    <div class="kpis4">
-      <div><b>${num(r.kwp,2)} kWp</b><span>potência</span></div>
-      <div><b>${r.modulos} módulos</b><span>de ${mod.wp} Wp</span></div>
-      <div><b>${num(r.gerMes)} kWh</b><span>geração por mês</span></div>
-      <div><b>${num(r.areaTotal,0)} m²</b><span>área estimada</span></div>
-    </div>
-    <table class="kv"><tbody>
+  const kp4=`<div class="kpis4"><div><b>${num(r.kwp,2)} kWp</b><span>potência</span></div><div><b>${r.modulos} módulos</b><span>de ${mod.wp} Wp</span></div><div><b>${num(r.gerMes+r.rateio)} kWh</b><span>geração por mês${r.rateio>0?" (inclui rateio)":""}</span></div><div><b>${num(r.areaTotal,0)} m²</b><span>área necessária</span></div></div>`;
+  const faces=r.al.faces.filter(f=>f.n>0).map(f=>`${ORI[f.ori][0]} (${f.n})`).join(" · ")||"Norte";
+  const detalhes=`<table class="kv"><tbody>
       <tr><td>Concessionária</td><td>${pesc(I.dist)} · UC ${pesc(I.uc)} · ${I.lig}</td></tr>
-      <tr><td>Consumo médio mensal</td><td><b>${num(v("consumo"))} kWh</b> · tarifa R$ ${num(r.tar,4)}/kWh (com impostos)</td></tr>
+      <tr><td>Consumo médio mensal</td><td><b>${num(v("consumo"))} kWh</b>${r.aum>0?` · considerado aumento de <b>${num(r.aum*100,1)}%</b> (${num(r.cons)} kWh)`:""} · tarifa R$ ${num(r.tar,4)}/kWh (com impostos)</td></tr>
+      ${r.rateio>0?`<tr><td>Rateio de energia</td><td>${num(r.rateio)} kWh/mês recebidos de outra unidade geradora</td></tr>`:""}
+      <tr><td>Local e irradiação</td><td>${pesc(I.cid||"—")} · ${num(r.hsp,2)} kWh/m²·dia</td></tr>
       <tr><td>Equipamentos</td><td>${r.modulos} módulos de ${mod.wp} Wp · ${r.qtdInv} inversor de ${num(inv.kw,1)} kW (${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"})</td></tr>
-      <tr><td>Local e irradiação</td><td>${pesc(I.cid)} · ${num(r.hsp,2)} kWh/m²·dia</td></tr>
-    </tbody></table>
-    <h3 class="sub">Geração × consumo</h3>
-    <svg class="chart" viewBox="0 0 560 215" role="img" aria-label="Geração mensal e consumo">${chartGen(r)}</svg>
-    <div class="leg"><span><i class="b"></i>Geração estimada</span><span><i class="d"></i>Consumo</span><span class="sm">Total anual: ${num(kwh12)} kWh</span></div>
-    <h3 class="sub">Economia estimada</h3>
-    <div class="kpis3">
-      <div><b>${brl2(r.contaAntes)}</b><span>conta mensal hoje</span></div>
-      <div><b>${brl2(r.contaDepois)}</b><span>conta com energia solar</span></div>
-      <div class="hi"><b>${brl2(r.contaAntes-r.contaDepois)}</b><span>economia por mês (1º ano)</span></div>
-    </div>
-    <table class="data"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th></tr></thead><tbody>${linhas}</tbody></table>
-    <p class="small">Reajuste anual de ${num(r.reaj*100,1)}% na tarifa, perda de geração de ${num(r.degr*100,1)}% ao ano e cobrança gradual do Fio B (Lei 14.300). Valores estimados.</p>`;
+      <tr><td>Instalação</td><td>Área útil necessária de ${num(r.areaTotal,1)} m² · orientação ${pesc(faces)} · ${pesc(r.tel.nome)}</td></tr>
+      <tr><td>Atendimento da fatura</td><td>${num(r.atend)}% do consumo compensado</td></tr>
+    </tbody></table>`;
+  const linhas=[1,5,10,15,20,25].map(a=>{const o=r.rows[a-1]; const sem=r.cons*12*o.t; const com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td><b>${brl(o.eco)}</b></td></tr>`}).join("");
+  const eco3=`<div class="kpis3"><div><b>${brl2(r.contaAntes)}</b><span>conta mensal hoje</span></div><div><b>${brl2(r.contaDepois)}</b><span>conta com energia solar</span></div><div class="hi"><b>${brl2(r.contaAntes-r.contaDepois)}</b><span>economia por mês (1º ano)</span></div></div>`;
+  const chartGenSvg=`<svg class="chart" viewBox="0 0 560 215" role="img" aria-label="Geração mensal e consumo">${chartGen(r)}</svg><div class="leg"><span><i class="b"></i>Geração estimada</span><span><i class="d"></i>Consumo</span><span class="sm">Total anual: ${num(kwh12)} kWh</span></div>`;
+  const simul=fins.map(f=>`<tr><td><b>${pesc(f.nome)}</b></td><td>${f.n}x</td><td>${num(f.i*100,2)}% a.m.</td><td>${f.ent>0?brl2(f.entV):"sem entrada"}</td><td><b>${brl2(f.t.pm)}</b></td><td>${brl2(f.t.total+f.entV)}</td></tr>`).join("");
+  const simulHead=`<table class="data"><thead><tr><th>Simulação</th><th>Parcelas</th><th>Juros</th><th>Entrada</th><th>Parcela</th><th>Total pago</th></tr></thead><tbody>${simul}</tbody></table>`;
+  const msgFin=`<p class="small">* Os valores descritos são apenas uma simulação e podem sofrer alterações no momento da contratação. ** Sujeito a aprovação de crédito.</p>`;
 
-  const p3=`<h2>Investimento e retorno</h2>
-    <table class="data prod"><thead><tr><th>Item incluso</th><th>Qtd.</th></tr></thead><tbody>
-      <tr><td>Módulos fotovoltaicos de ${mod.wp} Wp</td><td>${r.modulos}</td></tr>
-      <tr><td>Inversor string de ${num(inv.kw,1)} kW</td><td>${r.qtdInv}</td></tr>
-      <tr><td>Estrutura de fixação, string box, cabos CC e conectores</td><td>1 kit</td></tr>
-      <tr><td>Projeto, ART, instalação e homologação junto à concessionária</td><td>1</td></tr></tbody></table>
-    <div class="total"><span>Valor total da proposta</span><strong>${brl2(r.invest)}</strong><em>${brl2(r.invest/(r.kwp*1000))} por Wp</em></div>
-    <table class="data"><thead><tr><th>Condição de pagamento</th><th>Detalhes</th><th>Valor</th></tr></thead><tbody>
-      <tr><td>À vista</td><td>Pagamento único na contratação</td><td>${brl2(r.invest)}</td></tr>
-      ${fin.map(f=>`<tr><td>Financiado</td><td>${f.n} parcelas · ${num(f.i*100,2)}% a.m.${f.ent>0?` · entrada ${brl2(f.entV)}`:" · sem entrada"}</td><td>${brl2(f.parc)}</td></tr>`).join("")}</tbody></table>
-    <p class="small">Financiamento sujeito à aprovação de crédito. Prazo de entrega: ${v("prazo")||45} dias após a contratação.</p>
-    <h3 class="sub">Retorno do investimento</h3>
-    <div class="kpis3">
-      <div><b>${pbTxt}</b><span>payback</span></div>
-      <div><b>${r.tir===null?"-":num(r.tir*100,1)+"%"}</b><span>TIR ao ano</span></div>
-      <div><b>${brl(r.totalEco)}</b><span>economia líquida em 25 anos</span></div>
-    </div>
-    <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Fluxo de caixa acumulado">${chart(r)}</svg>
-    <h3 class="sub">Aceite</h3>
-    <p class="small" style="margin:0 0 4px">Estando de acordo com produtos, valores e condições, as partes firmam o aceite. Marcas e modelos finais são confirmados na cotação com o fornecedor antes da assinatura. Emitida em ${hoje}, válida até ${validade}.</p>
-    <div class="sign"><div><i></i><span>${pesc(P_EMP.razao)} · CNPJ ${P_EMP.cnpj}</span></div><div><i></i><span>${pesc(nome)}</span></div></div>
-    <div class="sobre"><b>Sobre a ON Engenharia</b><p>Soluções elétricas sob medida, com qualidade, segurança e eficiência energética: agronegócio, indústrias, comércio e residências. ${pesc(P_EMP.end)} · ${pesc(CONFIG.contato||"")}</p></div>`;
-
-  const paginas=[capaHtml,page(2,p2),page(3,p3)];
-  if(comSeg){ const sp=paginasSeguro(nome,seg,total,4,LOGO); paginas.push(page(4,sp[0])); paginas.push(page(5,sp[1])); }
+  let paginas=[];
+  if(modo==="resumida"){
+    const p2=`<h2>Seu sistema e sua economia</h2>${kp4}${detalhes}<h3 class="sub">Geração × consumo</h3>${chartGenSvg}<h3 class="sub">Economia estimada</h3>${eco3}
+      <table class="data"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th></tr></thead><tbody>${linhas}</tbody></table><p class="small">${basesTxt(r)}</p>`;
+    const p3=`<h2>Investimento e retorno</h2>
+      <table class="data prod"><thead><tr><th>Item incluso</th><th>Qtd.</th></tr></thead><tbody>
+        <tr><td>Módulos fotovoltaicos de ${mod.wp} Wp</td><td>${r.modulos}</td></tr>
+        <tr><td>Inversor string de ${num(inv.kw,1)} kW</td><td>${r.qtdInv}</td></tr>
+        <tr><td>Estrutura de fixação, string box, cabos CC e conectores</td><td>1 kit</td></tr>
+        <tr><td>Projeto, ART, instalação e homologação junto à concessionária</td><td>1</td></tr></tbody></table>
+      <div class="total"><span>Valor total da proposta</span><strong>${brl2(r.invest)}</strong><em>${brl2(r.invest/(r.kwp*1000))} por Wp</em></div>
+      <table class="data"><thead><tr><th>Condição de pagamento</th><th>Detalhes</th><th>Valor</th></tr></thead><tbody>
+        <tr><td>À vista</td><td>Pagamento único na contratação</td><td>${brl2(r.invest)}</td></tr>
+        ${fins.map(f=>`<tr><td>Financiado</td><td>${f.n} parcelas · ${num(f.i*100,2)}% a.m.${f.ent>0?` · entrada ${brl2(f.entV)}`:" · sem entrada"}</td><td>${brl2(f.t.pm)}</td></tr>`).join("")}</tbody></table>
+      ${msgFin}${bancosHtml()}
+      <h3 class="sub">Retorno do investimento</h3>
+      <div class="kpis3"><div><b>${pbTxt}</b><span>payback</span></div><div><b>${r.tir===null?"-":num(r.tir*100,1)+"%"}</b><span>TIR ao ano</span></div><div><b>${brl(r.totalEco)}</b><span>economia líquida em 25 anos</span></div></div>
+      <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Fluxo de caixa acumulado">${chart(r)}</svg>
+      <p class="small" style="margin:4px 0">Estando de acordo com produtos, valores e condições, as partes firmam o aceite. Marcas e modelos finais são confirmados na cotação antes da assinatura. Prazo de entrega: ${v("prazo")||45} dias.</p>
+      <div class="sign"><div><i></i><span>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</span></div><div><i></i><span>${pesc(nome)}</span></div></div>`;
+    paginas=[p2,p3];
+  } else {
+    const quem=`<h2>Quem somos</h2>
+      <p class="lead">A <b>ON Engenharia</b> desenvolve soluções elétricas sob medida para o agronegócio, a indústria, o comércio e a residência: projeto, execução, energia solar e eficiência energética.</p>
+      <div class="cards3"><div><h4>O que nos move</h4><p>Entregar energia com segurança, qualidade e economia, com o cuidado de quem conhece a realidade do campo e da cidade.</p></div>
+        <div><h4>Como trabalhamos</h4><p>Dimensionamos pelo seu consumo real, projetamos conforme as normas da concessionária e acompanhamos a instalação até a homologação.</p></div>
+        <div><h4>O que você recebe</h4><p>Projeto elétrico com ART, equipamentos de linha, instalação por equipe própria, homologação e suporte após a entrega.</p></div></div>
+      <h3 class="sub">Por que energia solar</h3>
+      <ul class="li"><li>Reduz a conta de luz e protege você dos reajustes da tarifa.</li><li>Sistema conectado à rede, sem baterias, com manutenção simples.</li><li>Módulos com garantia de desempenho de longo prazo.</li><li>Valoriza o imóvel e reduz emissões de CO₂.</li></ul>
+      <div class="sobre"><b>${pesc(pp.razao)}</b><p>CNPJ ${pesc(pp.cnpj)} · ${pesc(P_EMP.end)} · ${pesc(CONFIG.contato||"")}</p></div>`;
+    const det=`<h2>Detalhes do projeto</h2>${kp4}${detalhes}<h3 class="sub">Conta de energia antes e depois</h3>${eco3}
+      <p class="small">Estimativa para o primeiro ano, sem bandeira tarifária, com o Fio B escalonado pela Lei 14.300.</p>`;
+    const meses=MESES.map((m,i)=>`<tr><td>${m}</td><td>${num(r.gerM[i])}</td><td>${num(r.consM[i])}</td><td class="${r.gerM[i]+r.rateio>=r.consM[i]?"":"neg"}">${num(r.gerM[i]+r.rateio-r.consM[i])}</td></tr>`).join("");
+    const ger=`<h2>Geração de energia</h2>${chartGenSvg}<table class="data"><thead><tr><th>Mês</th><th>Geração (kWh)</th><th>Consumo (kWh)</th><th>Saldo (kWh)</th></tr></thead><tbody>${meses}</tbody></table>
+      <p class="small">A energia gerada acima do consumo vira crédito na rede, válido por 60 meses. Estimativa com irradiação de ${num(r.hsp,2)} kWh/m²·dia e perdas de ${num((1-r.PR)*100,1)}%.</p>`;
+    const proj=`<h2>Projeção anual</h2><table class="data tight"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th><th>Acumulado</th></tr></thead><tbody>${r.rows.map(o=>{const sem=r.cons*12*o.t, com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td>${brl(o.eco)}</td><td class="${o.acum>=0?"":"neg"}">${brl(o.acum)}</td></tr>`}).join("")}</tbody></table><p class="small">${basesTxt(r)}</p>`;
+    const dsRow=(titulo,item,linhas_)=>`<div class="prd"><div class="ph0">${item.foto?`<img src="${item.foto}" alt="">`:`<span>sem imagem</span>`}</div><div><h4>${titulo}</h4><b>${pesc((item.marca+" "+item.modelo).trim())}</b><ul>${linhas_.map(x=>`<li>${x}</li>`).join("")}</ul></div></div>`;
+    const dist=($("disttxt").value||"").trim();
+    const distLinhas=dist.split(/\n+/).map(s=>s.trim()).filter(Boolean).slice(0,14);
+    const prod=`<h2>Produtos</h2>
+      ${dsRow(`Módulos fotovoltaicos · ${r.modulos} un.`,mod,[`Potência ${mod.wp} Wp · ${num(r.kwp,2)} kWp no total`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Garantia de produto e de desempenho conforme o fabricante`])}
+      ${dsRow(`Inversor · ${r.qtdInv} un.`,inv,[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`,`Relação CC/CA ${num(r.ratio,2)}`])}
+      <div class="prd"><div class="ph0"><span>kit</span></div><div><h4>Estrutura e complementos</h4><ul><li>Estrutura de fixação para ${pesc(r.tel.nome)}</li><li>String box, cabos CC, conectores e proteções</li><li>Projeto, ART, instalação e homologação junto à concessionária</li></ul></div></div>
+      ${distLinhas.length?`<h3 class="sub">Descrição do fornecedor</h3><div class="dist">${distLinhas.map(x=>`<p>${pesc(x)}</p>`).join("")}</div>`:""}
+      <p class="small">As imagens e especificações seguem os datasheets dos fabricantes. Marcas e modelos finais são confirmados na cotação antes da assinatura.</p>`;
+    const pag=`<h2>Investimento e pagamento</h2>
+      <div class="total"><span>Valor total da proposta</span><strong>${brl2(r.invest)}</strong><em>${brl2(r.invest/(r.kwp*1000))} por Wp</em></div>
+      <table class="data l"><thead><tr><th>Condição</th><th>Detalhes</th></tr></thead><tbody>
+        <tr><td>À vista</td><td>${brl2(r.invest)} · pagamento único na contratação</td></tr>
+        <tr><td>Entrega</td><td>${v("prazo")||45} dias após a contratação, com instalação e homologação inclusas</td></tr>
+        <tr><td>Validade</td><td>${validade}</td></tr></tbody></table>
+      <h3 class="sub">Simulação de financiamento</h3>${simulHead}${msgFin}${bancosHtml()}
+      ${fin1?`<h3 class="sub">Tabela Price · ${pesc(fin1.nome)} (${fin1.n}x de ${brl2(fin1.t.pm)})</h3><table class="data tight"><thead><tr><th>Ano</th><th>Parcelas</th><th>Pago no ano</th><th>Juros</th><th>Amortização</th><th>Saldo devedor</th></tr></thead><tbody>${fin1.t.anos.map(a=>`<tr><td>${a.ano}</td><td>${a.parc}</td><td>${brl(a.pagto)}</td><td>${brl(a.juros)}</td><td>${brl(a.amort)}</td><td>${brl(a.saldo)}</td></tr>`).join("")}</tbody></table>`:""}`;
+    const ecoParc=fin1?`<h2>Economia × parcela</h2>
+      <p class="lead">Na simulação de <b>${fin1.n}x</b>, a parcela é de <b>${brl2(fin1.t.pm)}</b> e a economia média do 1º ano é de <b>${brl2(r.ecoMes1)}</b> por mês: ${r.ecoMes1>=fin1.t.pm?`o sistema <b>se paga com folga de ${brl2(r.ecoMes1-fin1.t.pm)} por mês</b> desde o início`:`a diferença de <b>${brl2(fin1.t.pm-r.ecoMes1)}</b> por mês é coberta pelo reajuste da tarifa ao longo dos anos`}.</p>
+      <svg class="chart" viewBox="0 0 560 215" role="img" aria-label="Economia anual e parcelas">${chartParcela(r,fin1)}</svg>
+      <div class="leg"><span><i class="b"></i>Economia anual</span><span><i class="d"></i>Parcelas no ano</span><span class="sm">Payback do investimento: ${pbTxt}</span></div>
+      <table class="data"><thead><tr><th>Ano</th><th>Economia</th><th>Parcelas</th><th>Saldo do ano</th></tr></thead><tbody>${[1,2,3,4,5].map(a=>{const e=r.rows[a-1].eco, p=a<=Math.ceil(fin1.n/12)?fin1.t.anos[a-1].pagto:0; return `<tr><td>${r.rows[a-1].year}</td><td>${brl(e)}</td><td>${brl(p)}</td><td class="${e-p>=0?"":"neg"}">${brl(e-p)}</td></tr>`}).join("")}</tbody></table>
+      ${msgFin}`:`<h2>Economia</h2>${eco3}`;
+    const ch=chartRetorno(r,pp);
+    const pts=[5,10,15,20,25];
+    const ret=`<h2>Retorno do investimento</h2>
+      <div class="kpis3"><div><b>${pbTxt}</b><span>payback</span></div><div><b>${r.tir===null?"-":num(r.tir*100,1)+"%"}</b><span>TIR ao ano</span></div><div class="hi"><b>${brl(r.totalEco)}</b><span>economia líquida em 25 anos</span></div></div>
+      <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Fluxo de caixa acumulado">${chart(r)}</svg>
+      <h3 class="sub">Análise de investimento: solar × renda fixa × poupança</h3>
+      <p class="small" style="margin:0 0 6px">Mesmo valor (${brl(r.invest)}) aplicado em cada alternativa; as economias da conta de luz são reaplicadas à taxa do CDB líquido. CDB de ${num(pp.cdbPct,0)}% do CDI (${num(pp.cdi,2)}% a.a.), IR de ${num(pp.ir,1)}%; poupança de ${num(pp.poup,2)}% a.a.</p>
+      <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Patrimônio por alternativa">${ch.svg}</svg>
+      <div class="leg"><span><i class="b"></i>Solar (economias reaplicadas)</span><span><i class="d"></i>CDB líquido</span><span><i class="g"></i>Poupança</span></div>
+      <table class="data"><thead><tr><th>Ano</th><th>Solar</th><th>CDB</th><th>Poupança</th></tr></thead><tbody>${pts.map(t=>`<tr><td>${t}</td><td><b>${brl(ch.solar[t])}</b></td><td>${brl(ch.cdb[t])}</td><td>${brl(ch.poup[t])}</td></tr>`).join("")}</tbody></table>
+      <p class="small">Rentabilidade do sistema (TIR): ${r.tir===null?"indisponível":num(r.tir*100,1)+"% ao ano"}, contra ${num(ch.iC*100,2)}% do CDB líquido e ${num(ch.iP*100,2)}% da poupança. Simulação, não é promessa de rentabilidade.</p>`;
+    const kwh25=r.rows.reduce((s,o)=>s+o.ger,0), co2=kwh25/1000*pp.fe, arv=co2/Math.max(pp.arv,0.0001);
+    const amb=`<h2>Retorno ambiental</h2>
+      <p class="lead">Energia limpa que deixa de ser gerada por fontes emissoras. Estimativa para os 25 anos de operação do sistema.</p>
+      <div class="kpis3"><div><b>${num(kwh25/1000,0)} MWh</b><span>energia limpa gerada</span></div><div><b>${num(co2,1)} tCO₂</b><span>emissões evitadas</span></div><div class="hi"><b>${num(arv,0)} árvores</b><span>equivalente em plantio</span></div></div>
+      <table class="kv"><tbody><tr><td>Por ano (1º ano)</td><td>${num(r.rows[0].ger/1000,1)} MWh · ${num(r.rows[0].ger/1000*pp.fe,2)} tCO₂ evitadas</td></tr>
+        <tr><td>Fator de emissão</td><td>${num(pp.fe,4)} tCO₂/MWh (média do Sistema Interligado Nacional)</td></tr>
+        <tr><td>Equivalência</td><td>${num(pp.arv,2)} tCO₂ absorvidas por árvore em 25 anos</td></tr></tbody></table>
+      <p class="small">Fator de emissão configurável pela ON (média do SIN divulgada pelo MCTI). Os valores são estimativas para fins de comunicação.</p>`;
+    paginas=[quem,det,ger,proj,prod,pag,ecoParc,ret,amb,paginaAceite(r,I,hoje,validade,ref,pp)];
+  }
+  let seguroP=[]; if(comSeg){ seguroP=paginasSeguro(nome,seg,0,0,LOGO); }
+  const todas=[...paginas,...seguroP];
+  const total=1+todas.length;
+  const head=()=>`<header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${pesc(nome)}</span></header>`;
+  const foot=n=>`<footer class="pf"><span>${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")}</span><span>Folha ${n} de ${total}</span></footer>`;
+  const corpo=[capaHtml].concat(todas.map((b,i)=>`<section class="pg">${head()}<div class="pb">${b}</div>${foot(i+2)}</section>`));
   return `<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Proposta ${pesc(nome)}</title>
@@ -1027,8 +1191,29 @@ table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 .chk span{display:inline-flex;align-items:center;gap:5px}.bx{display:inline-block;width:11px;height:11px;border:1.2px solid var(--dark)}
 .chart.cx{max-height:50mm}.sobre{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}.sobre b{font-size:11px;color:var(--dark2)}.sobre p{margin:3px 0 0;font-size:10.5px;color:var(--muted)}
 @media print{body{background:#fff;padding:0}.pg{margin:0;box-shadow:none;break-after:page}.pg:last-child{break-after:auto}}
+
+.neg{color:#c0392b}
+.chart.cx{margin:0 auto}
+.data.l th:last-child,.data.l td:last-child{text-align:left}
+.leg i.g{background:#8aa0b3}
+.data.tight td,.data.tight th{padding:3.5px 7px;font-size:10px}
+.data td.blank,.kv td.blank{height:22px}
+.cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0}
+.cards3 div{background:var(--bl);border-radius:10px;padding:11px 12px;border-top:3px solid var(--blue)}
+.cards3 h4,.prd h4{margin:0 0 4px;font-size:12.5px;color:var(--dark)}.cards3 p{margin:0;font-size:11px;color:var(--dark2)}
+ul.li{margin:4px 0;padding-left:18px;font-size:12px}ul.li li{margin:3px 0}
+.prd{display:grid;grid-template-columns:42mm 1fr;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;margin-bottom:8px}
+.prd .ph0{height:30mm;background:#f4f8fc;border-radius:8px;display:grid;place-items:center;overflow:hidden}
+.prd .ph0 img{width:100%;height:100%;object-fit:cover;object-position:top}
+.prd .ph0 span{font-size:10px;color:var(--muted)}
+.prd ul{margin:4px 0 0;padding-left:16px;font-size:10.5px;color:var(--dark2)}
+.dist{border-left:3px solid var(--blue);padding-left:10px}.dist p{margin:2px 0;font-size:10px;color:var(--dark2)}
+.bks{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.bk{height:9mm;min-width:24mm;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;padding:2px 8px;background:#fff}
+.bk img{max-height:7mm;max-width:28mm}.bk.t{font-size:10px;font-weight:700;color:var(--dark2)}
+.sign.big{margin-top:30px}.sign .assin{position:absolute;max-height:16mm;margin-top:-17mm}.sign div{position:relative}
 </style></head><body>
-${paginas.join("\n")}
+${corpo.join("\n")}
 </body></html>`;
 }
 
@@ -1062,13 +1247,14 @@ $("conc-filter").addEventListener("input",concFiltrar);
 function snapshot(){
   const f={};
   document.querySelectorAll("input[id],select[id],textarea[id]").forEach(el=>{
-    if(el.hasAttribute("data-cfg")||el.closest("#view-conf")||el.id==="conc-filter") return;
+    if(el.hasAttribute("data-cfg")||el.closest("#view-conf")||el.id==="conc-filter"||el.type==="file"||el.id==="txtbase") return;
     f[el.id]=el.type==="checkbox"?el.checked:el.value;
   });
   return {v:1,f,cm:[...document.querySelectorAll("[data-cm]")].map(e=>e.value),hm:HSPM.slice(),costs:clone(COSTS),real:clone(REAL),opt:OPT};
 }
 function restore(s){
   if(!s||!s.f) return;
+  if(typeof fillInvSel==="function") fillInvSel();
   if(s.hm&&s.hm.length===12) setHspm(s.hm);
   Object.entries(s.f).forEach(([id,val])=>{
     const el=$(id); if(!el) return;
@@ -1086,16 +1272,16 @@ function aplicarConfig(d){
   const base=clone(DEF), s=d.config||{};
   for(const k of Object.keys(base)){ if(s[k]===undefined) continue;
     if(k==="tec"){ base.tec=Object.assign(base.tec,s.tec); base.tec.perdas=Object.assign(clone(DEF.tec.perdas),(s.tec||{}).perdas); } else base[k]=s[k]; }
-  CONFIG=base;
+  CONFIG=base; mergeDefaults();
   if(d.custos){ Object.keys(COSTS).forEach(k=>{ if(d.custos[k]) COSTS[k]=d.custos[k]; }); nextId=Math.max(nextId,...Object.values(COSTS).flat().map(l=>+l.id||0))+1; }
-  initUI(); if(typeof capaPrev==="function") capaPrev();
+  initUI(); if(typeof capaPrev==="function") capaPrev(); if(typeof initV3==="function") initV3();
 }
 async function salvar(){
   if(!NEG||!CAN_EDIT||!READY||!DIRTY) return;
   DIRTY=false; setSv("Salvando…");
-  const resumo=R?{kwp:R.kwp,modulos:R.modulos,gerMes:R.gerMes,invest:R.invest,payback:R.payback,tir:R.tir,cliente:$("cliente").value}:null;
+  const resumo=R?{kwp:R.kwp,modulos:R.modulos,gerMes:R.gerMes,invest:R.invest,payback:R.payback,tir:R.tir,cliente:$("cliente").value,itens:R.kitItems.map(i=>({nome:i.nome,qtd:+(+i.qtd).toFixed(2),un:+(+i.un).toFixed(2),unid:i.unid}))}:null;
   const {error}=await SB.from("neg_orc_solar").upsert({negocio_id:NEG,dados:snapshot(),resumo,atualizado_por:UID,atualizado_em:new Date().toISOString()});
-  if(error){ DIRTY=true; setSv("Não salvou: "+error.message,"er"); } else setSv("Salvo ✓ "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),"ok");
+  if(error){ DIRTY=true; setSv("Não salvou: "+error.message,"er"); } else { setSv("Salvo ✓ "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),"ok"); if(R){ const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100; SB.from("negocios").update({valor,pot,un:"kWp"}).eq("id",NEG).then(()=>{ try{ parent.postMessage({orcsolar:"valor",neg:NEG,valor,pot},location.origin); }catch(e){} }); } }
 }
 function agendar(){ if(!READY||!NEG||!CAN_EDIT) return; DIRTY=true; setSv("Alterações não salvas…"); clearTimeout(SAVE_T); SAVE_T=setTimeout(salvar,1500); }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden){ clearTimeout(SAVE_T); salvar(); } });
@@ -1137,13 +1323,231 @@ async function integrar(){
   const neg=rn.data;
   if(ro.data&&ro.data.dados&&ro.data.dados.f){ restore(ro.data.dados); setSv("Orçamento carregado · "+new Date(ro.data.atualizado_em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})); }
   else if(neg){
-    $("cliente").value=neg.cliente||neg.titulo||""; $("pcid").value=neg.cidade||"";
+    $("cliente").value=neg.cliente||neg.titulo||""; $("pcid").value=neg.cidade||""; if(neg.cidade){ const mc=aplicarCidade(neg.cidade); if(mc&&!mc.exato) setSv("Cidade fora da lista: usei "+mc.k+" como irradiação. Ajuste se quiser."); }
     setSv("Novo orçamento para "+(neg.cliente||neg.titulo||"o negócio"));
   }
+  if(neg&&neg.cidade&&!$("pcid").value) aplicarCidade(neg.cidade);
   if(!CAN_EDIT){ setSv("Somente leitura (seu nível é “ver”)","er"); document.querySelectorAll("#view-ent input,#view-ent select,#view-ent textarea,#view-preco input,#view-preco select,#view-sis input,#view-sis select").forEach(e=>e.disabled=true); }
-  $("btn-aplicar").hidden=!CAN_EDIT;
+  $("btn-aplicar").hidden=true;
   if(ISADM) $("cfg-save").hidden=false; else if(!ISADM){ document.querySelector('[data-sub="com"]'); }
-  READY=true; calc(); renderPreco(); { const ab=({proposta:'prop'})[QS.get('aba')]||QS.get('aba'); if(ab&&VIEWS.includes(ab)) show(ab); }
+  READY=true; carregarBaseTextos(); calc(); renderPreco(); { const ab=({proposta:'prop'})[QS.get('aba')]||QS.get('aba'); if(ab&&VIEWS.includes(ab)) show(ab); }
 }
+
+/* ============ v3: cidade, fatura, datasheet, texto do distribuidor, logos ============ */
+const norm = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+function loadScriptJs(src){ return new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("falha ao carregar "+src)); document.head.appendChild(s); }); }
+function mergeDefaults(){
+  DEF.modulos.forEach(m=>{ if(!CONFIG.modulos.some(x=>x.id===m.id)) CONFIG.modulos.push(clone(m)); });
+  CONFIG.prop = Object.assign(clone(DEF.prop), CONFIG.prop||{});
+  if(!(CONFIG.prop.bancos||[]).length) CONFIG.prop.bancos = clone(DEF.prop.bancos);
+}
+mergeDefaults();
+
+/* ---- cidade do negócio -> irradiação ---- */
+function cidadeMatch(txt){
+  if(!txt) return null;
+  const t=norm(txt), mu=t.match(/(?:\/|-|,|\s)\s*([a-z]{2})\s*$/), uf=mu?mu[1].toUpperCase():"";
+  const nome=norm(t.replace(/\s*[\/\-,]\s*[a-z]{2}\s*$/,"").replace(/\(.*?\)/g,"")).replace(/\s+[a-z]{2}$/,m=>uf&&m.trim().toUpperCase()===uf?"":m);
+  const ks=Object.keys(CIDADES);
+  const ex=ks.find(c=>norm(c.replace(/\s*\(.*\)/,""))===nome && (!uf||c.includes("("+uf+")")));
+  if(ex) return {k:ex,exato:true};
+  const u=uf||"RS", mesmaUF=ks.filter(c=>c.includes("("+u+")"));
+  if(!mesmaUF.length) return null;
+  return {k: u==="RS"&&CIDADES["Passo Fundo (RS)"] ? "Passo Fundo (RS)" : mesmaUF[0], exato:false};
+}
+function aplicarCidade(txt){
+  const m=cidadeMatch(txt); if(!m) return null;
+  $("cidade").value=m.k; setHspm(monthlyFor(m.k));
+  if(!$("pcid").value) $("pcid").value=txt;
+  return m;
+}
+
+/* ---- leitura de PDF (pdf.js do projeto) ---- */
+async function pdfDoc(file){
+  if(!window.pdfjsLib) await loadScriptJs("vendor/pdf.min.js");
+  if(pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc="vendor/pdf.worker.min.js";
+  return pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+}
+async function pdfLinhas(pdf,paginas){
+  const out=[];
+  for(let p=1;p<=Math.min(pdf.numPages,paginas||2);p++){
+    const pg=await pdf.getPage(p), tc=await pg.getTextContent(), rows={};
+    tc.items.forEach(it=>{ if(!it.str||!it.str.trim()) return; const y=Math.round(it.transform[5]/3); (rows[y]=rows[y]||[]).push({x:it.transform[4],w:it.width||0,s:it.str}); });
+    Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      const its=rows[y].sort((a,b)=>a.x-b.x); let line="", end=null;
+      its.forEach(i=>{ line += (end!==null && i.x-end>6 ? "   " : (end!==null?" ":"")) + i.s; end=i.x+i.w; });
+      out.push(line.replace(/\s+$/,""));
+    });
+  }
+  return out;
+}
+
+/* ---- fatura ---- */
+const MESES_ABR=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+function brNum(s){ if(s==null) return NaN; s=String(s).trim(); return parseFloat(s.includes(",")?s.replace(/\./g,"").replace(",","."):s); }
+function classeDeTexto(t){
+  t=norm(t);
+  if(/baixa renda/.test(t)) return "B1RBR";
+  if(/cooperativa/.test(t)) return "B2COOP";
+  if(/irriga/.test(t)) return "B2IRR";
+  if(/rural/.test(t)) return "B2R";
+  if(/ilumina/.test(t)) return "B4";
+  if(/comercial|industrial|poder publico|servico publico|demais/.test(t)) return "B3";
+  if(/resid/.test(t)) return "B1R";
+  return "";
+}
+function parseFatura(linhas){
+  const L=linhas, T=L.join("\n"), o={avisos:[]};
+  const proib=/DISTRIBUIDORA|COOPERATIVA|ENERGIA|DANF|DOCUMENTO|FISCAL|CNPJ|RGE|COPREL|CPFL|CEMIG|ENEL|CELESC|COPEL|EQUATORIAL|NEOENERGIA|ELEKTRO|LIGHT|ENERGISA|AVENIDA|RUA\b/;
+  for(const l of L.slice(0,50)){ const s=l.trim(); if(/^[A-ZÀ-Ú][A-ZÀ-Ú .'\-]{5,}$/.test(s) && s.split(/\s+/).length>=2 && !proib.test(s) && !/\d/.test(s)){ o.nome=s.replace(/\b([A-ZÀ-Ú])([A-ZÀ-Ú]*)/g,(m,a,b)=>a+b.toLowerCase()).replace(/\b(Da|De|Do|Dos|Das|E)\b/g,x=>x.toLowerCase()); const i=L.indexOf(l); const nx=(L[i+1]||"").trim(); if(nx && /\d/.test(nx) && !/CPF|CNPJ/i.test(nx)) o.end=nx.replace(/\s*-\s*$/,""); break; } }
+  let m;
+  if((m=T.match(/(\d{6,12})\s+Energia Ativa/i))||(m=T.match(/(\d{5,12})\s+CONSUMO\s+kWh/i))||(m=T.match(/(?:Unidade Consumidora|N[uú]mero da UC|\bUC\b)\D{0,25}(\d{6,12})/i))) o.uc=m[1];
+  const cn=norm(T); const concs=CONFIG.conc.slice().sort((a,b)=>b.nome.length-a.nome.length);
+  const hit=concs.find(c=>c.nome.length>=3 && new RegExp('(^|[^a-z0-9])'+norm(c.nome).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'([^a-z0-9]|$)').test(cn)); if(hit) o.conc=hit; else o.avisos.push("Concessionária não reconhecida: escolha na lista.");
+  if((m=T.match(/Classifica[cç][aã]o:\s*([^\n]+?)(?:\s{3,}|$)/i))) o.classe=classeDeTexto(m[1]);
+  if(!o.classe && (m=T.match(/(RESIDENCIAL\s*\/\s*\w+|COMERCIAL\s*\/\s*\w+|RURAL\s*\/\s*\w+|INDUSTRIAL\s*\/\s*\w+)/i))) o.classe=classeDeTexto(m[1]);
+  if((m=T.match(/(Monof[aá]sico|Bif[aá]sico|Trif[aá]sico)/i))){ const x=norm(m[1]); o.padrao = x.startsWith("mono")?"30":x.startsWith("bi")?"50":"100"; }
+  const lc=L.find(l=>/(Energia Ativa-kWh|CONSUMO\s+kWh)/i.test(l) && /\d{3,}\s+\d{3,}\s+\d+(?:,\d+)?\s+\d+/.test(l)) || L.find(l=>/(Energia Ativa-kWh|CONSUMO\s+kWh)/i.test(l) && /\d/.test(l));
+  if(lc){ const mm=lc.match(/\d{3,}\s+\d{3,}\s+\d+(?:,\d+)?\s+(\d+(?:[.,]\d+)?)/); if(mm) o.consumo=Math.round(brNum(mm[1])); else { const ns=lc.match(/\d+(?:[.,]\d+)?/g); const last=ns&&ns[ns.length-1]; if(last) o.consumo=Math.round(brNum(last)); } }
+  if(!o.consumo && (m=T.match(/Consumo[^\n]*kWh\s+(\d+(?:[.,]\d+)?)/i))) o.consumo=Math.round(brNum(m[1]));
+  const inj=L.find(l=>/Energia\s+Injetada/i.test(l)&&/\d/.test(l)&&!/TUSD|TE\b/i.test(l)); if(inj){ const ns=inj.match(/\d+(?:[.,]\d+)?/g); o.injetada=Math.round(brNum(ns[ns.length-1])); o.avisos.push("A fatura registra energia injetada ("+o.injetada+" kWh): o cliente já tem geração própria."); }
+  // tarifa
+  const tl=l=>{ const ds=(l.match(/\d+,\d{5,8}/g)||[]).map(brNum); return ds; };
+  const lt=L.find(l=>/Consumo.*TUSD|CONSUMO TUSD/i.test(l)&&!/Injetada/i.test(l)), le=L.find(l=>/Consumo\s*-?\s*TE|CONSUMO TE/i.test(l)&&!/Injetada/i.test(l));
+  if(lt&&le){ const a=tl(lt), b=tl(le); if(a.length&&b.length){
+      if(a.length>=2&&b.length>=2){ o.tarifa=+(a[1]+b[1]).toFixed(4); o.tarifaTipo="fatura"; }
+      else { const ic=((hit&&hit.icms)||17)/100; o.tarifa=+((a[0]+b[0])/((1-ic)*0.95)).toFixed(4); o.tarifaTipo="estimada"; o.avisos.push("A fatura traz só a tarifa sem tributos ("+num(a[0]+b[0],4)+"). Tarifa com impostos estimada com o ICMS da concessionária: confira."); } } }
+  if((m=T.match(/([A-Za-z]{3})\/(\d{4})[^\n]*?R\$\s*([\d.]+,\d{2})/))||(m=T.match(/(\d{2})\/(\d{4})\s+R\$\s*([\d.]+,\d{2})/))){
+    const mm=/^\d+$/.test(m[1])?MESES_ABR[+m[1]-1]:norm(m[1]).slice(0,3); o.mes=mm+"/"+m[2]; o.valor="R$ "+m[3];
+  }
+  if((m=T.match(/(\d{5}-\d{3})\s+([A-ZÀ-Ú][A-ZÀ-Ú ]+?)\s+([A-Z]{2})\b/))){ o.cidade=m[2].trim(); o.uf=m[3]; o.cep=m[1]; }
+  else if((m=T.match(/([A-ZÀ-Ú][A-ZÀ-Ú ]+?)\s*-\s*([A-Z]{2})\s*-\s*CEP\s*:?\s*(\d{5}-\d{3})/))){ o.cidade=m[1].trim(); o.uf=m[2]; o.cep=m[3]; }
+  return o;
+}
+const capNome = s => String(s||"").toLowerCase().replace(/(^|\s)(\S)/g,(a,b,c)=>b+c.toUpperCase()).replace(/\b(Da|De|Do|Dos|Das|E)\b/g,x=>x.toLowerCase());
+async function importarFatura(file){
+  const msg=$("fat-msg"); msg.textContent="Lendo a fatura…";
+  try{
+    const pdf=await pdfDoc(file), linhas=await pdfLinhas(pdf,2), o=parseFatura(linhas), pre=[];
+    if(!(o.consumo||o.tarifa||o.nome)){ msg.textContent="Não encontrei dados nesse PDF. Preencha manualmente."; return; }
+    const put=(id,val,rot)=>{ if(val!=null&&val!==""&&!Number.isNaN(val)){ $(id).value=val; pre.push(rot); } };
+    if(o.nome) put("cliente",o.nome,"cliente"); put("ucnum",o.uc,"UC");
+    if(o.conc){ $("concsel").value=o.conc.id; applyConc(); pre.push("concessionária"); }
+    if(o.classe){ $("pclasse").value=o.classe; pre.push("classe"); }
+    if(o.padrao){ $("padrao").value=o.padrao; pre.push("padrão de entrada"); }
+    if(o.consumo){ $("consumo").value=o.consumo; pre.push("consumo"); }
+    if(o.tarifa){ $("tarifa").value=o.tarifa; pre.push("tarifa"+(o.tarifaTipo==="estimada"?" (estimada)":"")); }
+    put("pref",o.mes,"mês"); put("pfat",o.valor,"valor");
+    if(o.end&&!$("pend").value) $("pend").value=capNome(o.end);
+    if(o.cep&&!$("pcep").value) $("pcep").value=o.cep;
+    if(o.cidade){ const t=capNome(o.cidade)+(o.uf?" / "+o.uf:""); if(!$("pcid").value) $("pcid").value=t; const c=aplicarCidade(t); if(c) pre.push("irradiação ("+c.k+(c.exato?"":", cidade mais próxima da lista")+")"); }
+    if(o.classe && o.classe!=="B1R") o.avisos.push("Classe diferente de B1 residencial: a tarifa cadastrada é B1. Confira a tarifa na fatura.");
+    o.avisos.push("Consumo mês a mês não vem no texto do PDF (histórico é gráfico). Preencha em “Consumo mês a mês” se quiser.");
+    msg.innerHTML=esc("Importado: "+pre.join(", ")+". ")+o.avisos.map(a=>"<br>• "+esc(a)).join("");
+    calc();
+  }catch(e){ console.error(e); msg.textContent="Não consegui ler o PDF ("+e.message+"). Preencha manualmente."; }
+}
+$("btn-fat").onclick=()=>$("fat-file").click();
+$("fat-file").addEventListener("change",e=>{ const f=e.target.files[0]; if(f) importarFatura(f); e.target.value=""; });
+
+/* ---- datasheet ---- */
+const MARCAS=["Canadian Solar","Jinko","Trina","JA Solar","LONGi","Risen","Astronergy","DAH","ZNShine","Sungrow","Growatt","Huawei","Fronius","Deye","WEG","Solis","GoodWe","Hoymiles","SMA","ABB","Intelbras","Sofar","Refusol","Sicon","Elgin","BYD","Tongwei","Aiko","Q CELLS","Hanwha","Yingli","Sineng","Solplanet","APsystems"];
+function tipoDS(t){ const i=(t.match(/inverter|inversor|MPPT|AC output|output power/gi)||[]).length, m=(t.match(/\bVoc\b|\bIsc\b|\bPmax\b|module|m[oó]dulo|monocrystalline|TOPCon|bifacial/gi)||[]).length; return m>=i?"modulo":"inversor"; }
+function pegaNum(t,res){ for(const re of res){ const m=t.match(re); if(m){ const x=brNum(m[1]); if(isFinite(x)) return x; } } return null; }
+function parseDS(txt,fname){
+  const t=txt.replace(/\s+/g," "), tipo=tipoDS(t), marca=(MARCAS.find(b=>norm(t).includes(norm(b)))||"").trim(), base=fname.replace(/\.pdf$/i,"").replace(/[_]+/g," ");
+  if(tipo==="modulo"){
+    const wp=pegaNum(t,[/(?:Pmax|P\s*max|Maximum Power|Pot[eê]ncia m[aá]xima)[^0-9]{0,40}(\d{3})\b/i,/\b(\d{3})\s*W[pP]?\b/])||pegaNum(base,[/(\d{3})\s*W/i,/-(\d{3})/]);
+    const dim=t.match(/(\d{4})\s*[x×*]\s*(\d{3,4})\s*[x×*]\s*\d{2}/);
+    return {tipo,marca:marca||"",modelo:(wp?wp+" Wp":base.slice(0,24)),wp:wp||0,comp:dim?+dim[1]:0,larg:dim?+dim[2]:0,
+      voc:pegaNum(t,[/\bVoc\b[^0-9]{0,25}(\d{2}[.,]\d{1,2})/i,/Open[- ]circuit voltage[^0-9]{0,25}(\d{2}[.,]\d{1,2})/i])||0,
+      isc:pegaNum(t,[/\bIsc\b[^0-9]{0,25}(\d{1,2}[.,]\d{1,2})/i,/Short[- ]circuit current[^0-9]{0,25}(\d{1,2}[.,]\d{1,2})/i])||0,
+      vmp:pegaNum(t,[/\bVmp\b[^0-9]{0,25}(\d{2}[.,]\d{1,2})/i,/Voltage at Pmax[^0-9]{0,25}(\d{2}[.,]\d{1,2})/i])||0,
+      imp:pegaNum(t,[/\bImp\b[^0-9]{0,25}(\d{1,2}[.,]\d{1,2})/i,/Current at Pmax[^0-9]{0,25}(\d{1,2}[.,]\d{1,2})/i])||0,
+      coefVoc:pegaNum(t,[/(?:coefficient of Voc|Coef[^ ]* de Voc)[^-0-9]{0,25}(-?\d[.,]\d+)/i])||-0.25,
+      coefP:pegaNum(t,[/(?:coefficient of Pmax|Coef[^ ]* de Pmax)[^-0-9]{0,25}(-?\d[.,]\d+)/i])||-0.29,garantia:25,preco:0};
+  }
+  const kw=pegaNum(t,[/(?:Rated|Nominal|Max\.?)\s*(?:AC\s*)?(?:output\s*)?(?:active\s*)?power[^0-9]{0,30}(\d+(?:[.,]\d+)?)\s*kW/i,/Pot[eê]ncia (?:nominal )?CA[^0-9]{0,20}(\d+(?:[.,]\d+)?)\s*kW/i,/(\d+(?:[.,]\d+)?)\s*kW/i])||pegaNum(base,[/(\d+(?:[.,]\d+)?)\s*kW/i])||0;
+  const mppt=pegaNum(t,[/(\d)\s*MPPT/i,/(?:Number of MPPT|MPPT)[^0-9]{0,20}(\d)\b/i])||2;
+  const fases=/three[- ]phase|trif[aá]sico|3[- ]phase|3P\b/i.test(t)?3:/single[- ]phase|monof[aá]sico/i.test(t)?1:(kw>=10?3:1);
+  return {tipo,marca,modelo:base.slice(0,28)||(kw+" kW"),kw,fases,mppt,strMppt:pegaNum(t,[/strings? per MPPT[^0-9]{0,15}(\d)/i,/(\d)\s*strings? por MPPT/i])||1,
+    vmax:pegaNum(t,[/Max(?:imum)?\.?\s*(?:DC\s*)?(?:input\s*)?voltage[^0-9]{0,20}(\d{3,4})/i])||(fases===3?1100:600),
+    vmin:pegaNum(t,[/MPPT[^0-9]{0,30}(?:range|voltage)[^0-9]{0,20}(\d{2,3})/i,/Start[- ]up voltage[^0-9]{0,15}(\d{2,3})/i])||(fases===3?180:80),
+    iscMax:pegaNum(t,[/Max(?:imum)?\.?\s*(?:short[- ]circuit|input)\s*current[^0-9]{0,25}(\d{2}(?:[.,]\d)?)/i])||(fases===3?20:16),preco:0};
+}
+async function fotoPDF(pdf){
+  try{ const pg=await pdf.getPage(1), vp0=pg.getViewport({scale:1}), esc_=520/vp0.width, vp=pg.getViewport({scale:esc_});
+    const c=document.createElement("canvas"); c.width=Math.round(vp.width); c.height=Math.round(vp.height*0.5);
+    const ctx=c.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,c.width,c.height);
+    await pg.render({canvasContext:ctx,viewport:vp}).promise;
+    return c.toDataURL("image/jpeg",0.72);
+  }catch(e){ return ""; }
+}
+async function importarDatasheets(files){
+  const msg=$("ds-msg"); const res=[];
+  if(NEG && !ISADM){ msg.textContent="Somente administrador grava equipamentos na base."; return; }
+  for(const f of files){
+    msg.textContent="Lendo "+f.name+"…";
+    try{
+      const pdf=await pdfDoc(f), txt=(await pdfLinhas(pdf,2)).join(" "), d=parseDS(txt,f.name), foto=await fotoPDF(pdf);
+      const base={id:uid(d.tipo==="modulo"?"m":"i"),foto,ds:{arquivo:f.name,em:new Date().toISOString().slice(0,10)}};
+      const novo=Object.assign(base,d); delete novo.tipo;
+      (d.tipo==="modulo"?CONFIG.modulos:CONFIG.inversores).push(novo);
+      res.push((d.tipo==="modulo"?"módulo ":"inversor ")+(novo.marca+" "+novo.modelo).trim());
+    }catch(e){ console.error(e); res.push(f.name+" (falhou)"); }
+  }
+  Object.keys(EDITORS).forEach(renderEditorTable); refreshSelects(); saveCfg(); calc();
+  msg.textContent="Importado: "+res.join(", ")+". Revise os valores em Configurações → Equipamentos.";
+  if(NEG && ISADM) $("cfg-save").click();
+}
+$("btn-ds").onclick=()=>$("ds-file").click();
+$("ds-file").addEventListener("change",e=>{ const fs=[...e.target.files]; if(fs.length) importarDatasheets(fs); e.target.value=""; });
+
+/* ---- OCR do print do distribuidor + base de textos ---- */
+$("btn-ocr").onclick=()=>$("ocr-file").click();
+$("ocr-file").addEventListener("change",async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  $("txt-msg").textContent="Lendo o print… (pode levar alguns segundos)";
+  try{
+    if(!window.Tesseract) await loadScriptJs("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js");
+    const r=await Tesseract.recognize(f,"por");
+    $("disttxt").value=(($("disttxt").value?$("disttxt").value+"\n":"")+r.data.text).trim(); $("txt-msg").textContent="Texto extraído. Revise e ajuste antes de guardar."; calc();
+  }catch(err){ console.error(err); $("txt-msg").textContent="Não consegui ler a imagem aqui. Cole o texto manualmente."; }
+});
+async function carregarBaseTextos(){
+  if(!SB||!NEG) return;
+  let data=[]; try{ const r=await SB.from("solar_equip_textos").select("id,titulo,texto,criado_em").order("criado_em",{ascending:false}).limit(40); data=r.data||[]; }catch(e){}
+  window.TXTBASE=data;
+  $("txtbase").innerHTML='<option value="">Base de textos salvos…</option>'+TXTBASE.map(t=>`<option value="${t.id}">${esc(t.titulo)}</option>`).join("");
+}
+$("txtbase").addEventListener("change",()=>{ const t=(window.TXTBASE||[]).find(x=>x.id===$("txtbase").value); if(t){ $("disttxt").value=t.texto; calc(); } });
+$("btn-txtsave").onclick=async()=>{
+  const tx=$("disttxt").value.trim(); if(!tx){ $("txt-msg").textContent="Nada para guardar."; return; }
+  if(!SB||!NEG||!CAN_EDIT){ $("txt-msg").textContent="Disponível só dentro do negócio, com permissão de edição."; return; }
+  const titulo=(($("cliente").value||"Sem cliente")+" · "+new Date().toLocaleDateString("pt-BR"));
+  const {error}=await SB.from("solar_equip_textos").insert({negocio_id:NEG,titulo,texto:tx});
+  $("txt-msg").textContent=error?("Não guardou: "+error.message):"Guardado na base de textos ✓"; if(!error) carregarBaseTextos();
+};
+
+/* ---- assinatura e logos dos bancos (Configurações) ---- */
+function imgParaDataUrl(file,maxW,tipo){
+  return new Promise((res,rej)=>{ const img=new Image(), u=URL.createObjectURL(file);
+    img.onload=()=>{ const W=Math.min(maxW,img.width), H=Math.round(img.height*W/img.width), c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); if(tipo==="jpg"){ x.fillStyle="#fff"; x.fillRect(0,0,W,H); } x.drawImage(img,0,0,W,H); URL.revokeObjectURL(u); res(c.toDataURL(tipo==="jpg"?"image/jpeg":"image/png",0.85)); };
+    img.onerror=()=>rej(new Error("imagem inválida")); img.src=u; });
+}
+function assinPrev(){ const im=(CONFIG.prop||{}).assin||"", e=$("assin-prev"); e.style.display=im?"block":"none"; if(im) e.src=im; }
+$("assin-file").addEventListener("change",async e=>{ const f=e.target.files[0]; if(!f) return; CONFIG.prop.assin=await imgParaDataUrl(f,520,"png"); saveCfg(); assinPrev(); calc(); });
+function renderBk(){
+  $("bk-logos").innerHTML=(CONFIG.prop.bancos||[]).map((b,i)=>`<label><b>${esc(b.nome)}</b>${b.logo?`<img src="${b.logo}" alt="">`:`<span class="mini" style="display:block">sem logo (mostra o nome)</span>`}<input type="file" accept="image/*" data-bk="${i}">${b.logo?`<button class="btn alt small" type="button" data-bkrm="${i}">Remover</button>`:""}</label>`).join("");
+}
+$("bk-logos").addEventListener("change",async e=>{ const i=e.target.dataset.bk; if(i==null||!e.target.files[0]) return; CONFIG.prop.bancos[+i].logo=await imgParaDataUrl(e.target.files[0],260,"png"); saveCfg(); renderBk(); calc(); });
+$("bk-logos").addEventListener("click",e=>{ const b=e.target.closest("[data-bkrm]"); if(!b) return; CONFIG.prop.bancos[+b.dataset.bkrm].logo=""; saveCfg(); renderBk(); calc(); });
+function initV3(){ renderBk(); assinPrev(); }
+initV3();
+function fillInvSel(){ const cur=$("invsel").value; $("invsel").innerHTML='<option value="auto">Automático (menor compatível)</option>'+CONFIG.inversores.map(i=>`<option value="${i.id}">${esc((i.marca+" "+i.modelo).trim())} · ${num(i.kw,1)} kW</option>`).join(""); if([...$("invsel").options].some(o=>o.value===cur)) $("invsel").value=cur; }
+fillInvSel();
+$("pr-modo").addEventListener("change",()=>{ if(typeof atualizarPrev==="function") atualizarPrev(); if(typeof agendar==="function") agendar(); });
+
+$("strip").style.display="none";
 
 integrar();
