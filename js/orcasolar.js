@@ -1492,21 +1492,27 @@ async function fotoPDF(pdf){
   }catch(e){ return ""; }
 }
 async function importarDatasheets(files){
-  const msg=$("ds-msg"); const res=[];
-  if(NEG && !ISADM){ msg.textContent="Somente administrador grava equipamentos na base."; return; }
+  const msg=$("ds-msg"); const res=[]; let mexp=false;
   for(const f of files){
     msg.textContent="Lendo "+f.name+"…";
     try{
-      const pdf=await pdfDoc(f), txt=(await pdfLinhas(pdf,2)).join(" "), d=parseDS(txt,f.name), foto=await fotoPDF(pdf);
-      const base={id:uid(d.tipo==="modulo"?"m":"i"),foto,ds:{arquivo:f.name,em:new Date().toISOString().slice(0,10)}};
-      const novo=Object.assign(base,d); delete novo.tipo;
-      (d.tipo==="modulo"?CONFIG.modulos:CONFIG.inversores).push(novo);
-      res.push((d.tipo==="modulo"?"módulo ":"inversor ")+(novo.marca+" "+novo.modelo).trim());
+      const pdf=await pdfDoc(f), txt=(await pdfLinhas(pdf,2)).join(" "), d=parseDS(txt,f.name);
+      if(d.tipo==="modulo"){
+        if(NEG && !ISADM){ res.push(f.name+" (módulo: só administrador grava na base)"); continue; }
+        const foto=await fotoPDF(pdf), novo=Object.assign({id:uid("m"),foto,ds:{arquivo:f.name,em:new Date().toISOString().slice(0,10)}},d); delete novo.tipo;
+        CONFIG.modulos.push(novo); mexp=true; res.push("módulo "+(novo.marca+" "+novo.modelo).trim()+" (usado nos dados do dimensionamento)");
+        Object.keys(EDITORS).forEach(renderEditorTable); refreshSelects(); $("modsel").value=novo.id; $("madd").value=0;
+      } else {
+        // inversor: não entra na seleção; vai para o campo de descrição do fornecedor
+        const nome=(d.marca+" "+d.modelo).trim(), linha="Inversor "+nome+(d.kw?" · "+num(d.kw,1)+" kW":"")+(d.fases?" · "+(d.fases===1?"monofásico":d.fases===2?"bifásico":"trifásico"):"")+(d.mppt?" · "+d.mppt+" MPPT":"")+(d.vmax?" · tensão máx. CC "+d.vmax+" V":"");
+        $("disttxt").value=(($("disttxt").value?$("disttxt").value+"\n":"")+linha).trim();
+        res.push("inversor "+nome+" (foi para a descrição, sem selecionar)");
+      }
     }catch(e){ console.error(e); res.push(f.name+" (falhou)"); }
   }
-  Object.keys(EDITORS).forEach(renderEditorTable); refreshSelects(); saveCfg(); calc();
-  msg.textContent="Importado: "+res.join(", ")+". Revise os valores em Configurações → Equipamentos.";
-  if(NEG && ISADM) $("cfg-save").click();
+  saveCfg(); calc();
+  msg.textContent="Importado: "+res.join("; ")+"."+(mexp?" Revise os valores do módulo em Configurações → Equipamentos.":"");
+  if(NEG && ISADM && mexp) $("cfg-save").click();
 }
 $("btn-ds").onclick=()=>$("ds-file").click();
 $("ds-file").addEventListener("change",e=>{ const fs=[...e.target.files]; if(fs.length) importarDatasheets(fs); e.target.value=""; });
