@@ -951,48 +951,14 @@ function paginasSeguro(nome, seg, total, startN, logo){
 
 /* ================= PROPOSTA v3: completa (uma etapa por página) e resumida ================= */
 function iconProd(t){
-  const bil=(a,b,c,d,u,v)=>{ const tx=a[0]+(b[0]-a[0])*u, ty=a[1]+(b[1]-a[1])*u, bx=d[0]+(c[0]-d[0])*u, by=d[1]+(c[1]-d[1])*u; return [tx+(bx-tx)*v, ty+(by-ty)*v]; };
-  const S=(x)=>`<svg viewBox="0 0 200 130" width="100%" height="100%" role="img" aria-hidden="true"><ellipse cx="100" cy="122" rx="74" ry="5" fill="#1d3140" opacity=".12"/>${x}</svg>`;
-  if(t==="mod"){
-    const TL=[66,12],TR=[150,12],BR=[178,112],BL=[28,112]; let g="";
-    for(let c=1;c<6;c++){ const a=bil(TL,TR,BR,BL,c/6,0), b=bil(TL,TR,BR,BL,c/6,1); g+=`<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#8fb6e6" stroke-width=".7"/>`; }
-    for(let r=1;r<10;r++){ const a=bil(TL,TR,BR,BL,0,r/10), b=bil(TL,TR,BR,BL,1,r/10); g+=`<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#8fb6e6" stroke-width=".7"/>`; }
-    for(let c=0;c<6;c++){ [.33,.66].forEach(f=>{ const a=bil(TL,TR,BR,BL,(c+f)/6,0), b=bil(TL,TR,BR,BL,(c+f)/6,1); g+=`<line x1="${a[0].toFixed(1)}" y1="${a[1].toFixed(1)}" x2="${b[0].toFixed(1)}" y2="${b[1].toFixed(1)}" stroke="#c9dcf2" stroke-width=".35" opacity=".7"/>`; }); }
-    return S(`<defs><linearGradient id="ilm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6bb8"/><stop offset="1" stop-color="#0d2b5e"/></linearGradient></defs>
-      <polygon points="${TL} ${TR} ${BR} ${BL}" fill="url(#ilm)" stroke="#d3d9df" stroke-width="5" stroke-linejoin="round"/>${g}
-      <polygon points="${bil(TL,TR,BR,BL,.05,.04)} ${bil(TL,TR,BR,BL,.45,.04)} ${bil(TL,TR,BR,BL,.22,.96)} ${bil(TL,TR,BR,BL,0,.96)}" fill="#fff" opacity=".13"/>
-      <polygon points="${TL} ${TR} ${BR} ${BL}" fill="none" stroke="#8d98a3" stroke-width=".8"/>`);
-  }
-  if(t==="inv"){
-    let fins=""; for(let k=0;k<9;k++) fins+=`<line x1="${144+k*2.6}" y1="26" x2="${144+k*2.6}" y2="104" stroke="#aeb8c2" stroke-width="1.1"/>`;
-    return S(`<defs><linearGradient id="ili" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fbfcfd"/><stop offset="1" stop-color="#d5dce3"/></linearGradient></defs>
-      <rect x="52" y="12" width="94" height="102" rx="11" fill="url(#ili)" stroke="#aab4be" stroke-width="1.5"/>
-      <rect x="142" y="22" width="26" height="84" rx="4" fill="#e3e8ed" stroke="#aab4be"/>${fins}
-      <rect x="66" y="26" width="66" height="34" rx="5" fill="#10303f"/><polyline points="72,48 82,38 92,48 102,38 112,48 122,38" fill="none" stroke="#5fd490" stroke-width="2.2" stroke-linejoin="round"/>
-      <circle cx="72" cy="72" r="3" fill="#33b36b"/><circle cx="84" cy="72" r="3" fill="#64ABDE"/><circle cx="96" cy="72" r="3" fill="#b8c1ca"/>
-      <rect x="66" y="84" width="40" height="7" rx="3" fill="#64ABDE"/><text x="68" y="104" font-size="8" font-weight="700" fill="#1D3140" font-family="Arial">ON</text>
-      ${[62,78,94,110].map(x=>`<rect x="${x}" y="114" width="8" height="9" rx="2" fill="#2b3640"/>`).join("")}`);
-  }
-  if(t==="cabo"){
-    const ell=(cx,cy,col)=>[0,1,2,3].map(k=>`<ellipse cx="${cx}" cy="${cy}" rx="${46-k*8}" ry="${30-k*5.5}" fill="none" stroke="${col}" stroke-width="6.5"/><ellipse cx="${cx}" cy="${cy-1.5}" rx="${46-k*8}" ry="${30-k*5.5}" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="1.4"/>`).join("");
-    return S(`${ell(86,82,"#1f2a33")}${ell(70,66,"#d9362c")}
-      <path d="M112 62 C130 56 140 40 160 36" fill="none" stroke="#d9362c" stroke-width="6.5" stroke-linecap="round"/><path d="M128 90 C146 90 152 74 166 70" fill="none" stroke="#1f2a33" stroke-width="6.5" stroke-linecap="round"/>
-      <rect x="158" y="28" width="30" height="15" rx="4" fill="#3b4650" stroke="#232c34"/><rect x="186" y="32" width="8" height="7" rx="2" fill="#c9a24b"/><rect x="164" y="62" width="30" height="15" rx="4" fill="#3b4650" stroke="#232c34"/><rect x="192" y="66" width="6" height="7" rx="2" fill="#c9a24b"/>`);
-  }
-  if(t==="estr"){
-    let tl=""; for(let r=0;r<6;r++) for(let c=0;c<10;c++) tl+=`<rect x="${6+c*19+(r%2?9:0)}" y="${6+r*18}" width="18" height="17" rx="5" fill="${(r+c)%3?"#c4573a":"#b84d31"}" stroke="#8e3a25" stroke-width=".8"/>`;
-    const rail=y=>`<rect x="6" y="${y}" width="188" height="9" rx="2" fill="url(#ile)" stroke="#8d98a3" stroke-width=".8"/>`;
-    return S(`<defs><linearGradient id="ile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".55" stop-color="#c3cbd3"/><stop offset="1" stop-color="#8e99a4"/></linearGradient></defs>
-      <rect x="0" y="0" width="200" height="118" rx="8" fill="#e9d3c8" opacity=".55"/>${tl}
-      ${[34,100,166].map(x=>`<rect x="${x}" y="40" width="5" height="62" rx="1" fill="#6c7782"/>`).join("")}${rail(44)}${rail(84)}
-      ${[48,100,152].map(x=>`<rect x="${x}" y="38" width="12" height="7" rx="1.5" fill="#dfe4e9" stroke="#8d98a3" stroke-width=".7"/><rect x="${x}" y="78" width="12" height="7" rx="1.5" fill="#dfe4e9" stroke="#8d98a3" stroke-width=".7"/>`).join("")}`);
-  }
-  if(t==="prot"){
-    const row=y=>[0,1,2,3].map(k=>`<rect x="${64+k*19}" y="${y}" width="16" height="24" rx="2" fill="#fbfcfd" stroke="#8d98a3"/><rect x="${69+k*19}" y="${y+5}" width="6" height="9" rx="1" fill="#26313b"/><rect x="${66+k*19}" y="${y+17}" width="12" height="3" fill="${k===3?"#d9362c":"#64ABDE"}"/>`).join("")+`<rect x="58" y="${y+26}" width="88" height="2.4" fill="#aab4be"/>`;
-    return S(`<rect x="48" y="8" width="104" height="108" rx="9" fill="#e8ecf0" stroke="#9aa5b0" stroke-width="2"/><rect x="56" y="16" width="88" height="92" rx="5" fill="#f6f8fa" stroke="#c4ccd4"/>${row(24)}${row(56)}${row(86)}
-      ${[[52,12],[148,12],[52,112],[148,112]].map(q=>`<circle cx="${q[0]}" cy="${q[1]}" r="2" fill="#7d8893"/>`).join("")}`);
-  }
-  return S(`<rect x="50" y="20" width="100" height="80" rx="8" fill="#eef5fb" stroke="#64ABDE" stroke-width="2"/>`);
+  const a='fill="#64ABDE" fill-opacity=".28"', s='stroke="#1D3140" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+  const W=x=>`<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true">${x}</svg>`;
+  if(t==="mod") return W(`<path d="M12 8 H38 L42 36 H8 Z" ${a} ${s}/><path d="M18.5 8 L16 36 M25 8 V36 M31.5 8 L34 36 M10 15.5 H40 M9 26 H41" ${s} stroke-width="1.4"/><path d="M24 36 V42 M16 42 H32" ${s}/>`);
+  if(t==="inv") return W(`<rect x="10" y="6" width="28" height="34" rx="5" ${a} ${s}/><path d="M15 19 q3-6 6 0 t6 0 t6 0" ${s}/><circle cx="16" cy="29" r="1.6" fill="#1D3140"/><circle cx="22" cy="29" r="1.6" fill="#64ABDE"/><path d="M16 44 V40 M24 44 V40 M32 44 V40" ${s}/>`);
+  if(t==="cabo") return W(`<ellipse cx="20" cy="26" rx="14" ry="10" ${s}/><ellipse cx="20" cy="26" rx="8" ry="5" ${s}/><path d="M33 20 C38 16 40 14 44 14 M34 28 C38 30 41 31 44 31" ${s}/><rect x="40" y="10" width="6" height="8" rx="2" ${a} ${s} stroke-width="1.8"/>`);
+  if(t==="estr") return W(`<path d="M4 20 L24 8 L44 20" ${s}/><path d="M9 24 H39 M9 33 H39" ${s} stroke-width="3.2"/><path d="M15 24 V40 M24 24 V40 M33 24 V40" ${s}/><rect x="13" y="21" width="4" height="3" ${a} ${s} stroke-width="1.4"/><rect x="31" y="21" width="4" height="3" ${a} ${s} stroke-width="1.4"/>`);
+  if(t==="prot") return W(`<rect x="8" y="5" width="32" height="38" rx="4" ${s}/><rect x="13" y="11" width="6" height="11" rx="1" ${a} ${s} stroke-width="1.6"/><rect x="21" y="11" width="6" height="11" rx="1" ${a} ${s} stroke-width="1.6"/><rect x="29" y="11" width="6" height="11" rx="1" ${a} ${s} stroke-width="1.6"/><path d="M13 30 H35 M13 36 H35" ${s} stroke-width="1.6"/>`);
+  return W(`<path d="M6 22 L24 8 L42 22 V40 H6 Z" ${a} ${s}/><path d="M25 18 L19 28 H26 L22 37" ${s}/>`);
 }
 function capaModelo(M,pill,nome,local){
   const k=210/M.W, mm=v=>(v*k).toFixed(2)+"mm", bx=M.bar[0], by=M.bar[1], bl=M.bar[2], left=bx+35*M.W/1055;
@@ -1137,26 +1103,25 @@ function propostaHTML(){
     const ger=`<h2>Geração de energia</h2>${chartGenSvg}<table class="data"><thead><tr><th>Mês</th><th>Geração (kWh)</th><th>Consumo (kWh)</th><th>Saldo (kWh)</th></tr></thead><tbody>${meses}</tbody></table>
       <p class="small">A energia gerada acima do consumo vira crédito na rede, válido por 60 meses. Estimativa com irradiação de ${num(r.hsp,2)} kWh/m²·dia e perdas de ${num((1-r.PR)*100,1)}%.</p>`;
     const proj=`<h2>Projeção anual</h2><h3 class="sub s0">Conta de energia antes e depois (1º ano)</h3>${eco3}<p class="small" style="margin-bottom:8px">Estimativa sem bandeira tarifária, com o Fio B escalonado pela Lei 14.300.</p><table class="data tight"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th><th>Acumulado</th></tr></thead><tbody>${r.rows.map(o=>{const sem=r.cons*12*o.t, com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td>${brl(o.eco)}</td><td class="${o.acum>=0?"":"neg"}">${brl(o.acum)}</td></tr>`}).join("")}</tbody></table><p class="small">${basesTxt(r)}</p>`;
-    const dist=($("disttxt").value||"").trim();
-    const distLinhas=dist.split(/\n+/).map(s=>s.trim()).filter(Boolean).slice(0,30);
-    const CATS=[["mod",/m[óo]dulo|painel|placa|fotovolt|\bwp\b|bifacial|half.?cell|topcon|n-?type/i],["inv",/inversor|micro.?inversor/i],["estr",/estrutura|perfil|trilho|fixador|gancho|grampo|parafuso|suporte/i],["cabo",/cabo|conector|mc4|fio\b|eletroduto|terminal/i],["prot",/string.?box|\bdps\b|disjuntor|prote[çc]|quadro|aterramento|haste|\bdr\b/i]];
-    const porCat={mod:[],inv:[],estr:[],cabo:[],prot:[]}, sobra=[];
+    const limpa=l=>l.replace(/^\s*\d{5,}\s*[–—-]\s*/,"").replace(/^[–—-]\s*/,"").trim();
+    const distLinhas=($("disttxt").value||"").split(/\n+/).map(limpa).filter(l=>l&&!/frete/i.test(l)).slice(0,40);
+    const CATS=[["mod",/m[óo]dulo|painel|placa|fotovolt|\bwp\b|bifacial|half.?cell|topcon|n-?type|gokin|jinko|trina|canadian|longi/i],["inv",/inversor|micro.?inversor|\bsf\s?\d+k|sofar|growatt|fronius|goodwe|deye|solis|\bmppt\b/i],["estr",/estrutura|perfil|trilho|minitrilho|fixador|gancho|grampo|parafuso|suporte/i],["cabo",/cabo|conector|mc4|fio\b|eletroduto|terminal|materiais?\s*ca\b/i],["prot",/string.?box|\bdps\b|disjuntor|prote[çc]|quadro|aterramento|haste|\bdr\b/i],["inst",/projeto|m[ãa]o.?de.?obra|m[ãa]o obra|instala|homolog|\bart\b/i]];
+    const porCat={mod:[],inv:[],estr:[],cabo:[],prot:[],inst:[]}, sobra=[];
     distLinhas.forEach(l=>{ const c=CATS.find(x=>x[1].test(l)); if(c) porCat[c[0]].push(l); else sobra.push(l); });
-    const li=a_=>a_.map(x=>`<li>${typeof x==="string"&&x.indexOf("<")<0?pesc(x):x}</li>`).join("");
-    const card=(ic,titulo,sub,base,extra,foto)=>`<div class="eqc"><div class="ph0">${foto?`<img src="${foto}" alt="">`:iconProd(ic)}</div><h4>${titulo}</h4>${sub?`<b>${pesc(sub)}</b>`:""}<ul>${li(base)}${li(extra.map(x=>pesc(x)))}</ul></div>`;
-    const faixaMod=`${num(r.kwp,2)} kWp no total`;
-    const cards=[
-      card("mod",`Módulos fotovoltaicos · ${r.modulos} un.`,(mod.marca+" "+mod.modelo).trim(),[`Potência ${mod.wp} Wp · ${faixaMod}`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Garantia de produto e de desempenho conforme o fabricante`],porCat.mod,mod.foto),
-      card("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`,`Relação CC/CA ${num(r.ratio,2)}`],porCat.inv,inv.foto),
-      card("estr","Estrutura de fixação","",[`Para ${pesc(r.tel.nome).toLowerCase()}: ${r.modulos} módulos`,`Perfis e fixadores em alumínio/aço inox, conforme o telhado`],porCat.estr),
-      card("cabo","Cabos e conectores","",[`Cabos CC solares e conectores MC4 para ${num(r.kwp,2)} kWp`,`Cabeamento CA até o quadro de entrada, conforme projeto`],porCat.cabo),
-      card("prot","String box e proteções","",[`Proteções CC e CA: DPS e disjuntores`,`Aterramento do sistema conforme projeto e normas da concessionária`],porCat.prot)
+    const li=a_=>a_.map(x=>`<li>${x}</li>`).join("");
+    const row=(ic,titulo,sub,base,extra)=>`<div class="eqr"><div class="ico">${iconProd(ic)}</div><div class="eqt"><h4>${titulo}</h4>${sub?`<b>${pesc(sub)}</b>`:""}</div><ul>${li(base.map(x=>pesc(x)))}${li(extra.map(x=>pesc(x)))}</ul></div>`;
+    const rows=[
+      row("mod",`Módulos fotovoltaicos · ${r.modulos} un.`,(mod.marca+" "+mod.modelo).trim()||`${mod.wp} Wp`,[`Potência ${mod.wp} Wp · ${num(r.kwp,2)} kWp no total`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Garantia de produto e de desempenho conforme o fabricante`],porCat.mod),
+      row("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`,`Relação CC/CA ${num(r.ratio,2)}`],porCat.inv),
+      row("estr","Estrutura de fixação",`Para ${r.tel.nome.toLowerCase()}`,[`${r.modulos} módulos fixados em perfis e fixadores`],porCat.estr),
+      row("cabo","Cabos e conectores","",[`Cabos CC solares e conectores MC4 para ${num(r.kwp,2)} kWp`,`Cabeamento CA até o quadro de entrada`],porCat.cabo),
+      row("prot","String box e proteções","",[`Proteções CC e CA: DPS e disjuntores`,`Aterramento conforme projeto e normas da concessionária`],porCat.prot),
+      row("inst","Projeto, ART, instalação e homologação","",[`Projeto elétrico com ART do responsável técnico`,`Instalação por equipe própria e comissionamento`,`Solicitação de acesso e homologação junto à concessionária`],porCat.inst)
     ];
-    const inst=`<div class="eqc inst"><h4>Projeto, ART, instalação e homologação</h4><ul><li>Projeto elétrico com ART do responsável técnico</li><li>Instalação por equipe própria e comissionamento do sistema</li><li>Solicitação de acesso e homologação junto à concessionária</li></ul></div>`;
     const prod=`<h2>Produtos e equipamentos</h2><p class="lead">Itens que compõem o seu sistema de ${num(r.kwp,2)} kWp.</p>
-      <div class="eq">${cards.join("")}${inst}</div>
-      ${sobra.length?`<h3 class="sub">Descrição do fornecedor</h3><div class="dist">${sobra.map(x=>`<p>${pesc(x)}</p>`).join("")}</div>`:""}
-      <p class="small">Ilustrações representativas dos equipamentos; as imagens reais e as especificações seguem os datasheets dos fabricantes. Marcas e modelos finais são confirmados na cotação antes da assinatura.</p>`;
+      <div class="eq">${rows.join("")}</div>
+      ${sobra.length?`<h3 class="sub">Outros itens do fornecedor</h3><div class="dist">${sobra.map(x=>`<p>${pesc(x)}</p>`).join("")}</div>`:""}
+      <p class="small">As especificações seguem os datasheets dos fabricantes. Marcas, modelos e quantidades finais são confirmados na cotação antes da assinatura.</p>`;
     const pag=`<h2>Investimento e pagamento</h2>
       <div class="total"><span>Valor total da proposta</span><strong>${brl2(r.invest)}</strong><em>${brl2(r.invest/(r.kwp*1000))} por Wp</em></div>
       <table class="data l"><thead><tr><th>Condição</th><th>Detalhes</th></tr></thead><tbody>
@@ -1287,7 +1252,12 @@ h2{font-size:23px;margin-bottom:13px}.h2b{margin-top:6mm}h3.sub{font-size:15.5px
 .cards3{gap:12px;margin:10px 0 12px}.cards3 div{padding:13px 14px}.cards3 h4{font-size:13.5px}.cards3 p{font-size:12px}
 ul.li{font-size:13px}ul.li li{margin:5px 0}.sobre{margin-top:16px}.sobre b{font-size:12px}.sobre p{font-size:11.5px}
 .callout{font-size:11.5px;padding:9px 13px}
-.eq{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.eq{display:block;margin-top:2px}
+.eqr{display:grid;grid-template-columns:17mm 52mm 1fr;column-gap:12px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line)}
+.eqr:last-child{border-bottom:0}
+.eqr .ico{width:17mm;height:17mm;border-radius:50%;background:var(--bl);border:1.5px solid var(--bm);padding:2.2mm}
+.eqr h4{margin:0 0 3px;font-size:13px;color:var(--dark);line-height:1.2}.eqr b{display:block;font-size:11.5px;color:var(--blue)}
+.eqr ul{margin:0;padding-left:15px;font-size:10.8px;color:var(--dark2)}.eqr li{margin:2px 0}
 .roomy .data td{padding:11px 12px;font-size:13.5px}.roomy .data th{padding:10px 12px;font-size:12px}.roomy .data.tight td{padding:8px 10px;font-size:12px}.roomy .total{padding:18px 22px;margin:14px 0 20px}.roomy .total strong{font-size:38px}.roomy h3.sub{margin-top:28px}.roomy .chart{max-height:96mm}.roomy .kv td{padding:12px 14px;font-size:13.5px}.roomy .kpis3 b,.roomy .kpis4 b{font-size:23px}.roomy .lead{font-size:14px}.roomy .cards3 p{font-size:12.5px}.roomy .small{font-size:11px;margin-top:10px}
 .eqc{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;display:grid;grid-template-columns:34mm 1fr;column-gap:11px;align-items:start}
 .eqc .ph0{grid-row:1/span 3;align-self:center;height:30mm;background:linear-gradient(180deg,#f4f8fc,#e6f0f9);border-radius:9px;display:grid;place-items:center;overflow:hidden}
