@@ -741,7 +741,7 @@ async function abrir(id,manter){
        <div class="g12">
         <label class="fld s5">Cliente<input value="${esc(c.cliente)}" ${dis} data-f="cliente" list="dlCli" autocomplete="off">${cliDl("dlCli",c.id)}</label>
         <label class="fld s3">Tipo de pessoa<select ${dis} data-cad="tipo_pessoa"><option value="">—</option><option value="PF" ${(c.cadastro||{}).tipo_pessoa==="PF"?"selected":""}>Pessoa física</option><option value="PJ" ${(c.cadastro||{}).tipo_pessoa==="PJ"?"selected":""}>Pessoa jurídica</option></select></label>
-        <label class="fld s4">Tipo de projeto<select ${dis} data-cad="tipo_projeto"><option value="">Rede aérea / padrão</option><option value="lot" ${(c.cadastro||{}).tipo_projeto==="lot"?"selected":""}>Loteamento subterrâneo</option></select></label>
+        <label class="fld s4">Tipo de projeto<select ${dis} data-cad="tipo_projeto"><option value="">Rede aérea / padrão</option><option value="lot" ${(c.cadastro||{}).tipo_projeto==="lot"?"selected":""}>Loteamento subterrâneo</option><option value="solar" ${(c.cadastro||{}).tipo_projeto==="solar"?"selected":""}>Orçamento solar</option></select></label>
         <label class="fld s4">CPF ou CNPJ<input value="${esc(fmtDoc((c.cadastro||{}).doc))}" ${dis} data-cad="doc" inputmode="numeric" maxlength="18" placeholder="000.000.000-00 ou 00.000.000/0000-00"></label>
         <label class="fld s4">Razão social (PJ)<input value="${esc((c.cadastro||{}).razao||"")}" ${dis} data-cad="razao"></label>
         <label class="fld s4">E-mail<input type="email" value="${esc((c.cadastro||{}).email||"")}" ${dis} data-cad="email"></label>
