@@ -32,6 +32,11 @@ Deno.serve(async (req) => {
   const montar = (c: Record<string, string>) => {
     const doc = String(c.doc || "").replace(/\D/g, "");
     const tipo = c.tipo_pessoa || (doc.length === 14 ? "PJ" : "PF");
+    // itens do orçamento solar (kit): cada linha vira um item de MATERIAIS GERAIS; valores escalados para fechar o total da proposta
+    const kit = Array.isArray(o.itens) ? (o.itens as Record<string, unknown>[]).filter((i) => +i.qtd > 0 && +i.un >= 0) : [];
+    const somaKit = kit.reduce((s, i) => s + (+i.qtd) * (+i.un), 0);
+    const fator = somaKit > 0 && +o.total > 0 ? (+o.total) / somaKit : 1;
+    const itens = kit.map((i) => ({ produto: { produto_id: prod.id, ...(prod.vid ? { variacao_id: prod.vid } : {}), nome_produto: "MATERIAIS GERAIS", detalhes: String(i.nome || "").slice(0, 200), quantidade: String(+(+i.qtd).toFixed(2)), ...(prod.tv ? { tipo_valor_id: prod.tv } : {}), valor_venda: money((+i.un) * fator), tipo_desconto: "R$", desconto_valor: "" } }));
     const corpo: Record<string, unknown> = { tipo_pessoa: tipo, nome: String(c.nome || "").trim() };
     if (tipo === "PJ") { corpo.razao_social = c.razao || corpo.nome; if (doc) corpo.cnpj = doc; } else if (doc) corpo.cpf = doc;
     if (c.email) corpo.email = c.email;
@@ -119,8 +124,8 @@ Deno.serve(async (req) => {
     const sitId = "7221156", prod = { id: "72926677", vid: "123633552", tv: "519224" as string | undefined };
     let ccId: string | undefined = "513555", lojaId: string | undefined;
     const lj = ((await gj("lojas?limite=50"))?.data || []) as Record<string, string>[];
-    const loja = lj.find((x) => solar ? /solar/i.test(norm(x.nome) + norm(x.razao_social)) : /el.trica|eletrica/i.test(norm(x.nome) + norm(x.razao_social)));
-    if (lj.length > 1 && !loja) return out({ ok: false, erro: "Não achei a empresa " + (solar ? "Solar" : "Elétrica") + " no Gestão Click. Empresas: " + lj.map((x) => x.nome).join(", ") });
+    const loja = solar ? (lj.find((x) => /vmc/i.test(norm(x.nome) + norm(x.razao_social))) || lj.find((x) => /solar/i.test(norm(x.nome) + norm(x.razao_social)))) : lj.find((x) => /el.trica|eletrica/i.test(norm(x.nome) + norm(x.razao_social)));
+    if (lj.length > 1 && !loja) return out({ ok: false, erro: "Não achei a empresa " + (solar ? "VMC (Solar)" : "Elétrica") + " no Gestão Click. Empresas: " + lj.map((x) => x.nome).join(", ") });
     lojaId = loja?.id;
     if (solar) { const cl = ((await gj("centros_custos?limite=50"))?.data || []) as Record<string, string>[]; ccId = cl.find((x) => /solar/i.test(x.nome))?.id || ccId; }
     const hoje = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
@@ -128,7 +133,7 @@ Deno.serve(async (req) => {
     const corpo: Record<string, unknown> = {
       cliente_id: String(o.cliente_gc_id), ...(v ? { vendedor_id: v.id } : {}), situacao_id: sitId, ...(lojaId ? { loja_id: lojaId } : {}), ...(ccId ? { centro_custo_id: ccId } : {}),
       data: hoje, previsao_entrega: hoje, validade: "30 DIAS", introducao: String(o.ref || ""),
-      produtos: (+o.total > 0 || +o.material > 0) ? [{ produto: { produto_id: prod.id, ...(prod.vid ? { variacao_id: prod.vid } : {}), nome_produto: "MATERIAIS GERAIS", detalhes: +o.total > 0 ? [String(o.tipo || "").toUpperCase(), String(o.titulo || "")].filter(Boolean).join(" · ") : String(o.titulo || ""), quantidade: "1", ...(prod.tv ? { tipo_valor_id: prod.tv } : {}), valor_venda: money(+o.total > 0 ? +o.total : +o.material), tipo_desconto: "R$", desconto_valor: "" } }] : [],
+      produtos: itens.length ? itens : (+o.total > 0 || +o.material > 0) ? [{ produto: { produto_id: prod.id, ...(prod.vid ? { variacao_id: prod.vid } : {}), nome_produto: "MATERIAIS GERAIS", detalhes: +o.total > 0 ? [String(o.tipo || "").toUpperCase(), String(o.titulo || "")].filter(Boolean).join(" · ") : String(o.titulo || ""), quantidade: "1", ...(prod.tv ? { tipo_valor_id: prod.tv } : {}), valor_venda: money(+o.total > 0 ? +o.total : +o.material), tipo_desconto: "R$", desconto_valor: "" } }] : [],
       servicos: srv ? [{ servico: { servico_id: srv.id, nome_servico: alvo!.nome, detalhes: String(o.titulo || ""), quantidade: "1", valor_venda: money(alvo!.valor), tipo_desconto: "R$", desconto_valor: "" } }] : [],
     };
     const atualizar = b.acao === "orcamento_atualizar";

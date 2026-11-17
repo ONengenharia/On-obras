@@ -385,7 +385,7 @@ async function carregarTudo(){
 }
 async function carregarAvisos(){const {data}=await sb.from("notificacoes").select("*").order("criado_em",{ascending:false}).limit(150);const T=data||[];
   INBOX=inboxTudo||ADM&&false?T:T.filter(n=>n.tipo==="mencao"||n.tipo==="msg"||n.tipo==="adicionado"||!n.negocio_id||ehMeu(CARDS.find(c=>c.id===n.negocio_id)))}
-window.addEventListener("message",e=>{if(e.origin!==location.origin||!e.data||e.data.orcsolar!=="aplicado")return;const c=CARDS.find(k=>k.id===e.data.neg);if(c)carregarTudo().then(()=>{render()}).catch(()=>{})});
+window.addEventListener("message",e=>{if(e.origin===location.origin&&e.data&&e.data.orcsolar==="valor"){const c=CARDS.find(k=>k.id===e.data.neg);if(c){c.valor=e.data.valor;c.pot=e.data.pot;c.un="kWp"}return}if(e.origin!==location.origin||!e.data||e.data.orcsolar!=="aplicado")return;const c=CARDS.find(k=>k.id===e.data.neg);if(c)carregarTudo().then(()=>{render()}).catch(()=>{})});
 async function recarregar(){await carregarTudo();await carregarAvisos();render();if(aberto&&CARDS.find(c=>c.id===aberto))abrir(aberto,true)}
 
 /* ---------- gravação ---------- */
@@ -847,7 +847,7 @@ async function abrir(id,manter){
         if(!cid){const r=await sb.functions.invoke("gestaoclick",{body:{empresa:c.quadro==="solar"?"solar":"eletrica",acao:"cliente_enviar",cliente:{nome:c.cliente,fone:c.fone,cidade:c.cidade,...cd}}});const d=r.data;
           if(!d||!d.ok){st.textContent="Não foi possível cadastrar o cliente: "+((d&&(d.erro||JSON.stringify(d.resposta)))||(r.error&&r.error.message)||"erro");return}
           cid=String(d.id);await salvarCampos(c,{cadastro:{...(c.cadastro||{}),gc_id:cid}})}
-        const r=await sb.functions.invoke("gestaoclick",{body:{empresa:c.quadro==="solar"?"solar":"eletrica",acao:upd?"orcamento_atualizar":"orcamento_criar",orc:{cliente_gc_id:cid,gc_id:go.id,total:+c.valor,tipo:c.tipo||"Obra",titulo:c.titulo||"",ref:"Negócio · "+(c.titulo||c.cliente)}}});
+        const r=await sb.functions.invoke("gestaoclick",{body:{empresa:c.quadro==="solar"?"solar":"eletrica",acao:upd?"orcamento_atualizar":"orcamento_criar",orc:{cliente_gc_id:cid,gc_id:go.id,total:+c.valor,tipo:c.tipo||"Obra",titulo:c.titulo||"",ref:"Negócio · "+(c.titulo||c.cliente),itens:await itensSolar(c)}}});
         const d=r.data;if(!d||!d.ok){st.textContent="O Gestão Click não aceitou: "+((d&&(d.erro||JSON.stringify(d.resposta)))||(r.error&&r.error.message)||"erro");return}
         await salvarCampos(c,{cadastro:{...(c.cadastro||{}),gc_id:cid,gc_orc:{id:d.id,codigo:d.codigo||go.codigo||"",em:new Date().toISOString()}}});
         st.innerHTML="✓ Orçamento nº <b>"+esc(d.codigo||go.codigo||"")+"</b> no Gestão Click";if(gcN)gcN.value=d.codigo||go.codigo||"";gcO.textContent="Atualizar valor do orçamento no Gestão Click";
@@ -975,7 +975,7 @@ async function novo(){
     document.body.appendChild(m);mascara(m.querySelector("#nfone"),fmtFone);{const ci=m.querySelector("#ncli");ci.addEventListener("change",()=>{const ex=cliEx(ci.value);const inf=m.querySelector("#ncliInfo");ini.cad=null;if(!ex){inf.hidden=true;return}ci.value=ex.nome;const f=m.querySelector("#nfone"),ct=m.querySelector("#ncid");if(!f.value&&ex.fone)f.value=fmtFone(ex.fone);if(!ct.value&&ex.cidade)ct.value=ex.cidade;ini.cad=Object.keys(ex.cad).length?ex.cad:null;inf.hidden=false;inf.textContent="✓ Cliente existente: dados puxados"+(ex.cad.gc_id?" (já cadastrado no Gestão Click)":"")})}m.querySelector("#nx").onclick=()=>{m.remove();res(null)};m.querySelector("#nok").onclick=()=>{const v=m.querySelector("#ndono").value;etapa0=m.querySelector("#netapa").value;const g=i=>m.querySelector(i);ini={cad:ini.cad||null,cliente:g("#ncli").value.trim(),fone:fmtFone(g("#nfone").value),cidade:g("#ncid").value.trim(),valor:lerBrl(g("#nval").value)||0,gc:g("#ngc").checked||g("#ngo").checked,orc:g("#ngo").checked};m.remove();res(v)}});
     if(!dono)return}
   const mem=[...new Set([dono,...(ADM||dono===eu?[]:[eu])])];
-  const {data,error}=await sb.from("negocios").insert({quadro,ordem:Math.max(0,...CARDS.filter(k=>k.coluna===(etapa0||primeira.id)).map(k=>+k.ordem||0))+1,coluna:etapa0||primeira.id,titulo:"Novo negócio "+(quadro==="solar"?"solar":"elétrico"),un:quadro==="solar"?"kWp":"kVA",membros:mem,resp:dono,...(ini.cliente?{cliente:ini.cliente,titulo:ini.cliente}:{}),...(ini.fone?{fone:ini.fone}:{}),...(ini.cidade?{cidade:ini.cidade}:{}),...(ini.valor>0?{valor:ini.valor}:{}),...(ini.cad?{cadastro:ini.cad}:{})}).select().single();
+  const {data,error}=await sb.from("negocios").insert({quadro,ordem:Math.max(0,...CARDS.filter(k=>k.coluna===(etapa0||primeira.id)).map(k=>+k.ordem||0))+1,coluna:etapa0||primeira.id,titulo:"Novo negócio "+(quadro==="solar"?"solar":"elétrico"),un:quadro==="solar"?"kWp":"kVA",...(quadro==="solar"?{tipo:"Energia Solar"}:{}),membros:mem,resp:dono,...(ini.cliente?{cliente:ini.cliente,titulo:ini.cliente}:{}),...(ini.fone?{fone:ini.fone}:{}),...(ini.cidade?{cidade:ini.cidade}:{}),...(ini.valor>0?{valor:ini.valor}:{}),...(ini.cad?{cadastro:ini.cad}:{})}).select().single();
   if(error){toast("Não foi possível criar: "+error.message);return}
   CARDS.unshift(data);abaCard="resumo";render();abrir(data.id);
   if(ini.gc){if(!ini.cliente){toast("Negócio criado. Para cadastrar no Gestão Click, preencha o nome do cliente no card.");return}
@@ -1043,6 +1043,9 @@ async function negociadaDialog(c){
       await carregarTudo();render();if(aberto===c.id)abrir(c.id);if(window.ON_LEMBRETES)window.ON_LEMBRETES.checar();
     }catch(e){console.error(e);toast("Não foi possível concluir: "+(e.message||e));b.disabled=false;b.textContent="Confirmar negociada"}};
 }
+async function itensSolar(c){ // kit do orçador solar (linhas do orçamento) para o Gestão Click
+  if(c.quadro!=="solar")return[];try{const {data}=await sb.from("neg_orc_solar").select("resumo").eq("negocio_id",c.id).maybeSingle();return (data&&data.resumo&&data.resumo.itens)||[]}catch(e){return[]}
+}
 async function gcCriar(c,comOrc){ // cadastra o cliente (ou vincula) e, se pedido, cria o orçamento no Gestão Click
   try{const cd=c.cadastro||{};let cid=cd.gc_id;
     if(!cid){const r=await sb.functions.invoke("gestaoclick",{body:{empresa:c.quadro==="solar"?"solar":"eletrica",acao:"cliente_enviar",cliente:{nome:c.cliente,fone:c.fone,cidade:c.cidade,...cd}}});const d=r.data;
@@ -1050,7 +1053,7 @@ async function gcCriar(c,comOrc){ // cadastra o cliente (ou vincula) e, se pedid
       cid=String(d.id);await salvarCampos(c,{cadastro:{...(c.cadastro||{}),gc_id:cid}})}
     if(!comOrc)return "Negócio criado e cliente cadastrado no Gestão Click.";
     if(!(+c.valor>0))return "Cliente cadastrado no Gestão Click. Para criar o orçamento, preencha o valor estimado no card.";
-    const r=await sb.functions.invoke("gestaoclick",{body:{empresa:c.quadro==="solar"?"solar":"eletrica",acao:"orcamento_criar",orc:{cliente_gc_id:cid,total:+c.valor,tipo:c.tipo||"Obra",titulo:c.titulo||"",ref:"Negócio · "+(c.titulo||c.cliente)}}});const d=r.data;
+    const r=await sb.functions.invoke("gestaoclick",{body:{empresa:c.quadro==="solar"?"solar":"eletrica",acao:"orcamento_criar",orc:{cliente_gc_id:cid,total:+c.valor,tipo:c.tipo||"Obra",titulo:c.titulo||"",ref:"Negócio · "+(c.titulo||c.cliente),itens:await itensSolar(c)}}});const d=r.data;
     if(!d||!d.ok)return "Cliente cadastrado, mas o orçamento não foi criado: "+((d&&(d.erro||JSON.stringify(d.resposta)))||(r.error&&r.error.message)||"erro");
     await salvarCampos(c,{cadastro:{...(c.cadastro||{}),gc_id:cid,gc_orc:{id:d.id,codigo:d.codigo||"",em:new Date().toISOString()}}});
     return "Negócio criado. Orçamento "+(d.codigo||"")+" criado no Gestão Click."
