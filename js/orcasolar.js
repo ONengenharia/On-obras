@@ -1429,6 +1429,7 @@ async function importarFatura(file){
   const msg=$("fat-msg"); msg.textContent="Lendo a fatura…";
   try{
     const pdf=await pdfDoc(file), linhas=await pdfLinhas(pdf,2), o=parseFatura(linhas), pre=[];
+    let anexou=false; if(SB&&NEG&&CAN_EDIT){ try{ const path=NEG+"/"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)+".pdf"; const up=await SB.storage.from("negocios").upload(path,file,{contentType:"application/pdf"}); if(up.error) throw up.error; const url=SB.storage.from("negocios").getPublicUrl(path).data.publicUrl; const ins=await SB.from("neg_anexos").insert({negocio_id:NEG,nome:file.name||"fatura.pdf",tipo:"application/pdf",tam:file.size,url}); if(ins&&ins.error) throw ins.error; anexou=true; }catch(e){ console.error(e); o.avisos.push("Não consegui anexar a fatura ao negócio: "+(e.message||e)); } }
     if(!(o.consumo||o.tarifa||o.nome)){ msg.textContent="Não encontrei dados nesse PDF. Preencha manualmente."; return; }
     const put=(id,val,rot)=>{ if(val!=null&&val!==""&&!Number.isNaN(val)){ $(id).value=val; pre.push(rot); } };
     if(o.nome) put("cliente",o.nome,"cliente"); put("ucnum",o.uc,"UC");
@@ -1443,7 +1444,7 @@ async function importarFatura(file){
     if(o.cidade){ const t=capNome(o.cidade)+(o.uf?" / "+o.uf:""); if(!$("pcid").value) $("pcid").value=t; const c=aplicarCidade(t); if(c) pre.push("irradiação ("+c.k+(c.exato?"":", cidade mais próxima da lista")+")"); }
     if(o.classe && o.classe!=="B1R") o.avisos.push("Classe diferente de B1 residencial: a tarifa cadastrada é B1. Confira a tarifa na fatura.");
     o.avisos.push("Consumo mês a mês não vem no texto do PDF (histórico é gráfico). Preencha em “Consumo mês a mês” se quiser.");
-    msg.innerHTML=esc("Importado: "+pre.join(", ")+". ")+o.avisos.map(a=>"<br>• "+esc(a)).join("");
+    msg.innerHTML=esc("Importado: "+pre.join(", ")+". "+(anexou?"Fatura anexada ao negócio. ":""))+o.avisos.map(a=>"<br>• "+esc(a)).join("");
     calc();
   }catch(e){ console.error(e); msg.textContent="Não consegui ler o PDF ("+e.message+"). Preencha manualmente."; }
 }
