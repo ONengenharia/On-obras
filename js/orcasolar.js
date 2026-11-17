@@ -2,6 +2,7 @@
 const DEF = {
   empresa:"ON Engenharia Elétrica", contato:"(55) 99133-7296 · projetos.on.engenharia@gmail.com", validade:10, descMax:5,
   financeiras:[{id:"f1",nome:"Financiamento 36x (exemplo)",taxa:1.85,prazo:36,entrada:0},{id:"f2",nome:"Financiamento 60x (exemplo)",taxa:1.85,prazo:60,entrada:0}],
+  tabProj:[{ate:5,v:500,v2:250},{ate:10,v:630,v2:315},{ate:20,v:700,v2:350},{ate:30,v:820,v2:410},{ate:40,v:950,v2:475},{ate:50,v:1050,v2:525},{ate:60,v:1200,v2:600},{ate:70,v:1300,v2:650},{ate:80,v:1800,v2:900}],
   capa:{estilo:"prime",imagem:"",titulo:"Energia solar fotovoltaica",campanha:"",detalhe:""},
   tec:{perdas:{temp:10,sujeira:3,sombra:0,cabos:2,inversor:3,outras:3},
        degr:0.7, dias:30.4, ccaMin:0.9, ccaMax:1.5, simult:30, tmin:0, tcell:70, kitOutrosKwp:80},
@@ -467,8 +468,9 @@ function compute(){
 }
 
 /* ============ PRECIFICAÇÃO E DRE ============ */
-function lineValue(l,kwp,rec,K,N){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : l.modo==="pctserv" ? l.valor/100*Math.max(0,rec-(K||0)) : l.valor/100*rec; }
-function fixedOf(l,kwp,K,N){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : 0; }
+function tabProj(kwp){ const t=(CONFIG.tabProj||[]).slice().sort((a,b)=>a.ate-b.ate); if(!t.length) return 0; const r=t.find(x=>kwp<=x.ate+1e-9)||t[t.length-1]; return +r.v||0; }
+function lineValue(l,kwp,rec,K,N){ if(l.modo==="tabproj") return tabProj(kwp); return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : l.modo==="pctserv" ? l.valor/100*Math.max(0,rec-(K||0)) : l.valor/100*rec; }
+function fixedOf(l,kwp,K,N){ if(l.modo==="tabproj") return tabProj(kwp); return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : 0; }
 function pricing(kwp,desc,Kest,N){
   const cot=v("kitcot"), mt=$("metodo").value, mv=v("margem"), meta=v("meta-liq")/100;
   const K = cot>0 ? cot : Kest;
@@ -492,6 +494,7 @@ function renderEditor(){
           <option value="fixo"${l.modo==="fixo"?" selected":""}>R$ fixo</option>
           <option value="kwp"${l.modo==="kwp"?" selected":""}>R$ por kWp</option>
           <option value="mod"${l.modo==="mod"?" selected":""}>R$ por módulo (unidade)</option>
+          <option value="tabproj"${l.modo==="tabproj"?" selected":""}>Tabela de projeto (faixa de kWp)</option>
           <option value="km"${l.modo==="km"?" selected":""}>R$ por km</option>
           <option value="pctkit"${l.modo==="pctkit"?" selected":""}>% do kit</option>
           <option value="pctserv"${l.modo==="pctserv"?" selected":""}>% do valor do serviço (venda − kit)</option>
@@ -1683,7 +1686,7 @@ function capaUrl(id){ return new URL("assets/capas/"+id+".jpg", location.href).h
 function capaAtual(){ const s=$("pr-capa"); const v_=(s&&s.value)||((CONFIG.capa||{}).estilo)||"prime"; return v_; }
 async function capaPronta(){ const m=CAPAS.find(c=>c.id===capaAtual()); if(!m||CAPA_B64[m.id]) return; CAPA_B64[m.id]=await dataUrl("assets/capas/"+m.id+".jpg"); }
 function capaMarca(){ const cur=(CONFIG.capa||{}).estilo; document.querySelectorAll("#capa-gal [data-cp]").forEach(b=>b.classList.toggle("on",b.dataset.cp===cur)); }
-function initCapas(){
+function initCapas(){ tabProjTxt();
   if(!CONFIG.capa) CONFIG.capa={};
   if(CONFIG.capa.estilo==="paineis"||!CONFIG.capa.estilo) CONFIG.capa.estilo="prime";
   const ps=$("pr-capa"), keep=ps.value;
@@ -1728,5 +1731,10 @@ function duplicarVersao(){
 }
 $("pr-nova").onclick=criarOutraProposta; $("pr-hrest").onclick=duplicarVersao;
 histSel(); initCapas();
+
+/* ---- tabela de projeto */
+function tabProjTxt(){ $("tabproj-txt").value=(CONFIG.tabProj||[]).map(r=>[r.ate,r.v,r.v2].join(" ; ")).join("\n"); }
+$("tabproj-txt").addEventListener("input",e=>{ CONFIG.tabProj=e.target.value.split(/\n/).map(l=>l.split(/[;\t]/).map(x=>parseFloat(String(x).replace(/\./g,"").replace(",",".")))).filter(a=>isFinite(a[0])&&isFinite(a[1])).map(a=>({ate:a[0],v:a[1],v2:isFinite(a[2])?a[2]:0})); saveCfg(); calc(); if(typeof renderPreco==="function") renderPreco(); });
+tabProjTxt();
 
 integrar();
