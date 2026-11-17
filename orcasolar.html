@@ -208,10 +208,15 @@ table.ed td:first-child input{min-width:96px}
               </select>
             </label>
             <label>Tarifa com impostos (R$/kWh)<input id="tarifa" type="number" min="0" step="0.0001" data-own></label>
-            <label>Fio B (R$/kWh)<input id="fiob" type="number" min="0" step="0.0001" data-own></label>
             <label>Consumo médio mensal (kWh)<input id="consumo" type="number" min="1" step="1" value="500"></label>
             <label>Meta de compensação (%)<input id="meta" type="number" min="10" max="100" step="5" value="100"></label>
           </div>
+          <p class="note" style="margin:8px 0 0">A tarifa vem da concessionária escolhida (Configurações → Tarifas). Se a fatura mostrar outro valor, corrija o campo acima: o orçamento usa o que estiver ali.</p>
+          <details>
+            <summary>Fio B (avançado)</summary>
+            <div class="fields" style="margin-top:10px"><label>Fio B (R$/kWh)<input id="fiob" type="number" min="0" step="0.0001" data-own></label></div>
+            <p class="note">Vem estimado da concessionária. Só ajuste se tiver o valor oficial.</p>
+          </details>
           <details>
             <summary>Consumo mês a mês (opcional)</summary>
             <div class="months" id="cm-grid"></div>
@@ -379,11 +384,27 @@ table.ed td:first-child input{min-width:96px}
 
   <!-- ===== 4. PROPOSTA (rascunho) ===== -->
   <main id="view-prop" class="hidden" role="tabpanel" aria-labelledby="tab-prop">
+    <section class="card" style="margin-bottom:14px">
+      <h2>Seguro solar (opcional)</h2>
+      <div class="fields three">
+        <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="seg-on" style="width:auto"> Incluir seguro (2 folhas a mais)</label>
+        <label>Valor do projeto (R$)<input id="seg-proj" type="text" inputmode="decimal" placeholder="vazio = valor da proposta"></label>
+        <label>Observação de pagamento<input id="seg-cond" type="text" placeholder="opcional"></label>
+      </div>
+      <div class="fields three" style="margin-top:10px">
+        <label>Anual (à vista R$)<input id="seg-v1" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>2 anos (à vista R$)<input id="seg-v2" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>3 anos (à vista R$)<input id="seg-v3" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>4 anos (à vista R$)<input id="seg-v4" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>5 anos (à vista R$)<input id="seg-v5" type="text" inputmode="decimal" placeholder="0,00"></label>
+      </div>
+      <p class="note">Digite o valor à vista da cotação da seguradora; as parcelas e os limites de cobertura (base no valor do projeto) são calculados sozinhos. Vigência em branco não aparece.</p>
+    </section>
     <div class="row" style="margin:0 auto 14px;gap:10px;flex-wrap:wrap">
       <button class="btn" id="pr-abrir">Abrir proposta ON (imprimir / salvar em PDF)</button>
       <button class="btn alt small" id="pr-baixar">Baixar HTML</button>
       <span class="toast" id="toast" role="status"></span>
-      <span class="note" style="margin:0">Modelo ON com a paleta e o logo da empresa. Marcado como preliminar até a cotação real dos equipamentos.</span>
+      <span class="note" style="margin:0">Proposta de 3 folhas A4 com capa branca (boa para imprimir). Preliminar até a cotação real dos equipamentos.</span>
     </div>
     <iframe id="prev" title="Prévia da proposta"></iframe>
     <article class="doc" id="doc" hidden></article>
@@ -421,7 +442,23 @@ table.ed td:first-child input{min-width:96px}
         <section class="card">
           <h2>Financeiras</h2>
           <div class="scroll" id="ed-financeiras"></div>
-          <p class="note">Serão usadas na simulação de parcelas da proposta.</p>
+          <p class="note">As duas primeiras linhas aparecem na proposta como opções de financiamento.</p>
+        </section>
+        <section class="card" id="card-capa">
+          <h2>Capa da proposta</h2>
+          <div class="fields">
+            <label class="full">Estilo da capa
+              <select data-cfg="capa.estilo"><option value="aneis">Anéis ON (padrão)</option><option value="paineis">Painéis solares</option><option value="imagem">Minha imagem</option><option value="nenhum">Sem arte (só texto)</option></select>
+            </label>
+            <label class="full">Imagem da capa (campanha, foto de obra, arte)
+              <input type="file" id="capa-file" accept="image/*">
+            </label>
+            <div class="full" style="display:flex;gap:10px;align-items:center"><img id="capa-prev" alt="" style="max-height:90px;border-radius:8px;border:1px solid var(--line);display:none"><button class="btn alt small" id="capa-rm" type="button" style="display:none">Remover imagem</button></div>
+            <label class="full">Título acima de "Proposta comercial"<input type="text" data-cfg="capa.titulo"></label>
+            <label class="full">Campanha (faixa na capa, opcional)<input type="text" data-cfg="capa.campanha" placeholder="Ex.: Campanha de fim de ano: instalação com 5% off até 31/12"></label>
+            <label class="full">Detalhe da campanha<input type="text" data-cfg="capa.detalhe" placeholder="Regras, prazo, condição"></label>
+          </div>
+          <p class="note">A capa é branca para imprimir bem e não mostra valores nem dados técnicos. A imagem é reduzida automaticamente (largura 1400 px). Para valer em todos os orçamentos, use "Salvar como padrão para todos".</p>
         </section>
       </div>
     </div>
@@ -498,6 +535,6 @@ table.ed td:first-child input{min-width:96px}
 
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
-<script src="js/orcasolar.js?v=1"></script>
+<script src="js/orcasolar.js?v=2"></script>
 </body>
 </html>

@@ -1,7 +1,8 @@
 /* ============ CONFIGURAÇÃO PADRÃO ============ */
 const DEF = {
-  empresa:"Sua Empresa Solar", contato:"(00) 00000-0000", validade:10, descMax:5,
-  financeiras:[{id:"f1",nome:"Financeira exemplo",taxa:1.85,prazo:60,entrada:0}],
+  empresa:"ON Engenharia Elétrica", contato:"(55) 99133-7296 · projetos.on.engenharia@gmail.com", validade:10, descMax:5,
+  financeiras:[{id:"f1",nome:"Financiamento 36x (exemplo)",taxa:1.85,prazo:36,entrada:0},{id:"f2",nome:"Financiamento 60x (exemplo)",taxa:1.85,prazo:60,entrada:0}],
+  capa:{estilo:"aneis",imagem:"",titulo:"Energia solar fotovoltaica",campanha:"",detalhe:""},
   tec:{perdas:{temp:10,sujeira:3,sombra:0,cabos:2,inversor:3,outras:3},
        degr:0.7, dias:30.4, ccaMin:0.9, ccaMax:1.5, simult:30, tmin:0, tcell:70, kitOutrosKwp:80},
   telhados:[
@@ -726,7 +727,7 @@ $("hsp").addEventListener("input",()=>{
   calc();
 });
 $("concsel").addEventListener("change",()=>{ applyConc(); calc(); });
-["tarifa","fiob"].forEach(id=>$(id).addEventListener("input",()=>{ $("concsel").value="__custom"; calc(); }));
+["tarifa","fiob"].forEach(id=>$(id).addEventListener("input",()=>{ calc(); }));
 
 function updateMargemLabel(){ $("margem-label").textContent = {venda:"Margem sobre o preço de venda (%)",markup:"Markup sobre o custo do kit (%)",rs:"Lucro sobre o kit (R$)"}[$("metodo").value]; }
 $("metodo").addEventListener("change",()=>{
@@ -783,11 +784,12 @@ updateMargemLabel();
 calc();
 
 /* ============ PROPOSTA ON (modelo próprio, paleta da empresa) ============ */
-let LOGO = "assets/on-logo.png";
-async function carregarLogo(){
-  try{ const r=await fetch("assets/on-logo.png"); const b=await r.blob();
-    LOGO = await new Promise(res=>{ const f=new FileReader(); f.onload=()=>res(f.result); f.readAsDataURL(b); }); }catch(e){ LOGO=new URL("assets/on-logo.png",location.href).href; }
+let LOGO = "assets/on-logo.png", LOGO_ESSOR = "assets/essor-logo.png";
+async function dataUrl(path){
+  try{ const r=await fetch(path); const b=await r.blob();
+    return await new Promise(res=>{ const f=new FileReader(); f.onload=()=>res(f.result); f.readAsDataURL(b); }); }catch(e){ return new URL(path,location.href).href; }
 }
+async function carregarLogo(){ LOGO = await dataUrl("assets/on-logo.png"); LOGO_ESSOR = await dataUrl("assets/essor-logo.png"); }
 function propInfo(){
   const conc=CONFIG.conc.find(c=>c.id===$("concsel").value);
   const lig={"30":"Monofásico","50":"Bifásico","100":"Trifásico"}[$("padrao").value];
@@ -798,241 +800,256 @@ function propInfo(){
     refmes:g("pref")||"referência", fatura:g("pfat")||"—", hist:temMes?"os meses informados":"consumo médio informado", nota:g("pnota"),
     tarifaNota:"Tarifa com impostos informada para esta simulação, sem bandeira tarifária.", fioNota:""};
 }
+/* ============ PROPOSTA ON: 3 folhas A4, capa branca (boa para imprimir) + seguro opcional (2 folhas) ============ */
+const P_EMP = {razao:"Vmc Projetos e Instalações Elétricas Ltda", cnpj:"61.702.854/0001-04", end:"Vl. Arroio Grande, Interior · Ibirubá/RS · CEP 98200-000"};
 function pmt(P,i,n){ return P*i/(1-Math.pow(1+i,-n)); }
 function npv(rate,flows){ return flows.reduce((s,c,k)=>s+c/Math.pow(1+rate,k),0); }
+const pesc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-function page(n,total,cli,body,cls=''){
-  return `<section class="page ${cls}">
-  <header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${esc(cli)}</span></header>
-  <div class="pb">${body}</div>
-  <footer class="pf"><span>ON Engenharia · Ibirubá/RS</span><span>Página ${n} de ${total}</span></footer></section>`;
+/* ---- ilustrações da capa (pouca tinta, só contorno) ---- */
+function capaArte(estilo, img){
+  if(estilo==="nenhum") return "";
+  if(estilo==="imagem" && img) return `<div class="arte"><img src="${img}" alt=""></div>`;
+  if(estilo==="paineis"){
+    let g="";
+    for(let r=0;r<4;r++) for(let c=0;c<7;c++){
+      const x=70+c*58+r*14, y=190-r*34;
+      g+=`<path d="M${x} ${y} l54 0 l-10 -30 l-54 0 z" fill="none" stroke="#64ABDE" stroke-width="1.6"/><path d="M${x+13} ${y-30} l${-0} 0" stroke="#64ABDE" stroke-width="0"/>`;
+    }
+    let rays=""; for(let k=0;k<12;k++){ const a=k*Math.PI/6, x1=95+Math.cos(a)*34, y1=70+Math.sin(a)*34, x2=95+Math.cos(a)*50, y2=70+Math.sin(a)*50; rays+=`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#1D3140" stroke-width="2" stroke-linecap="round"/>`; }
+    return `<div class="arte"><svg viewBox="0 0 560 230" role="img" aria-label="Painéis solares"><circle cx="95" cy="70" r="22" fill="#64ABDE"/>${rays}${g}</svg></div>`;
+  }
+  // aneis (padrão): inspirado no "O" da marca
+  return `<div class="arte"><svg viewBox="0 0 560 230" role="img" aria-label="Energia solar"><g fill="none" stroke="#64ABDE">
+    <circle cx="280" cy="115" r="108" stroke-width="1" stroke-opacity=".5"/><circle cx="280" cy="115" r="84" stroke-width="1.2" stroke-opacity=".65"/><circle cx="280" cy="115" r="60" stroke-width="2.4" stroke-opacity=".85"/><circle cx="280" cy="115" r="36" stroke-width="1.2" stroke-opacity=".7"/></g>
+    <circle cx="280" cy="115" r="20" fill="#64ABDE"/>
+    <g stroke="#1D3140" stroke-width="2" stroke-linecap="round"><line x1="40" y1="115" x2="140" y2="115"/><line x1="420" y1="115" x2="520" y2="115"/></g></svg></div>`;
+}
+
+/* ---- seguro (portado do gerador de seguro da ON) ---- */
+const SEG_BASE = 28000;
+const SEG_VIG = [[535.30,267.65,178.44,133.84,null],[1017.09,508.55,339.03,254.28,203.41],[1450.63,725.31,483.55,362.65,290.11],[1841.44,920.72,613.82,460.36,368.28],[2194.72,1097.36,731.58,548.68,438.96]];
+const SEG_COB = [
+  ["Cobertura básica","Incêndio, queda de raio, explosão de qualquer natureza, vendaval até granizo, alagamento/inundação, impacto de veículos",1.00,369.40,"basica"],
+  ["Danos elétricos","",0.30,49.85,"10% dos prejuízos indenizáveis por sinistro, mínimo de R$ 500,00"],
+  ["Roubo / furto qualificado","",0.50,59.82,"20% dos prejuízos indenizáveis por sinistro, mínimo de R$ 500,00"],
+  ["Despesas extras","",0.05,19.44,"10 dias, período indenitário de 30 dias"],
+  ["Despesas de salvamento e contenção de sinistro","",0.10,0,"Não se aplica"]];
+const segRound = x => Math.round((x+1e-9)*100)/100;
+const segBRL = x => "R$ "+x.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+function segCalc(proj,anual){
+  const refTot=SEG_COB.reduce((t,x)=>t+x[3],0), liq=anual>0?anual/1.0738:0;
+  const cob=SEG_COB.map(c=>({nome:c[0],det:c[1],lmi:segRound(proj*c[2]),premio:anual>0?segRound(liq*c[3]/refTot):null,
+    franq:c[4]==="basica"?(proj>100000?"10% dos prejuízos por sinistro, mínimo de R$ 3.000,00. 20%, mínimo de R$ 5.000,00, para vendaval, furacão, ciclone e granizo":"10% dos prejuízos por sinistro, mínimo de R$ 500,00. 20%, mínimo de R$ 1.000,00, para vendaval, furacão, ciclone e granizo"):c[4]}));
+  return {cob,premioLiq:anual>0?segRound(anual/1.0738):null};
+}
+function segDados(){
+  const g=id=>{ const s=($(id).value||"").replace(/[^\d,.]/g,""); const n=parseFloat(s.includes(",")?s.replace(/\./g,"").replace(",","."):s); return isFinite(n)?n:0; };
+  return {on:$("seg-on").checked, proj:g("seg-proj")||(R?Math.round(R.invest):0), vig:[1,2,3,4,5].map(n=>g("seg-v"+n)), cond:($("seg-cond").value||"").trim()};
+}
+
+function paginasSeguro(nome, seg, total, startN, logo){
+  const R_=segCalc(seg.proj,seg.vig[0]||0), com=R_.premioLiq!=null;
+  const prot=[["Defeitos de fabricação","",1,0],["Incêndio","",0,1],["Explosão","",0,1],["Queda de raio","",0,1],["Vendaval","limitado a 50% do valor do projeto",0,1],["Granizo","limitado a 50% do valor do projeto",0,1],["Furacão","limitado a 50% do valor do projeto",0,1],["Ciclone","limitado a 50% do valor do projeto",0,1],["Impacto de veículos","",0,1],["Inundação","",0,1],["Alagamento","",0,1],["Roubo / furto qualificado","limitado a 50% do valor do projeto",0,1],["Danos elétricos","limitado a 30% do valor do projeto",0,1],["Despesas extras","limitado a 5% do valor do projeto",0,1],["Mão de obra do integrador","em caso de sinistro",0,1]];
+  const ok='<i class="ck ok">✓</i>', no='<i class="ck no">✕</i>';
+  const rows=r=>`<tr><td><b>${pesc(r.nome)}</b>${r.det?`<small>${pesc(r.det)}</small>`:""}</td><td class="n">${segBRL(r.lmi)}</td><td class="fr">${pesc(r.franq)}</td>${com?`<td class="n">${segBRL(r.premio)}</td>`:""}</tr>`;
+  const head=t=>`<thead><tr><th>${t}</th><th class="n">Limite (LMI)</th><th>Franquia (P.O.S.)</th>${com?'<th class="n">Prêmio líquido</th>':""}</tr></thead>`;
+  const p1=`<h2>Seguro solar</h2><p class="lead">Riscos Diversos Equipamentos: o que o seguro cobre. Valor do projeto: <b>${segBRL(seg.proj)}</b></p>
+    <table class="data prot"><thead><tr><th>Proteção</th><th class="c">Garantia</th><th class="c">Seguro</th></tr></thead><tbody>${prot.map(r=>`<tr><td><b>${r[0]}</b>${r[1]?` <small class="in">(${r[1]})</small>`:""}</td><td class="c">${r[2]?ok:no}</td><td class="c">${r[3]?ok:no}</td></tr>`).join("")}</tbody></table>
+    <table class="data cob">${head("Cobertura básica")}<tbody>${rows(R_.cob[0])}</tbody></table>
+    <table class="data cob">${head("Coberturas adicionais")}<tbody>${R_.cob.slice(1).map(rows).join("")}</tbody></table>
+    ${com?`<p class="tot2"><span>Prêmio líquido total anual (sem IOF)</span><b>${segBRL(R_.premioLiq)}</b></p>`:""}
+    <p class="small">Seguradora parceira: <img src="${LOGO_ESSOR}" alt="Seguradora" style="height:9mm;vertical-align:middle;margin-left:6px"></p>`;
+  const VIG=seg.vig.map((t,i)=>({anos:i+1,total:t,parc:[2,3,4,5].map(n=>(i===0&&n>4)?null:segRound(t/n))})).filter(r=>r.total>0);
+  const p2=`<h2>Investimento no seguro</h2><p class="lead">Cotação para projeto de <b>${segBRL(seg.proj)}</b>. Valores por vigência e parcelamento.</p>
+    <table class="data"><thead><tr><th>Vigência</th><th class="n">À vista</th><th class="n">2x</th><th class="n">3x</th><th class="n">4x</th><th class="n">5x</th></tr></thead><tbody>
+    ${VIG.map(r=>`<tr><td><b>${r.anos===1?"Anual":"Plurianual "+r.anos+" anos"}</b></td><td class="n"><b>${segBRL(r.total)}</b></td>${r.parc.map(x=>`<td class="n">${x==null?"-":segBRL(x)}</td>`).join("")}</tr>`).join("")}</tbody></table>
+    <p class="small">Forma de pagamento: ficha de compensação. A primeira parcela vence 7 dias após a emissão e as demais a cada 30 dias. Valores com IOF incluso, parcelas sem juros.${seg.cond?" "+pesc(seg.cond):""}</p>
+    <div class="callout"><b>Importante.</b> Os valores desta cotação são uma estimativa e podem sofrer pequenas variações até a contratação, conforme as condições da seguradora e a confirmação dos dados do sistema na emissão da apólice.</div>
+    <h3 class="sub">Termo de aceite do seguro</h3>
+    <p class="small" style="font-size:11px;color:#1D3140">Declaro que li e compreendi as coberturas, limites e franquias apresentados nesta proposta e aceito a contratação do Seguro de Riscos Diversos Equipamentos para o meu sistema fotovoltaico, na vigência e forma de pagamento escolhidas abaixo. Estou ciente de que a contratação está sujeita à análise e aceitação da seguradora e de que as condições definitivas constam na apólice.</p>
+    <p class="chk"><b>Vigência:</b> ${VIG.map(r=>`<span><i class="bx"></i>${r.anos===1?"1 ano":r.anos+" anos"}</span>`).join("")}</p>
+    <p class="chk"><b>Pagamento:</b> ${["À vista","2x","3x","4x","5x"].map(t=>`<span><i class="bx"></i>${t}</span>`).join("")}</p>
+    <p class="chk"><span><i class="bx"></i>Aceito a contratação do seguro</span><span><i class="bx"></i>Não desejo contratar o seguro</span></p>
+    <div class="sign"><div><i></i><span>Assinatura do cliente</span></div><div><i></i><span>Data</span></div></div>`;
+  return [p1,p2];
 }
 
 function propostaHTML(){
-  const d={consumo:v('consumo'),svgGen:chartGen(R),svgCaixa:chart(R)}, r=R, I=propInfo();
-  const _h=new Date(), _v=new Date(_h.getTime()+10*864e5), hoje=_h.toLocaleDateString('pt-BR'), validade=_v.toLocaleDateString('pt-BR');
+  const r=R, I=propInfo(), cap=CONFIG.capa||{}, seg=segDados();
+  const _h=new Date(), _v=new Date(_h.getTime()+(+CONFIG.validade||10)*864e5), hoje=_h.toLocaleDateString("pt-BR"), validade=_v.toLocaleDateString("pt-BR");
   const kwh12=r.gerM.reduce((s,x)=>s+x,0);
-  // tabela sem/com solar
-  const sel=[1,2,3,4,5,6,7,8,9,10,15,20,25];
-  const linhas=sel.map(a=>{const o=r.rows[a-1]; const sem=r.cons*12*o.t; const com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td><strong>${brl(o.eco)}</strong></td></tr>`;}).join('');
-  // financiamento
-  const f60=pmt(r.invest,0.0185,60), f36=pmt(r.invest,0.0185,36);
-  const flows=[-r.invest].concat(r.rows.map(x=>x.liq));
-  const vpl=npv(0.06,flows);
-  const pbMeses=r.payback===null?null:Math.round(r.payback*12);
-  const _a=r.payback===null?0:Math.floor(pbMeses/12), _m=r.payback===null?0:pbMeses%12;
-  const pbTxt=r.payback===null?'acima de 25 anos':(_a===0?`${_m} meses`:`${_a} ${_a===1?'ano':'anos'}${_m?` e ${_m} ${_m===1?'mês':'meses'}`:''}`);
-  const eco25=r.totalEco;
-  const mod=r.mod, inv=r.inv;
-  const contaA=r.contaAntes, contaD=r.contaDepois;
-  const total=9; let n=0;
-  const nome=I.nome;
+  const sel=[1,5,10,15,20,25];
+  const linhas=sel.map(a=>{const o=r.rows[a-1]; const sem=r.cons*12*o.t; const com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td><b>${brl(o.eco)}</b></td></tr>`}).join("");
+  const fin=(CONFIG.financeiras||[]).slice(0,2).map(f=>{ const n=Math.max(1,+f.prazo||60), i=(+f.taxa||0)/100, ent=(+f.entrada||0)/100, P=r.invest*(1-ent); return {n,i,ent,parc:i>0?pmt(P,i,n):P/n,entV:r.invest*ent}; });
+  const flows=[-r.invest].concat(r.rows.map(x=>x.liq)), vpl=npv(0.06,flows);
+  const pbMeses=r.payback===null?null:Math.round(r.payback*12), _a=r.payback===null?0:Math.floor(pbMeses/12), _m=r.payback===null?0:pbMeses%12;
+  const pbTxt=r.payback===null?"acima de 25 anos":(_a===0?`${_m} meses`:`${_a} ${_a===1?"ano":"anos"}${_m?` e ${_m} ${_m===1?"mês":"meses"}`:""}`);
+  const mod=r.mod, inv=r.inv, nome=I.nome;
+  const comSeg=seg.on&&seg.vig.some(x=>x>0);
+  const total=3+(comSeg?2:0);
+  const head=(n)=>`<header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${pesc(nome)}</span></header>`;
+  const foot=(n)=>`<footer class="pf"><span>${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")}</span><span>Folha ${n} de ${total}</span></footer>`;
+  const page=(n,body)=>`<section class="pg">${head(n)}<div class="pb">${body}</div>${foot(n)}</section>`;
 
-  const capa=`<section class="page cover">
-    <div class="cv-top"><img src="${LOGO}" alt="ON Engenharia" class="cv-logo"><div class="cv-badge">Proposta preliminar</div></div>
+  const capaHtml=`<section class="pg cover">
+    <div class="cv-top"><img src="${LOGO}" alt="ON Engenharia" class="cv-logo"><span class="cv-badge">Proposta preliminar</span></div>
     <div class="cv-main">
-      <p class="eyebrow">Energia solar fotovoltaica</p>
-      <h1>Proposta comercial</h1>
-      <div class="cv-client"><span>Preparada para</span><strong>${esc(nome.toUpperCase())}</strong><em>${esc(I.end)} · ${esc(I.cid)} · CEP ${I.cep}</em></div>
-      <div class="cv-kpis">
-        <div><b>${num(r.kwp,2)} kWp</b><span>potência do sistema</span></div>
-        <div><b>${num(r.gerMes)} kWh</b><span>geração média por mês</span></div>
-        <div><b>${brl(r.invest)}</b><span>investimento</span></div>
-        <div><b>${pbTxt}</b><span>retorno do investimento</span></div>
-      </div>
+      <p class="eyebrow">${pesc(cap.titulo||"Energia solar fotovoltaica")}</p>
+      <h1>Proposta<br>comercial</h1>
+      <div class="cv-client"><span>Preparada para</span><strong>${pesc(nome)}</strong><em>${pesc([I.end!=="Endereço a informar"?I.end:"",I.cid!=="—"?I.cid:""].filter(Boolean).join(" · "))}</em></div>
     </div>
-    <div class="cv-foot"><span>Emitida em ${hoje} · válida até ${validade}</span><span>ON Engenharia Elétrica · Ibirubá/RS</span></div>
+    ${capaArte(cap.estilo||"aneis",cap.imagem)}
+    ${cap.campanha?`<div class="camp"><b>${pesc(cap.campanha)}</b>${cap.detalhe?`<span>${pesc(cap.detalhe)}</span>`:""}</div>`:""}
+    <div class="cv-foot"><span>Emitida em ${hoje} · válida até ${validade}</span><span>${pesc(CONFIG.empresa||"ON Engenharia")}</span><span>${pesc(CONFIG.contato||"")}</span></div>
   </section>`;
 
-  const p2=`<h2>Quem somos</h2>
-    <p class="lead">A ON Engenharia Elétrica nasceu para entregar soluções elétricas sob medida, com qualidade, segurança e eficiência energética em cada projeto. Atendemos agronegócio, indústrias, comércio e residências.</p>
-    <div class="trio">
-      <div><h3>Visão</h3><p>Oferecer soluções inovadoras e eficientes para suprir as necessidades energéticas dos nossos clientes.</p></div>
-      <div><h3>Missão</h3><p>Levar energia limpa e renovável a quem precisa, de forma acessível e personalizada, com segurança e respeito ao meio ambiente.</p></div>
-      <div><h3>Valores</h3><p>Ética e transparência. Respeito ao meio ambiente. Valorização das pessoas e da inovação. Atendimento com excelência.</p></div>
+  const p2=`<h2>Seu sistema e sua economia</h2>
+    <div class="kpis4">
+      <div><b>${num(r.kwp,2)} kWp</b><span>potência</span></div>
+      <div><b>${r.modulos} módulos</b><span>de ${mod.wp} Wp</span></div>
+      <div><b>${num(r.gerMes)} kWh</b><span>geração por mês</span></div>
+      <div><b>${num(r.areaTotal,0)} m²</b><span>área estimada</span></div>
     </div>
-    <h3 class="sub">Contato</h3>
     <table class="kv"><tbody>
-      <tr><td>Empresa</td><td>Vmc Projetos e Instalações Elétricas Ltda · CNPJ 61.702.854/0001-04</td></tr>
-      <tr><td>Endereço</td><td>Vl. Arroio Grande, Interior · Ibirubá/RS · CEP 98200-000</td></tr>
-      <tr><td>Telefone</td><td>(55) 99133-7296</td></tr>
-      <tr><td>E-mail</td><td>projetos.on.engenharia@gmail.com</td></tr>
-    </tbody></table>`;
-
-  const p3=`<h2>Sua conta de energia</h2>
-    <p class="lead">Analisamos a fatura de ${I.refmes} da unidade consumidora abaixo e o histórico de consumo de ${I.hist}.</p>
-    <table class="kv"><tbody>
-      <tr><td>Concessionária</td><td>${esc(I.dist)}</td></tr>
-      <tr><td>Unidade consumidora</td><td>${I.uc} · ${esc(I.classe)}</td></tr>
-      <tr><td>Ligação</td><td>${I.lig} · consumo mínimo faturado de ${I.minimo} kWh</td></tr>
-      <tr><td>Fatura de ${I.refmes}</td><td>${I.fatura}</td></tr>
-      <tr><td>Consumo médio mensal</td><td><strong>${num(d.consumo)} kWh</strong></td></tr>
-      <tr><td>Tarifa considerada</td><td>R$ ${num(r.tar,4)} por kWh (com impostos)</td></tr>
+      <tr><td>Concessionária</td><td>${pesc(I.dist)} · UC ${pesc(I.uc)} · ${I.lig}</td></tr>
+      <tr><td>Consumo médio mensal</td><td><b>${num(v("consumo"))} kWh</b> · tarifa R$ ${num(r.tar,4)}/kWh (com impostos)</td></tr>
+      <tr><td>Equipamentos</td><td>${r.modulos} módulos de ${mod.wp} Wp · ${r.qtdInv} inversor de ${num(inv.kw,1)} kW (${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"})</td></tr>
+      <tr><td>Local e irradiação</td><td>${pesc(I.cid)} · ${num(r.hsp,2)} kWh/m²·dia</td></tr>
     </tbody></table>
-    <p class="small">${I.tarifaNota}</p>
-    ${I.nota?`<div class="callout"><strong>Observação técnica.</strong> ${esc(I.nota)}</div>`:''}`;
+    <h3 class="sub">Geração × consumo</h3>
+    <svg class="chart" viewBox="0 0 560 215" role="img" aria-label="Geração mensal e consumo">${chartGen(r)}</svg>
+    <div class="leg"><span><i class="b"></i>Geração estimada</span><span><i class="d"></i>Consumo</span><span class="sm">Total anual: ${num(kwh12)} kWh</span></div>
+    <h3 class="sub">Economia estimada</h3>
+    <div class="kpis3">
+      <div><b>${brl2(r.contaAntes)}</b><span>conta mensal hoje</span></div>
+      <div><b>${brl2(r.contaDepois)}</b><span>conta com energia solar</span></div>
+      <div class="hi"><b>${brl2(r.contaAntes-r.contaDepois)}</b><span>economia por mês (1º ano)</span></div>
+    </div>
+    <table class="data"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th></tr></thead><tbody>${linhas}</tbody></table>
+    <p class="small">Reajuste anual de ${num(r.reaj*100,1)}% na tarifa, perda de geração de ${num(r.degr*100,1)}% ao ano e cobrança gradual do Fio B (Lei 14.300). Valores estimados.</p>`;
 
-  const p4=`<h2>Dimensionamento</h2>
-    <p class="lead">O sistema foi dimensionado para compensar ${num(Math.min(r.cons-r.fee,r.cons))} kWh por mês, o consumo médio descontado o custo de disponibilidade da ligação ${I.lig.toLowerCase()}.</p>
-    <table class="kv"><tbody>
-      <tr><td>Local da usina</td><td>${esc(I.cid)}</td></tr>
-      <tr><td>Irradiação solar diária média anual</td><td>${num(r.hsp,2)} kWh/m²</td></tr>
-      <tr><td>Potência do sistema</td><td><strong>${num(r.kwp,2)} kWp</strong></td></tr>
-      <tr><td>Módulos fotovoltaicos</td><td>${r.modulos} módulos de ${mod.wp} Wp</td></tr>
-      <tr><td>Inversor</td><td>${r.qtdInv} inversor string de ${num(inv.kw,1)} kW (${inv.fases===1?'monofásico':inv.fases===2?'bifásico':'trifásico'})</td></tr>
-      <tr><td>Energia estimada (média anual)</td><td><strong>${num(r.gerMes)} kWh por mês</strong></td></tr>
-      <tr><td>Área útil estimada</td><td>${num(r.areaTotal,1)} m²</td></tr>
-      <tr><td>Tipo de estrutura</td><td>Telhado cerâmico (a confirmar em visita técnica)</td></tr>
-      <tr><td>Garantia de desempenho dos módulos</td><td>${mod.garantia} anos</td></tr>
-    </tbody></table>
-    <p class="small">As verificações de tensão, corrente e relação entre potência CC e CA do arranjo ficaram dentro dos limites do inversor (relação de ${num(r.ratio,2)}).</p>`;
-
-  const p5=`<h2>Geração de energia</h2>
-    <p class="lead">Geração mensal estimada do sistema comparada ao consumo da unidade.</p>
-    <svg class="chart" viewBox="0 0 560 240" role="img" aria-label="Geração mensal estimada e consumo">${d.svgGen}</svg>
-    <div class="leg"><span><i class="b"></i>Geração estimada (kWh)</span><span><i class="d"></i>Consumo (kWh)</span></div>
-    <div class="scroll"><table class="mini"><thead><tr><th></th>${MESES.map(m=>`<th>${m}</th>`).join('')}<th>Ano</th></tr></thead><tbody>
-      <tr><td>Geração</td>${r.gerM.map(x=>`<td>${num(x)}</td>`).join('')}<td><strong>${num(kwh12)}</strong></td></tr>
-      <tr><td>Consumo</td>${r.consM.map(x=>`<td>${num(x)}</td>`).join('')}<td><strong>${num(r.consM.reduce((s,x)=>s+x,0))}</strong></td></tr></tbody></table></div>
-    <p class="small">Os meses sem histórico de consumo usam a média. A geração acima do consumo vira crédito de energia na rede, válido por 60 meses.</p>`;
-
-  const p6=`<h2>Economia estimada</h2>
-    <p class="lead">Comparamos o custo da energia sem e com o sistema solar. Os valores já consideram o reajuste da tarifa, a perda de eficiência dos módulos e a cobrança gradual do Fio B pela Lei 14.300.</p>
-    <table class="kv"><tbody>
-      <tr><td>Conta mensal estimada hoje</td><td>${brl2(contaA)}</td></tr>
-      <tr><td>Conta mensal estimada com energia solar</td><td>${brl2(contaD)}</td></tr>
-      <tr><td><strong>Economia mensal no 1º ano</strong></td><td><strong>${brl2(contaA-contaD)}</strong></td></tr>
-    </tbody></table>
-    <div class="scroll"><table class="data"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th></tr></thead><tbody>${linhas}</tbody></table></div>
-    <p class="small">Valores estimados. Reajuste anual de ${num(r.reaj*100,1)}% na tarifa, simultaneidade de ${num(r.sim*100)}% e perda anual de geração de ${num(r.degr*100,1)}%.</p>`;
-
-  const p7=`<h2>Produtos e investimento</h2>
-    <table class="data prod"><thead><tr><th>Item</th><th>Qtd.</th></tr></thead><tbody>
+  const p3=`<h2>Investimento e retorno</h2>
+    <table class="data prod"><thead><tr><th>Item incluso</th><th>Qtd.</th></tr></thead><tbody>
       <tr><td>Módulos fotovoltaicos de ${mod.wp} Wp</td><td>${r.modulos}</td></tr>
       <tr><td>Inversor string de ${num(inv.kw,1)} kW</td><td>${r.qtdInv}</td></tr>
-      <tr><td>Estrutura de fixação para telhado cerâmico</td><td>1 kit</td></tr>
-      <tr><td>String box, cabos CC e conectores</td><td>1 kit</td></tr>
-      <tr><td>Projeto, ART, instalação e homologação junto à concessionária</td><td>1</td></tr>
-    </tbody></table>
+      <tr><td>Estrutura de fixação, string box, cabos CC e conectores</td><td>1 kit</td></tr>
+      <tr><td>Projeto, ART, instalação e homologação junto à concessionária</td><td>1</td></tr></tbody></table>
     <div class="total"><span>Valor total da proposta</span><strong>${brl2(r.invest)}</strong><em>${brl2(r.invest/(r.kwp*1000))} por Wp</em></div>
-    <h3 class="sub">Condições de pagamento</h3>
-    <table class="data"><thead><tr><th>Opção</th><th>Detalhes</th><th>Valor</th></tr></thead><tbody>
+    <table class="data"><thead><tr><th>Condição de pagamento</th><th>Detalhes</th><th>Valor</th></tr></thead><tbody>
       <tr><td>À vista</td><td>Pagamento único na contratação</td><td>${brl2(r.invest)}</td></tr>
-      <tr><td>Financiado</td><td>36 parcelas · 1,85% a.m. · sem entrada</td><td>${brl2(f36)}</td></tr>
-      <tr><td>Financiado</td><td>60 parcelas · 1,85% a.m. · sem entrada</td><td>${brl2(f60)}</td></tr>
-    </tbody></table>
-    <p class="small">Simulação sujeita à aprovação de crédito e a alterações no momento da contratação. Prazo de entrega: ${v('prazo')||45} dias.</p>`;
-
-  const p8=`<h2>Retorno do investimento</h2>
-    <div class="kpi3">
-      <div><b>${r.tir===null?'-':num(r.tir*100,1)+'%'}</b><span>TIR ao ano</span></div>
-      <div><b>${brl(vpl)}</b><span>VPL (TMA de 6%)</span></div>
+      ${fin.map(f=>`<tr><td>Financiado</td><td>${f.n} parcelas · ${num(f.i*100,2)}% a.m.${f.ent>0?` · entrada ${brl2(f.entV)}`:" · sem entrada"}</td><td>${brl2(f.parc)}</td></tr>`).join("")}</tbody></table>
+    <p class="small">Financiamento sujeito à aprovação de crédito. Prazo de entrega: ${v("prazo")||45} dias após a contratação.</p>
+    <h3 class="sub">Retorno do investimento</h3>
+    <div class="kpis3">
       <div><b>${pbTxt}</b><span>payback</span></div>
+      <div><b>${r.tir===null?"-":num(r.tir*100,1)+"%"}</b><span>TIR ao ano</span></div>
+      <div><b>${brl(r.totalEco)}</b><span>economia líquida em 25 anos</span></div>
     </div>
-    <svg class="chart" viewBox="0 0 560 260" role="img" aria-label="Fluxo de caixa acumulado em 25 anos">${d.svgCaixa}</svg>
-    <p class="small">Economia líquida acumulada em 25 anos: <strong>${brl(eco25)}</strong>, já descontados manutenção anual, Fio B e a troca do inversor no 12º ano.</p>`;
+    <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Fluxo de caixa acumulado">${chart(r)}</svg>
+    <h3 class="sub">Aceite</h3>
+    <p class="small" style="margin:0 0 4px">Estando de acordo com produtos, valores e condições, as partes firmam o aceite. Marcas e modelos finais são confirmados na cotação com o fornecedor antes da assinatura. Emitida em ${hoje}, válida até ${validade}.</p>
+    <div class="sign"><div><i></i><span>${pesc(P_EMP.razao)} · CNPJ ${P_EMP.cnpj}</span></div><div><i></i><span>${pesc(nome)}</span></div></div>
+    <div class="sobre"><b>Sobre a ON Engenharia</b><p>Soluções elétricas sob medida, com qualidade, segurança e eficiência energética: agronegócio, indústrias, comércio e residências. ${pesc(P_EMP.end)} · ${pesc(CONFIG.contato||"")}</p></div>`;
 
-  const p9=`<h2>Aceite da proposta</h2>
-    <p class="lead">Estando de acordo com os produtos, valores e condições desta proposta, as partes firmam o aceite.</p>
-    <h3 class="sub">Dados do contratante</h3>
-    <div class="form">
-      <div><span>Nome</span><i>${esc(nome)}</i></div><div><span>CPF / CNPJ</span><i></i></div>
-      <div><span>RG</span><i></i></div><div><span>Telefone</span><i></i></div>
-      <div class="w"><span>Endereço da instalação</span><i>${esc(I.end)}, ${esc(I.cid)}</i></div>
-      <div class="w"><span>E-mail</span><i></i></div>
-    </div>
-    <div class="sign"><div><i></i><span>ON Engenharia · Vmc Projetos e Instalações Elétricas Ltda<br>CNPJ 61.702.854/0001-04</span></div><div><i></i><span>${esc(nome)}</span></div></div>
-    <p class="small">Proposta preliminar emitida em ${hoje}, válida até ${validade}. Marcas e modelos dos equipamentos e valores finais serão confirmados na cotação com o fornecedor antes da assinatura.</p>`;
-
-  const pages=[p2,p3,p4,p5,p6,p7,p8,p9];
-  const T=pages.length+1;
-  const body=capa+pages.map((p,i)=>page(i+2,T,nome,p)).join('\n');
-
+  const paginas=[capaHtml,page(2,p2),page(3,p3)];
+  if(comSeg){ const sp=paginasSeguro(nome,seg,total,4,LOGO); paginas.push(page(4,sp[0])); paginas.push(page(5,sp[1])); }
   return `<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Proposta ${esc(nome)}</title>
+<title>Proposta ${pesc(nome)}</title>
 <style>
-/* Identidade do Orça Rede: azul-marinho #1D3140, azul #64ABDE, fundo claro #e8f3fb. Páginas empilhadas como no modelo em PDF. */
-:root{--dark:#1D3140;--dark2:#2d4a60;--blue:#64ABDE;--bl:#e8f3fb;--bm:#b8d8f0;--gray:#5a7a95;--line:#dce8f3;--paper:#ffffff;
-  --ink:#1D3140;--muted:#5a7a95;--accent:#64ABDE;--sun:#1D3140;--surface:#ffffff;color-scheme:light}
-*{box-sizing:border-box}
+@page{size:A4;margin:0}
+:root{--dark:#1D3140;--dark2:#2d4a60;--blue:#64ABDE;--bl:#eef5fb;--bm:#b8d8f0;--muted:#5a7a95;--line:#dce8f3;--accent:#64ABDE;--sun:#1D3140;--surface:#fff;--ink:#1D3140;color-scheme:light}
+*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 html,body{margin:0}
-body{background:#d9e5ef;color:var(--dark);font-family:'Segoe UI',Arial,sans-serif;font-size:15px;line-height:1.55;padding:20px 12px 40px}
-.page{background:var(--paper);max-width:820px;margin:0 auto 20px;border-radius:6px;box-shadow:0 2px 14px rgba(29,49,64,.14);overflow:hidden;display:flex;flex-direction:column;min-height:760px}
-.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--dark);color:#fff;padding:10px 28px}
-.ph img{height:46px;width:auto;border-radius:3px}
-.ph span{font-size:12.5px;color:var(--bm);letter-spacing:.02em}
-.pb{padding:32px 36px 20px;flex:1}
-.pf{display:flex;justify-content:space-between;padding:10px 28px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
-h1,h2,h3{margin:0;line-height:1.2}
-h2{font-size:27px;color:var(--dark);padding-bottom:10px;border-bottom:3px solid var(--blue);display:inline-block;margin-bottom:18px}
-h3.sub{font-size:16px;color:var(--dark2);margin:26px 0 8px}
-.lead{font-size:16px;color:var(--dark2);margin:0 0 18px}
-.small{font-size:12.5px;color:var(--muted);margin:12px 0 0}
+body{background:#d9e5ef;color:var(--dark);font-family:Montserrat,'Segoe UI',Arial,sans-serif;font-size:13px;line-height:1.45;padding:14px 0}
+.pg{width:210mm;height:297mm;margin:0 auto 14px;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 14px rgba(29,49,64,.16)}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9mm 14mm 3mm;border-bottom:2px solid var(--blue);margin:0 0 0}
+.ph img{height:13mm;width:auto}
+.ph span{font-size:10.5px;color:var(--muted)}
+.pb{padding:6mm 14mm 0;flex:1;min-height:0}
+.pf{display:flex;justify-content:space-between;gap:8px;padding:3mm 14mm 7mm;border-top:1px solid var(--line);font-size:9.5px;color:var(--muted);margin:0 14mm}
+.pf{padding-left:0;padding-right:0;margin:0 14mm}
+h1,h2,h3{margin:0;line-height:1.15}
+h2{font-size:20px;color:var(--dark);padding-bottom:5px;border-bottom:3px solid var(--blue);display:inline-block;margin-bottom:10px}
+h3.sub{font-size:14px;color:var(--dark2);margin:16px 0 6px}
+.lead{font-size:12.5px;color:var(--dark2);margin:0 0 8px}
+.small{font-size:10px;color:var(--muted);margin:6px 0 0}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-.kv td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-.kv td:first-child{width:38%;color:var(--muted);background:var(--bl);font-weight:600;font-size:13.5px}
-.kv td:last-child{text-align:left}
-.data th{background:var(--dark);color:#fff;font-weight:600;font-size:12.5px;padding:9px 10px;text-align:right}
+.kv td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;font-size:12.5px}
+.kv td:first-child{width:27%;color:var(--muted);background:var(--bl);font-weight:600;font-size:10.5px}
+.data th{background:var(--dark);color:#fff;font-weight:600;font-size:10.5px;padding:6px 9px;text-align:right}
 .data th:first-child,.data td:first-child{text-align:left}
-.data td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-size:14px}
+.data td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:right;font-size:12px}
 .data tbody tr:nth-child(even) td{background:#f7fafd}
-.data td:nth-child(2){text-align:right}
-.prod td:last-child{text-align:right}
-.mini{font-size:11.5px;margin-top:12px}
-.mini th{color:var(--muted);font-weight:600;padding:6px 3px;text-align:right}
-.mini td{padding:6px 3px;border-top:1px solid var(--line);text-align:right}
-.mini th:first-child,.mini td:first-child{text-align:left;min-width:64px}
-.scroll{overflow-x:auto}
-.callout{margin-top:18px;background:var(--bl);border-left:4px solid var(--blue);padding:12px 16px;border-radius:0 8px 8px 0;font-size:14px}
-.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.trio div{background:var(--bl);border-radius:10px;padding:16px}
-.trio h3{font-size:15px;color:var(--dark);margin-bottom:6px}
-.trio p{margin:0;font-size:13.5px;color:var(--dark2)}
-@media(max-width:640px){.trio{grid-template-columns:1fr}.pb{padding:24px 18px 14px}.ph{padding:10px 16px}}
-.chart{width:100%;height:auto;display:block}
-.chart text{fill:var(--muted);font:11px 'Segoe UI',Arial,sans-serif}
-.leg{display:flex;gap:20px;font-size:12.5px;color:var(--muted);margin:6px 0 4px}
-.leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
-.leg i.b{background:var(--blue)}.leg i.d{background:var(--dark)}
-.total{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;background:var(--dark);color:#fff;border-radius:10px;padding:16px 20px;margin-top:16px}
-.total span{color:var(--bm);font-size:14px}.total strong{font-size:30px;color:#fff}.total em{font-style:normal;color:var(--blue);font-size:13.5px}
-.kpi3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-.kpi3 div{background:var(--bl);border-radius:10px;padding:14px 16px}
-.kpi3 b{display:block;font-size:24px;color:var(--dark)}.kpi3 span{font-size:12.5px;color:var(--muted)}
-@media(max-width:640px){.kpi3{grid-template-columns:1fr}}
-.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.form .w{grid-column:1/-1}
-.form span{display:block;font-size:12px;color:var(--muted);font-weight:600}
-.form i{display:block;font-style:normal;min-height:30px;border-bottom:1.5px solid var(--dark2);padding-top:6px}
-.sign{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:56px}
-.sign i{display:block;border-bottom:1.5px solid var(--dark);height:34px}
-.sign span{display:block;font-size:12.5px;color:var(--muted);margin-top:6px}
-@media(max-width:640px){.form,.sign{grid-template-columns:1fr}}
-/* capa */
-.cover{background:var(--dark);color:#fff;min-height:900px;padding:34px 40px;justify-content:space-between}
-.cv-top{display:flex;justify-content:space-between;align-items:center}
-.cv-logo{height:120px;width:auto;border-radius:6px}
-.cv-badge{border:1.5px solid var(--blue);color:var(--blue);padding:5px 14px;border-radius:99px;font-size:12.5px;font-weight:600}
-.cv-main{padding:20px 0}
-.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:13px;margin:0 0 10px}
-.cover h1{font-size:54px;line-height:1.05;margin-bottom:34px}
-.cv-client{display:grid;gap:4px;border-left:4px solid var(--blue);padding-left:18px;margin-bottom:38px}
-.cv-client span{color:var(--bm);font-size:13px}.cv-client strong{font-size:24px}.cv-client em{font-style:normal;color:var(--bm);font-size:14px}
-.cv-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.cv-kpis div{background:var(--dark2);border-radius:12px;padding:16px 18px}
-.cv-kpis b{display:block;font-size:26px}.cv-kpis span{font-size:13px;color:var(--bm)}
-.cv-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:12.5px;color:var(--bm);border-top:1px solid var(--dark2);padding-top:14px}
-@media(max-width:640px){.cover{padding:24px 20px}.cover h1{font-size:38px}.cv-kpis{grid-template-columns:1fr}}
-@media print{body{background:#fff;padding:0}.page{box-shadow:none;border-radius:0;margin:0;break-after:page;max-width:none}}
+.data.prod td:last-child{text-align:right}
+.callout{margin-top:8px;background:var(--bl);border-left:4px solid var(--blue);padding:7px 11px;border-radius:0 6px 6px 0;font-size:10.5px}
+.chart{width:100%;height:auto;display:block;max-height:66mm}
+.chart text{fill:var(--muted);font:10px Montserrat,'Segoe UI',Arial,sans-serif}
+.leg{display:flex;gap:16px;font-size:10px;color:var(--muted);margin:2px 0 0}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.leg i.b{background:var(--blue)}.leg i.d{background:var(--dark)}.leg .sm{margin-left:auto}
+.kpis4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px}
+.kpis4 div,.kpis3 div{background:var(--bl);border-radius:8px;padding:8px 10px}
+.kpis4 b{display:block;font-size:17px}.kpis4 span,.kpis3 span{font-size:9.5px;color:var(--muted)}
+.kpis3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.kpis3 b{display:block;font-size:18px}
+.kpis3 .hi{background:var(--dark);color:#fff}.kpis3 .hi span{color:var(--bm)}
+.total{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border:2px solid var(--dark);border-radius:8px;padding:8px 14px;margin:8px 0}
+.total span{color:var(--muted);font-size:11px}.total strong{font-size:26px;color:var(--dark)}.total em{font-style:normal;color:var(--blue);font-size:11px;font-weight:600}
+.sign{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+.sign i{display:block;border-bottom:1.3px solid var(--dark);height:22px}
+.sign span{display:block;font-size:9.5px;color:var(--muted);margin-top:4px}
+/* capa branca */
+.cover{padding:14mm 16mm 10mm}
+.cv-top{display:flex;justify-content:space-between;align-items:flex-start}
+.cv-logo{height:30mm;width:auto}
+.cv-badge{border:1.2px solid var(--blue);color:var(--blue);padding:3px 12px;border-radius:99px;font-size:10.5px;font-weight:600}
+.cv-main{margin-top:16mm}
+.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:11.5px;margin:0 0 10px}
+.cover h1{font-size:46px;line-height:1.02;color:var(--dark);margin-bottom:12mm}
+.cv-client{display:grid;gap:3px;border-left:4px solid var(--blue);padding-left:14px}
+.cv-client span{color:var(--muted);font-size:11px}.cv-client strong{font-size:21px;color:var(--dark)}.cv-client em{font-style:normal;color:var(--muted);font-size:11.5px}
+.arte{margin-top:auto;margin-bottom:6mm;height:78mm;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:10px}
+.arte svg{width:100%;height:100%}.arte img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+.camp{border:1.5px solid var(--blue);border-radius:10px;padding:9px 14px;margin-bottom:6mm;background:var(--bl);display:flex;flex-direction:column;gap:2px}
+.camp b{font-size:14px;color:var(--dark)}.camp span{font-size:11px;color:var(--muted)}
+.cv-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:10px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px;margin-top:auto}
+.arte+.camp,.cv-main+.arte{margin-top:auto}
+/* seguro */
+.ck{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:99px;color:#fff;font:700 10px/1 Arial;font-style:normal}
+.ck.ok{background:#2e9d52}.ck.no{background:#d63a35}
+.prot td{padding:2.5px 8px}.prot .c,.prot th.c{text-align:center}
+.in{color:var(--muted);font-weight:400;font-size:9px}
+.cob{margin-top:8px}.cob td small{display:block;color:var(--muted);font-size:9px}.cob td.fr{text-align:left;color:var(--muted);font-size:9.5px}.cob td.n{white-space:nowrap}.cob th.n,.cob td.n{text-align:right}.cob th:nth-child(3){text-align:left}
+.tot2{display:flex;justify-content:space-between;border-top:1.5px solid var(--dark);padding-top:5px;font-size:11.5px;margin:2px 0 0}
+.chk{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:11px;margin:8px 0}
+.chk span{display:inline-flex;align-items:center;gap:5px}.bx{display:inline-block;width:11px;height:11px;border:1.2px solid var(--dark)}
+.chart.cx{max-height:50mm}.sobre{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}.sobre b{font-size:11px;color:var(--dark2)}.sobre p{margin:3px 0 0;font-size:10.5px;color:var(--muted)}
+@media print{body{background:#fff;padding:0}.pg{margin:0;box-shadow:none;break-after:page}.pg:last-child{break-after:auto}}
 </style></head><body>
-${body}
+${paginas.join("\n")}
 </body></html>`;
 }
 
 function atualizarPrev(){ if(!R) return; try{ $("prev").srcdoc = propostaHTML(); }catch(e){ console.error(e); } }
 $("pr-abrir").onclick=()=>{ if(!R) return; const w=window.open("","_blank"); if(!w){ flash($("toast"),"Libere pop-ups para abrir a proposta."); return; } w.document.open(); w.document.write(propostaHTML()); w.document.close(); };
 $("pr-baixar").onclick=()=>{ if(!R) return; const b=new Blob([propostaHTML()],{type:"text/html"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="Proposta - "+(($("cliente").value||"cliente").replace(/[\\/:*?"<>|]/g,"").trim())+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); };
+
+/* capa: imagem configurável + seguro */
+function capaPrev(){ const im=(CONFIG.capa||{}).imagem||""; const e=$("capa-prev"), b=$("capa-rm"); e.style.display=im?"block":"none"; b.style.display=im?"inline-block":"none"; if(im) e.src=im; }
+$("capa-file").addEventListener("change",ev=>{
+  const f=ev.target.files[0]; if(!f) return;
+  const img=new Image(); const url=URL.createObjectURL(f);
+  img.onload=()=>{ const W=Math.min(1400,img.width), H=Math.round(img.height*W/img.width); const c=document.createElement("canvas"); c.width=W; c.height=H;
+    c.getContext("2d").drawImage(img,0,0,W,H); CONFIG.capa=CONFIG.capa||{}; CONFIG.capa.imagem=c.toDataURL("image/jpeg",0.82); CONFIG.capa.estilo="imagem";
+    document.querySelector('[data-cfg="capa.estilo"]').value="imagem"; URL.revokeObjectURL(url); saveCfg(); capaPrev(); calc(); };
+  img.src=url;
+});
+$("capa-rm").onclick=()=>{ CONFIG.capa.imagem=""; if(CONFIG.capa.estilo==="imagem"){ CONFIG.capa.estilo="aneis"; document.querySelector('[data-cfg="capa.estilo"]').value="aneis"; } $("capa-file").value=""; saveCfg(); capaPrev(); calc(); };
+["seg-on","seg-proj","seg-cond","seg-v1","seg-v2","seg-v3","seg-v4","seg-v5"].forEach(id=>$(id).addEventListener("input",()=>calc()));
+["seg-proj","seg-v1","seg-v2","seg-v3","seg-v4","seg-v5"].forEach(id=>$(id).addEventListener("blur",()=>{ const el=$(id), s=el.value.replace(/[^\d,.]/g,""); const n=parseFloat(s.includes(",")?s.replace(/\./g,"").replace(",","."):s); if(n) el.value=n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }));
+capaPrev();
 
 /* ============ ON: integração com o Orça Rede (Supabase) ============ */
 var SB=null, UID=null, NIVEL=null, ISADM=false, CAN_EDIT=true, READY=false, DIRTY=false, SAVE_T=null;
@@ -1071,7 +1088,7 @@ function aplicarConfig(d){
     if(k==="tec"){ base.tec=Object.assign(base.tec,s.tec); base.tec.perdas=Object.assign(clone(DEF.tec.perdas),(s.tec||{}).perdas); } else base[k]=s[k]; }
   CONFIG=base;
   if(d.custos){ Object.keys(COSTS).forEach(k=>{ if(d.custos[k]) COSTS[k]=d.custos[k]; }); nextId=Math.max(nextId,...Object.values(COSTS).flat().map(l=>+l.id||0))+1; }
-  initUI();
+  initUI(); if(typeof capaPrev==="function") capaPrev();
 }
 async function salvar(){
   if(!NEG||!CAN_EDIT||!READY||!DIRTY) return;
