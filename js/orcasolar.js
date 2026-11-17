@@ -2,6 +2,7 @@
 const DEF = {
   empresa:"ON Engenharia Elétrica", contato:"(55) 99133-7296 · projetos.on.engenharia@gmail.com", validade:10, descMax:5,
   financeiras:[{id:"f1",nome:"Financiamento 36x (exemplo)",taxa:1.85,prazo:36,entrada:0},{id:"f2",nome:"Financiamento 60x (exemplo)",taxa:1.85,prazo:60,entrada:0}],
+  modelosPreco:[],
   tabProj:[{ate:5,v:500},{ate:10,v:630},{ate:20,v:700},{ate:30,v:820},{ate:40,v:950},{ate:50,v:1050},{ate:60,v:1200},{ate:70,v:1300},{ate:80,v:1800}],
   capa:{estilo:"prime",imagem:"",titulo:"Energia solar fotovoltaica",campanha:"",detalhe:""},
   tec:{perdas:{temp:10,sujeira:3,sombra:0,cabos:2,inversor:3,outras:3},
@@ -1666,7 +1667,7 @@ function capaUrl(id){ return new URL("assets/capas/"+id+".jpg", location.href).h
 function capaAtual(){ const s=$("pr-capa"); const v_=(s&&s.value)||((CONFIG.capa||{}).estilo)||"prime"; return v_; }
 async function capaPronta(){ const m=CAPAS.find(c=>c.id===capaAtual()); if(!m||CAPA_B64[m.id]) return; CAPA_B64[m.id]=await dataUrl("assets/capas/"+m.id+".jpg"); }
 function capaMarca(){ const cur=(CONFIG.capa||{}).estilo; document.querySelectorAll("#capa-gal [data-cp]").forEach(b=>b.classList.toggle("on",b.dataset.cp===cur)); }
-function initCapas(){ tabProjTxt();
+function initCapas(){ tabProjTxt(); if(typeof pmFill==="function") pmFill($("pm-sel").value);
   if(!CONFIG.capa) CONFIG.capa={};
   if(CONFIG.capa.estilo==="paineis"||!CONFIG.capa.estilo) CONFIG.capa.estilo="prime";
   const ps=$("pr-capa"), keep=ps.value;
@@ -1720,5 +1721,29 @@ tabProjTxt();
 /* ---- tensão sugerida pelo padrão de entrada (editável) */
 $("padrao").addEventListener("change",()=>{ $("tensao").value={"30":"mono220","50":"bi220","100":"tri380"}[$("padrao").value]||"mono220"; if(typeof atualizarPrev==="function") atualizarPrev(); });
 $("tensao").addEventListener("change",()=>{ if(typeof atualizarPrev==="function") atualizarPrev(); if(typeof agendar==="function") agendar(); });
+
+/* ---- modelos de precificação */
+const PM_IDS=["metodo","margem","origem","desclib"];
+function pmList(){ if(!Array.isArray(CONFIG.modelosPreco)) CONFIG.modelosPreco=[]; return CONFIG.modelosPreco; }
+function pmFill(sel){ const a=pmList(), s=$("pm-sel"); s.innerHTML=a.length?a.map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join(""):'<option value="">(nenhum salvo)</option>'; if(sel&&a.some(m=>m.id===sel)) s.value=sel; }
+function pmMsg(t){ $("pm-msg").textContent=t; setTimeout(()=>{ $("pm-msg").textContent=""; },4000); }
+$("pm-sal").onclick=()=>{
+  const nome=($("pm-nome").value||"").trim()||(pmList().find(m=>m.id===$("pm-sel").value)||{}).nome; if(!nome){ pmMsg("Digite um nome para o modelo."); return; }
+  const f={}; PM_IDS.forEach(id=>{ const e=$(id); if(e) f[id]=e.value; });
+  const a=pmList(), ex=a.find(m=>m.nome.toLowerCase()===nome.toLowerCase()), m={id:ex?ex.id:"pm"+Date.now().toString(36),nome,costs:clone(COSTS),f};
+  if(ex) a[a.indexOf(ex)]=m; else a.push(m);
+  saveCfg(); pmFill(m.id); $("pm-nome").value=""; if(typeof cfgMark==="function"){ CFG_DIRTY=true; cfgMark(); } if(NEG&&ISADM) $("cfg-save").click();
+  pmMsg(ex?"Modelo atualizado.":"Modelo salvo.");
+};
+$("pm-apl").onclick=()=>{
+  const m=pmList().find(x=>x.id===$("pm-sel").value); if(!m) return;
+  Object.keys(COSTS).forEach(k=>{ if(m.costs[k]) COSTS[k]=clone(m.costs[k]); });
+  nextId=Math.max(nextId,...Object.values(COSTS).flat().map(l=>+l.id||0))+1;
+  Object.entries(m.f||{}).forEach(([id,val])=>{ const e=$(id); if(e&&!(e.tagName==="SELECT"&&![...e.options].some(o=>o.value===String(val)))) e.value=val; });
+  if(typeof updateMargemLabel==="function") updateMargemLabel();
+  renderEditor(); calc(); renderPreco(); pmMsg("Modelo \""+m.nome+"\" aplicado.");
+};
+$("pm-del").onclick=()=>{ const a=pmList(), i=a.findIndex(x=>x.id===$("pm-sel").value); if(i<0) return; const n=a[i].nome; a.splice(i,1); saveCfg(); pmFill(); if(NEG&&ISADM) $("cfg-save").click(); pmMsg("Modelo \""+n+"\" excluído."); };
+pmFill();
 
 integrar();

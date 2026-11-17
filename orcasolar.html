@@ -397,6 +397,20 @@ table.ed td:first-child input{min-width:96px}
           </div>
           <details class="mt"><summary>Kit calculado do catálogo (referência)</summary><div class="scroll mt"><table id="tbl-kit"></table></div></details>
         </section>
+        <section class="card adm-only">
+          <h2>Modelos de precificação</h2>
+          <div class="fields">
+            <label class="full">Modelo salvo<select id="pm-sel"></select></label>
+            <label class="full">Nome para salvar<input id="pm-nome" type="text" placeholder="Ex.: Residencial telhado cerâmico"></label>
+          </div>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn alt small" id="pm-apl" type="button">Aplicar modelo</button>
+            <button class="btn small" id="pm-sal" type="button">Salvar modelo atual</button>
+            <button class="btn alt small" id="pm-del" type="button">Excluir</button>
+            <span class="mini" id="pm-msg"></span>
+          </div>
+          <p class="note">O modelo guarda a lista de custos e deduções (com unidade ou %), o método e o valor da margem e o desconto máximo liberado. Não guarda o valor do kit nem o desconto aplicado. Salvar também grava como padrão para todos.</p>
+        </section>
         <section class="card">
           <h2>2. Margem e desconto</h2>
           <div class="fields">
