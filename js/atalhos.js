@@ -39,9 +39,8 @@
   const draw = (extra) => {
     nav.className = "atl" + (min ? " min" : "");
     if (oculto) { nav.classList.add("oculta"); nav.innerHTML = `<button type="button" class="mostrar" title="Mostrar atalhos" aria-label="Mostrar atalhos">☰</button>`; nav.querySelector(".mostrar").onclick = () => { oculto = false; try { localStorage.setItem("atl.oculto", "0") } catch (e) {} draw(extra) }; requestAnimationFrame(aplicaPos); return }
-    nav.innerHTML = `<span class="grip" title="Arraste para mover · duplo clique volta ao lugar">⠿</span><button type="button" class="hb" title="Voltar (Alt+←)" aria-label="Voltar">◀</button><button type="button" class="hf" title="Avançar (Alt+→)" aria-label="Avançar">▶</button>` + [...L, ...extra].map(([i, t, h, on]) => `<a href="${h}" class="${on ? "on" : ""}" title="${t}">${i}<span class="rot">${t}</span></a>`).join("") +
+    nav.innerHTML = `<span class="grip" title="Arraste para mover · duplo clique volta ao lugar">⠿</span>` + [...L, ...extra].map(([i, t, h, on]) => `<a href="${h}" class="${on ? "on" : ""}" title="${t}">${i}<span class="rot">${t}</span></a>`).join("") +
       `<button type="button" class="fundo" title="Fundo de tela">🎨</button><button type="button" class="ocultar" title="Ocultar a barra" aria-label="Ocultar a barra">✕</button><button type="button" class="tam" title="${min ? "Mostrar nomes" : "Só ícones"}" aria-label="Alternar tamanho">${min ? "»" : "«"}</button>`;
-    nav.querySelector(".hb").onclick = () => history.back(); nav.querySelector(".hf").onclick = () => history.forward();
     nav.querySelector(".tam").onclick = () => { min = !min; try { localStorage.setItem("atl.min", min ? "1" : "0") } catch (e) {} draw(extra) };
     nav.querySelector(".ocultar").onclick = () => { oculto = true; try { localStorage.setItem("atl.oculto", "1") } catch (e) {} draw(extra) };
     nav.querySelector(".fundo").onclick = e => { e.stopPropagation(); popFundo() };
@@ -83,7 +82,11 @@
   aplicaFundo();
   addEventListener("resize", () => aplicaPos());
   draw([]);
-  const pronto = () => document.body.appendChild(nav);
+  const hn = document.createElement("div"); hn.className = "hnav";
+  hn.innerHTML = '<button type="button" title="Voltar (Alt+←)" aria-label="Voltar">◀</button><button type="button" title="Avançar (Alt+→)" aria-label="Avançar">▶</button>';
+  hn.children[0].onclick = () => history.back(); hn.children[1].onclick = () => history.forward();
+  const hs = document.createElement("style"); hs.textContent = ".hnav{position:fixed;top:4px;left:4px;z-index:1000;display:flex;gap:2px;background:rgba(30,47,64,.92);border:1px solid #3b5670;border-radius:999px;padding:2px}.hnav button{border:0;background:none;color:#e8f1f9;cursor:pointer;border-radius:999px;width:28px;height:24px;font-size:12px;padding:0}.hnav button:hover{background:#2b4157}@media print{.hnav{display:none}}"; document.head.appendChild(hs);
+  const pronto = () => { document.body.appendChild(nav); document.body.appendChild(hn) };
   if (document.body) pronto(); else document.addEventListener("DOMContentLoaded", pronto);
   (async () => {
     try {
