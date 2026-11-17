@@ -295,7 +295,7 @@ img.logo{width:auto;height:38px;border-radius:0;object-fit:contain;background:no
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
 <script src="js/db.js"></script>
-<script src="js/atalhos.js?v=6"></script>
+<script src="js/atalhos.js?v=7"></script>
 <script src="js/global.js?v=13" defer></script>
 </head>
 <body>
@@ -692,6 +692,7 @@ async function abrirCalendario(){
 }
 async function abrir(id,manter){
   aberto=id;const c=CARDS.find(x=>x.id===id);if(!c){fechar();return}
+  if(!manter&&!(history.state&&history.state.card===id)){try{history.pushState({card:id},"")}catch(e){}}
   if(!manter)await carregarExtras(id);
   const cols=colsDe(c.quadro);const i=cols.findIndex(x=>x.id===c.coluna);const ed=podeEditar(c);
   const rascunho=$("#tx")?$("#tx").value:"";
@@ -924,7 +925,9 @@ function bindLembretes(c,root){
   root.querySelectorAll("[data-lf]").forEach(b=>b.onclick=async()=>{const {error}=await sb.from("neg_lembretes").update({feito:true}).eq("id",b.dataset.lf);if(error){toast(error.message);return}await carregarExtras(c.id);await carregarTudo();render();abrir(c.id,true)});
   root.querySelectorAll("[data-lx]").forEach(b=>b.onclick=async()=>{if(!b.dataset.c){b.dataset.c=1;b.textContent="?";return}const {error}=await sb.from("neg_lembretes").delete().eq("id",b.dataset.lx);if(error){toast(error.message);return}await carregarExtras(c.id);await carregarTudo();render();abrir(c.id,true)});
 }
-function fechar(){document.querySelectorAll(".gv").forEach(x=>x.remove());aberto=null;clearInterval(pollChat);if(gravando)gravando.stop()}
+function fechar(){if(history.state&&history.state.card){try{history.back();return}catch(e){}}
+  fechaCard()}
+function fechaCard(){document.querySelectorAll(".gv").forEach(x=>x.remove());aberto=null;clearInterval(pollChat);if(gravando)gravando.stop()}
 const botoesAnexo=()=>`<div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn" style="position:relative;overflow:hidden">📎 Anexar arquivo<input type="file" multiple id="fa" style="position:absolute;inset:0;opacity:0"></label><button class="btn" id="rec">${gravando?"⏹ Parar gravação":"🎙 Gravar áudio"}</button>${gravando?'<span class="rec">● gravando…</span>':""}</div>`;
 function anexosLista(){
   return extras.anx.length?`<div class="anx">${extras.anx.map(a=>`<div>${a.audio?`<i>🎙</i><span style="flex:1;display:grid;gap:4px;min-width:0"><span>${esc(a.nome)} <span class="note">· ${esc(a.autor_nome)}</span></span><audio controls preload="none" src="${esc(a.url)}" style="width:100%;height:32px"></audio></span>`:`<i>${esc((a.nome.split(".").pop()||"ARQ").toUpperCase().slice(0,4))}</i><span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(a.nome)}<span class="note"> · ${esc(a.autor_nome)}</span></span><a class="btn" href="${esc(a.url)}${a.url.includes("?")?"&":"?"}download=${encodeURIComponent(a.nome)}" target="_blank" rel="noopener">⬇ Baixar</a>`}${(ADM||a.autor===eu)?`<button class="lnk del" data-ad="${a.id}" title="Excluir">×</button>`:""}</div>`).join("")}</div>`:'<p class="note" style="margin:0">Nenhum anexo ainda.</p>';
@@ -1241,6 +1244,7 @@ try{await recarregar()}catch(e){$("#app").innerHTML=`<div class="erro"><h1>Não 
 const abrirId=new URLSearchParams(location.search).get("n");if(abrirId&&CARDS.find(c=>c.id===abrirId)){const c=CARDS.find(x=>x.id===abrirId);quadro=c.quadro;render();abrir(abrirId)}
 setInterval(async()=>{if(document.hidden||document.querySelector(".modal"))return;const ab=aberto,aba=abaCard;try{await carregarTudo();await carregarAvisos()}catch(e){return}if(!document.querySelector(".gv"))render();else{const b=$("#bIn");if(b){const nl=INBOX.filter(n=>!n.lido).length;b.innerHTML="🔔 Caixa de entrada"+(nl?`<b class="badge ${INBOX.some(n=>!n.lido&&n.tipo==="mencao")?"pisca":""}">${nl}</b>`:"")}}},25000);
 window.addEventListener("on:notif",async()=>{try{await carregarAvisos()}catch(e){return}if(!document.querySelector(".gv")&&!document.querySelector(".modal"))render();else{const b=$("#bIn");if(b){const nl=INBOX.filter(n=>!n.lido).length;b.innerHTML="🔔 Caixa de entrada"+(nl?`<b class="badge ${INBOX.some(n=>!n.lido&&n.tipo==="mencao")?"pisca":""}">${nl}</b>`:"")}}});
+window.addEventListener("popstate",e=>{const s=e.state;if(s&&s.card){if(!document.querySelector(".gv"))abrir(s.card)}else if(document.querySelector(".gv"))fechaCard()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.querySelector(".gv")&&!document.querySelector(".modal"))fechar()});
 })();
 </script>

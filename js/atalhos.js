@@ -39,8 +39,9 @@
   const draw = (extra) => {
     nav.className = "atl" + (min ? " min" : "");
     if (oculto) { nav.classList.add("oculta"); nav.innerHTML = `<button type="button" class="mostrar" title="Mostrar atalhos" aria-label="Mostrar atalhos">☰</button>`; nav.querySelector(".mostrar").onclick = () => { oculto = false; try { localStorage.setItem("atl.oculto", "0") } catch (e) {} draw(extra) }; requestAnimationFrame(aplicaPos); return }
-    nav.innerHTML = `<span class="grip" title="Arraste para mover · duplo clique volta ao lugar">⠿</span>` + [...L, ...extra].map(([i, t, h, on]) => `<a href="${h}" class="${on ? "on" : ""}" title="${t}">${i}<span class="rot">${t}</span></a>`).join("") +
+    nav.innerHTML = `<span class="grip" title="Arraste para mover · duplo clique volta ao lugar">⠿</span><button type="button" class="hb" title="Voltar (Alt+←)" aria-label="Voltar">◀</button><button type="button" class="hf" title="Avançar (Alt+→)" aria-label="Avançar">▶</button>` + [...L, ...extra].map(([i, t, h, on]) => `<a href="${h}" class="${on ? "on" : ""}" title="${t}">${i}<span class="rot">${t}</span></a>`).join("") +
       `<button type="button" class="fundo" title="Fundo de tela">🎨</button><button type="button" class="ocultar" title="Ocultar a barra" aria-label="Ocultar a barra">✕</button><button type="button" class="tam" title="${min ? "Mostrar nomes" : "Só ícones"}" aria-label="Alternar tamanho">${min ? "»" : "«"}</button>`;
+    nav.querySelector(".hb").onclick = () => history.back(); nav.querySelector(".hf").onclick = () => history.forward();
     nav.querySelector(".tam").onclick = () => { min = !min; try { localStorage.setItem("atl.min", min ? "1" : "0") } catch (e) {} draw(extra) };
     nav.querySelector(".ocultar").onclick = () => { oculto = true; try { localStorage.setItem("atl.oculto", "1") } catch (e) {} draw(extra) };
     nav.querySelector(".fundo").onclick = e => { e.stopPropagation(); popFundo() };
