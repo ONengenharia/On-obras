@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orçamento Solar · ON Engenharia</title>
+<link rel="icon" href="assets/on-logo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
+<style>
+/* Fluxo em etapas: Entradas, Sistema, Valor e DRE, Proposta. Configurações à parte. Faixa de resumo fixa sob o menu. */
+/* Identidade ON Engenharia (mesma do Negócios): navy #1e2f40, azul ON #62a8dc, amarelo solar #e0a800. Fonte Montserrat. */
+:root{
+  --bg:#eef2f6;--surface:#ffffff;--ink:#1e2f40;--muted:#5a6f83;--line:#d6e1ea;
+  --navy:#1e2f40;--onblue:#62a8dc;
+  --accent:#2f6f9f;--accent-ink:#ffffff;--sun:#e0a800;--good:#1f8a4c;--warn:#b7791f;
+  --s1:#2f6f9f;--s2:#e0a800;--s3:#62a8dc;--s4:#8aa0b3;--s5:#1f8a4c;
+  --font-display:Montserrat,"Segoe UI",system-ui,sans-serif;
+  --font-body:Montserrat,"Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101b26;--surface:#172534;--ink:#e8f1f9;--muted:#9fb8cc;--line:#2b4157;
+    --navy:#0b141d;--accent:#62a8dc;--accent-ink:#0b141d;--sun:#e3b94b;--good:#52c47f;--warn:#e3a94b;
+    --s1:#62a8dc;--s2:#e3b94b;--s3:#8cc2ea;--s4:#6f869a;--s5:#52c47f;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101b26;--surface:#172534;--ink:#e8f1f9;--muted:#9fb8cc;--line:#2b4157;
+  --navy:#0b141d;--accent:#62a8dc;--accent-ink:#0b141d;--sun:#e3b94b;--good:#52c47f;--warn:#e3a94b;
+  --s1:#62a8dc;--s2:#e3b94b;--s3:#8cc2ea;--s4:#6f869a;--s5:#52c47f;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;line-height:1.15}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 48px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{font-size:26px}
+.brand p{margin:0;color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px;flex-wrap:wrap}
+.tabs button{border:0;background:transparent;color:var(--muted);font:600 14px var(--font-body);padding:8px 14px;border-radius:7px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tabs button b{font:700 12px var(--font-body);width:20px;height:20px;border-radius:99px;border:1.5px solid currentColor;display:inline-grid;place-items:center}
+.tabs button[aria-selected="true"]{background:var(--navy);color:#fff}
+.tabs .gap{width:1px;background:var(--line);margin:4px 4px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--sun);outline-offset:2px}
+.strip{display:flex;flex-wrap:wrap;gap:8px 22px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 16px;margin-bottom:18px;position:sticky;top:8px;z-index:5}
+.strip div{display:flex;flex-direction:column;min-width:96px}
+.strip .l{font-size:11.5px;color:var(--muted);font-weight:600}
+.strip .v{font:700 17px var(--font-display);font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
+@media (max-width:960px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card + .card{margin-top:16px}
+.card h2{font-size:17px;margin-bottom:12px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fields.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fields .full{grid-column:1/-1}
+@media (max-width:520px){.fields,.fields.three{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;font-weight:600;color:var(--muted)}
+input,select,textarea{font:500 15px var(--font-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+input[type=number]{font-variant-numeric:tabular-nums}
+textarea{resize:vertical;min-height:64px}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:520px){.kpis{grid-template-columns:1fr}}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:600}
+.kpi .v{font:700 24px var(--font-display);font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.main{background:var(--navy);border-color:var(--navy);color:#fff;grid-column:1/-1}
+.kpi.main .l,.kpi.main .s{color:inherit;opacity:.85}
+.kpi.main .v{font-size:34px}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}
+.pos{color:var(--good)}.neg{color:var(--warn)}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font:11px var(--font-body)}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{font:600 14px var(--font-body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
+.btn.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:6px 12px;font-size:13px}
+.sticky{position:sticky;top:84px}
+@media (max-width:960px){.sticky{position:static}.strip{position:static}}
+.hidden{display:none}
+.pill{display:inline-block;font:700 12px var(--font-body);padding:2px 9px;border-radius:99px;border:1px solid currentColor}
+.pill.ok{color:var(--good)}.pill.warn{color:var(--warn)}.pill.mut{color:var(--muted)}
+.tec td:last-child{text-align:right}
+.tec td:first-child{color:var(--muted);width:38%}
+.checks{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:13px}
+.checks li{display:flex;gap:8px;align-items:baseline}
+details{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+summary{cursor:pointer;font:600 13.5px var(--font-body);color:var(--accent)}
+/* ON: logo, modo embutido, bloqueio */
+.brand img{height:40px;width:auto;display:block}
+.embed .wrap{padding-top:10px}
+.embed .brand p{display:none}
+.embed .brand h1{font-size:19px}
+.embed .brand img{height:30px}
+.embed .strip{top:0}
+#blk{position:fixed;inset:0;background:var(--bg);display:none;place-items:center;z-index:50;padding:24px;text-align:center}
+#blk.on{display:grid}
+#blk div{max-width:420px}
+#blk a{color:var(--accent);font-weight:700}
+.svs{font-size:12.5px;font-weight:600;color:var(--muted)}
+.svs.ok{color:var(--good)}.svs.er{color:var(--warn)}
+.btn.alt.small.on{background:var(--navy);color:#fff}
+#prev{width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;background:#d9e5ef}
+.pg2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:620px){.pg2{grid-template-columns:1fr}}
+#conc-filter{max-width:320px;margin-bottom:10px}
+table.ed tr.fh{display:none}
+table.ed input[type=number]{min-width:84px}
+.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:10px}
+@media (max-width:520px){.months{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.months label{font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+.months input{padding:6px 6px;font-size:13px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.opt{border:1.5px solid var(--line);border-radius:12px;padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted)}
+.opt.sel{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 22%,transparent)}
+.opt .t{font:700 14px var(--font-body);color:var(--ink)}
+.opt .big{font:700 26px var(--font-display);color:var(--ink);font-variant-numeric:tabular-nums}
+.opt .d{font-size:12px;min-height:34px}
+.opt .act{margin-top:8px}
+/* Configurações */
+.subtabs{display:flex;gap:6px;flex-wrap:wrap}
+.subtabs button{border:1px solid var(--line);background:var(--surface);color:var(--muted);font:600 13.5px var(--font-body);padding:7px 14px;border-radius:99px;cursor:pointer}
+.subtabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+table.ed{min-width:640px}
+table.ed td,table.ed th{text-align:left;padding:5px 4px;border-bottom:1px solid var(--line)}
+table.ed input,table.ed select{padding:6px 7px;font-size:13.5px;min-width:64px}
+table.ed td:first-child input{min-width:96px}
+.icon-btn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;cursor:pointer;font:600 16px var(--font-body);width:30px;height:30px}
+.sec-title{font:700 13px var(--font-body);margin:14px 0 8px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sec-title:first-child{margin-top:0}
+.line{display:grid;grid-template-columns:minmax(0,1fr) 120px 84px 32px;gap:6px;margin-bottom:6px}
+@media (max-width:520px){.line{grid-template-columns:minmax(0,1fr) 108px 72px 32px}}
+.line input,.line select{padding:7px 8px;font-size:14px}
+#tbl-dre td.k{font-size:13px}
+#tbl-dre tr.sub td{font-weight:700;background:var(--bg)}
+#tbl-dre tr.total td{font-weight:700;border-top:2px solid var(--ink)}
+#tbl-dre input{width:104px;padding:5px 7px;font-size:13px;text-align:right}
+.stack{display:flex;height:26px;border-radius:7px;overflow:hidden;border:1px solid var(--line)}
+.stack span{display:block;min-width:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12.5px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.toast{font-size:13px;color:var(--good);font-weight:600}
+.mt{margin-top:16px}
+#tbl-gen{font-size:12px;min-width:640px}
+#tbl-gen th,#tbl-gen td{padding:6px 4px}
+#tbl-gen td:first-child,#tbl-gen th:first-child{min-width:86px}
+.legend2{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend2 i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+/* Proposta (rascunho) */
+.doc{background:#fff;color:#1e2f40;border:1px solid var(--line);border-radius:12px;padding:36px 40px;max-width:820px;margin:0 auto}
+@media (max-width:600px){.doc{padding:22px 16px}}
+.doc h2{font-size:28px;color:var(--navy)}
+.doc h3{font-size:16px;margin:24px 0 8px;color:var(--navy);border-bottom:2px solid var(--onblue);padding-bottom:4px;display:inline-block}
+.doc .meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#5b6b64;font-size:13px;margin-top:6px}
+.doc th{color:#5b6b64}
+.doc td,.doc th{border-bottom:1px solid #dbe2dd}
+.doc .tot td{font-weight:700;border-top:2px solid #14261f}
+.doc p{margin:6px 0}
+.doc .chart text{fill:#5b6b64}
+.doc ul{margin:6px 0 0;padding-left:20px}
+</style>
+</head>
+<body>
+<div id="blk"><div></div></div>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <img src="assets/on-logo.png" alt="ON Engenharia">
+      <div><h1>Orçamento Solar</h1><p>Do consumo do cliente ao valor do projeto</p></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-ent" aria-selected="true"><b>1</b>Entradas</button>
+      <button role="tab" id="tab-sis" aria-selected="false"><b>2</b>Sistema</button>
+      <button role="tab" id="tab-preco" aria-selected="false"><b>3</b>Valor e DRE</button>
+      <button role="tab" id="tab-prop" aria-selected="false"><b>4</b>Proposta</button>
+      <span class="gap" aria-hidden="true"></span>
+      <button role="tab" id="tab-conf" aria-selected="false">Configurações</button>
+    </div>
+  </header>
+  <div class="row" id="barra" style="margin:-4px 0 12px;gap:10px;flex-wrap:wrap"><span class="svs" id="sv"></span><span style="flex:1"></span><button class="btn alt small" id="btn-aplicar" hidden title="Grava o valor e a potência calculados no card do negócio">Aplicar valor e potência no negócio</button></div>
+  <div class="strip" id="strip" aria-live="polite"></div>
+
+  <!-- ===== 1. ENTRADAS ===== -->
+  <main id="view-ent" role="tabpanel" aria-labelledby="tab-ent">
+    <div class="grid">
+      <div>
+        <section class="card">
+          <h2>Cliente e conta de energia</h2>
+          <div class="fields">
+            <label class="full">Nome do cliente<input id="cliente" type="text" value="" placeholder="Nome do cliente"></label>
+            <label>Unidade consumidora<input id="ucnum" type="text" placeholder="Número da UC"></label>
+            <label>Descrição da unidade<input id="ucdesc" type="text" placeholder="Ex.: casa, galpão"></label>
+            <label>Concessionária<select id="concsel" data-own></select></label>
+            <label>Padrão de entrada
+              <select id="padrao">
+                <option value="30" selected>Monofásico (mínimo 30 kWh)</option>
+                <option value="50">Bifásico (mínimo 50 kWh)</option>
+                <option value="100">Trifásico (mínimo 100 kWh)</option>
+              </select>
+            </label>
+            <label>Tarifa com impostos (R$/kWh)<input id="tarifa" type="number" min="0" step="0.0001" data-own></label>
+            <label>Consumo médio mensal (kWh)<input id="consumo" type="number" min="1" step="1" value="500"></label>
+            <label>Meta de compensação (%)<input id="meta" type="number" min="10" max="100" step="5" value="100"></label>
+          </div>
+          <p class="note" style="margin:8px 0 0">A tarifa vem da concessionária escolhida (Configurações → Tarifas). Se a fatura mostrar outro valor, corrija o campo acima: o orçamento usa o que estiver ali.</p>
+          <details>
+            <summary>Fio B (avançado)</summary>
+            <div class="fields" style="margin-top:10px"><label>Fio B (R$/kWh)<input id="fiob" type="number" min="0" step="0.0001" data-own></label></div>
+            <p class="note">Vem estimado da concessionária. Só ajuste se tiver o valor oficial.</p>
+          </details>
+          <details>
+            <summary>Consumo mês a mês (opcional)</summary>
+            <div class="months" id="cm-grid"></div>
+            <p class="note">Ao preencher, o consumo médio passa a ser a média dos meses informados e o gráfico de geração compara mês a mês.</p>
+          </details>
+        </section>
+
+        <section class="card" id="card-prop">
+          <h2>Dados para a proposta</h2>
+          <div class="fields">
+            <label class="full">Endereço da instalação<input id="pend" type="text" placeholder="Rua, número, bairro"></label>
+            <label>Cidade / UF<input id="pcid" type="text" placeholder="Ibirubá / RS"></label>
+            <label>CEP<input id="pcep" type="text" placeholder="00000-000"></label>
+            <label>Classe da unidade<input id="pclasse" type="text" value="Residencial (B1 convencional)"></label>
+            <label>Mês da fatura analisada<input id="pref" type="text" placeholder="ex.: out/2026"></label>
+            <label>Valor da fatura (R$)<input id="pfat" type="text" placeholder="ex.: R$ 653,50"></label>
+            <label class="full">Observação técnica (aparece na página da conta de energia)<textarea id="pnota" placeholder="Opcional. Ex.: fatura registra energia injetada, indicando geração própria já instalada."></textarea></label>
+          </div>
+        </section>
+        <section class="card">
+          <h2>Premissas do dimensionamento</h2>
+          <div class="fields">
+            <label>Módulo<select id="modsel"></select></label>
+            <label>Tipo de telhado<select id="telsel"></select></label>
+            <label>Perdas de geração (%)<input id="perdas" type="number" min="0" max="60" step="0.5"></label>
+            <label>Simultaneidade (%)<input id="simult" type="number" min="0" max="100" step="1"></label>
+            <label>Manutenção anual (R$)<input id="om" type="number" min="0" step="50" value="300"></label>
+            <label>Troca do inversor no ano 12 (% do investimento)<input id="inv" type="number" min="0" step="1" value="8"></label>
+            <label>Reajuste anual da tarifa (%)<input id="reaj" type="number" min="0" step="0.5" value="6"></label>
+            <label>Limite de potência injetável (kW)<input id="injmax" type="number" min="0" step="0.5" placeholder="opcional"></label>
+          </div>
+          <p class="note">Os valores iniciais vêm de Configurações e podem ser alterados só para este orçamento.</p>
+        </section>
+
+        <section class="card">
+          <h2>Dados da proposta</h2>
+          <div class="fields">
+            <label class="full">Título da proposta<input id="titulo" type="text" value="Usina fotovoltaica"></label>
+            <label>Prazo de entrega (dias)<input id="prazo" type="number" min="0" step="1" value="45"></label>
+            <label>Distância até a obra, ida e volta (km)<input id="dist" type="number" min="0" step="1" value="0"></label>
+            <label class="full">Observação interna (não vai para o cliente)<textarea id="obs"></textarea></label>
+          </div>
+        </section>
+      </div>
+
+      <div class="sticky">
+        <section class="card">
+          <h2>Local e irradiação solar</h2>
+          <div class="fields">
+            <label>Cidade<select id="cidade" data-own></select></label>
+            <label>Irradiação média anual (kWh/m²·dia)<input id="hsp" type="number" step="0.01" min="2" max="8" data-own></label>
+          </div>
+          <svg id="irr-chart" class="chart mt" viewBox="0 0 560 200" role="img" aria-label="Irradiação solar diária média mensal"></svg>
+          <details>
+            <summary>Editar valores mensais</summary>
+            <div class="months" id="hm-grid"></div>
+          </details>
+          <p class="note" id="irr-note"></p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== 2. SISTEMA ===== -->
+  <main id="view-sis" class="hidden" role="tabpanel" aria-labelledby="tab-sis">
+    <section class="card">
+      <h2>Escolha o sistema</h2>
+      <div class="opts" id="opts"></div>
+      <p class="note" id="opts-note"></p>
+    </section>
+    <div class="grid mt">
+      <div>
+        <section class="card">
+          <h2>Dimensionamento técnico</h2>
+          <table class="tec" id="tbl-tec"></table>
+          <ul class="checks" id="checks"></ul>
+        </section>
+        <section class="card">
+          <h2>Conta de luz antes e depois</h2>
+          <div class="scroll"><table id="tbl-conta"></table></div>
+        </section>
+      </div>
+      <div>
+        <section class="card">
+          <h2>Valide a geração</h2>
+          <svg id="gen-chart" class="chart" viewBox="0 0 560 240" role="img" aria-label="Geração mensal estimada comparada ao consumo"></svg>
+          <div class="legend2"><span><i style="background:var(--accent)"></i>Geração estimada (kWh)</span><span><i style="background:var(--sun)"></i>Consumo (kWh)</span></div>
+          <div class="scroll mt"><table id="tbl-gen"></table></div>
+        </section>
+      </div>
+    </div>
+    <section class="card mt">
+      <h2>Retorno para o cliente</h2>
+      <div class="grid">
+        <div class="kpis" id="ret-kpis"></div>
+        <div>
+          <svg id="chart" class="chart" viewBox="0 0 560 260" role="img" aria-label="Fluxo de caixa acumulado em 25 anos"></svg>
+          <div class="note" id="chart-note"></div>
+        </div>
+      </div>
+      <details>
+        <summary>Projeção ano a ano</summary>
+        <div class="scroll mt"><table id="tbl-anos"></table></div>
+      </details>
+    </section>
+  </main>
+
+  <!-- ===== 3. VALOR E DRE ===== -->
+  <main id="view-preco" class="hidden" role="tabpanel" aria-labelledby="tab-preco">
+    <div class="grid">
+      <div>
+        <section class="card">
+          <h2>Kit do projeto</h2>
+          <div class="scroll"><table id="tbl-kit"></table></div>
+          <div class="fields" style="margin-top:14px">
+            <label class="full">Valor do kit cotado no distribuidor (R$)<input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo"></label>
+          </div>
+        </section>
+        <section class="card">
+          <h2>Margem e preço</h2>
+          <div class="fields">
+            <label>Como informar a margem
+              <select id="metodo" data-own>
+                <option value="venda" selected>% sobre o preço de venda</option>
+                <option value="markup">% sobre o custo do kit (markup)</option>
+                <option value="rs">Valor em R$ (lucro)</option>
+              </select>
+            </label>
+            <label><span id="margem-label">Margem de contribuição (%)</span><input id="margem" type="number" min="0" step="1" value="45"></label>
+            <label>Origem do preço de venda
+              <select id="origem">
+                <option value="preco" selected>Kit + margem</option>
+                <option value="wp">Valor direto em R$/Wp</option>
+              </select>
+            </label>
+            <label>Valor direto (R$/Wp)<input id="preco" type="number" min="1" step="0.05" value="2.80"></label>
+            <label>Desconto comercial (%)<input id="desc" type="number" min="0" max="50" step="0.5" value="0"></label>
+            <label>Meta de resultado líquido (%)<input id="meta-liq" type="number" min="0" max="60" step="1" value="10"></label>
+          </div>
+          <p class="note" id="desc-warn"></p>
+        </section>
+        <section class="card">
+          <h2>Custos da obra</h2>
+          <p class="note" style="margin:-4px 0 12px">Os valores abaixo são exemplos. Ajuste para a realidade da empresa.</p>
+          <div id="editor"></div>
+        </section>
+      </div>
+      <div class="sticky">
+        <section class="card" aria-live="polite">
+          <h2>Preço e margem</h2>
+          <div class="kpis" id="preco-kpis"></div>
+        </section>
+        <section class="card">
+          <h2>Para onde vai cada real da venda</h2>
+          <div id="stack"></div>
+        </section>
+        <section class="card">
+          <h2>DRE da obra</h2>
+          <div class="scroll"><table id="tbl-dre"></table></div>
+          <p class="note">Na coluna Realizado, preencha o que foi gasto de verdade. Campos vazios usam o previsto. O desvio mostra se a precificação estava certa.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== 4. PROPOSTA (rascunho) ===== -->
+  <main id="view-prop" class="hidden" role="tabpanel" aria-labelledby="tab-prop">
+    <section class="card" style="margin-bottom:14px">
+      <h2>Seguro solar (opcional)</h2>
+      <div class="fields three">
+        <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="seg-on" style="width:auto"> Incluir seguro (2 folhas a mais)</label>
+        <label>Valor do projeto (R$)<input id="seg-proj" type="text" inputmode="decimal" placeholder="vazio = valor da proposta"></label>
+        <label>Observação de pagamento<input id="seg-cond" type="text" placeholder="opcional"></label>
+      </div>
+      <div class="fields three" style="margin-top:10px">
+        <label>Anual (à vista R$)<input id="seg-v1" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>2 anos (à vista R$)<input id="seg-v2" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>3 anos (à vista R$)<input id="seg-v3" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>4 anos (à vista R$)<input id="seg-v4" type="text" inputmode="decimal" placeholder="0,00"></label>
+        <label>5 anos (à vista R$)<input id="seg-v5" type="text" inputmode="decimal" placeholder="0,00"></label>
+      </div>
+      <p class="note">Digite o valor à vista da cotação da seguradora; as parcelas e os limites de cobertura (base no valor do projeto) são calculados sozinhos. Vigência em branco não aparece.</p>
+    </section>
+    <div class="row" style="margin:0 auto 14px;gap:10px;flex-wrap:wrap">
+      <button class="btn" id="pr-abrir">Abrir proposta ON (imprimir / salvar em PDF)</button>
+      <button class="btn alt small" id="pr-baixar">Baixar HTML</button>
+      <span class="toast" id="toast" role="status"></span>
+      <span class="note" style="margin:0">Proposta de 3 folhas A4 com capa branca (boa para imprimir). Preliminar até a cotação real dos equipamentos.</span>
+    </div>
+    <iframe id="prev" title="Prévia da proposta"></iframe>
+    <article class="doc" id="doc" hidden></article>
+  </main>
+
+  <!-- ===== CONFIGURAÇÕES ===== -->
+  <main id="view-conf" class="hidden" role="tabpanel" aria-labelledby="tab-conf">
+    <div class="row" style="justify-content:space-between;margin-bottom:14px">
+      <div class="subtabs" id="subtabs">
+        <button data-sub="com" aria-selected="true">Comercial</button>
+        <button data-sub="tec" aria-selected="false">Técnicas</button>
+        <button data-sub="eqp" aria-selected="false">Equipamentos</button>
+        <button data-sub="tar" aria-selected="false">Tarifas</button>
+      </div>
+      <div class="row">
+        <span class="toast" id="conf-toast" role="status"></span>
+        <button class="btn small" id="cfg-save" hidden title="Grava tarifas, equipamentos e custos como padrão de todos os orçamentos">Salvar como padrão para todos</button>
+        <button class="btn alt small" id="cfg-copy">Copiar configurações (JSON)</button>
+        <button class="btn alt small" id="cfg-reset">Restaurar padrões</button>
+      </div>
+    </div>
+
+    <div id="sub-com">
+      <div class="grid">
+        <section class="card">
+          <h2>Empresa e proposta</h2>
+          <div class="fields">
+            <label class="full">Nome da empresa<input type="text" data-cfg="empresa"></label>
+            <label>Contato (telefone / e-mail)<input type="text" data-cfg="contato"></label>
+            <label>Validade da proposta (dias)<input type="number" min="1" data-cfg="validade" data-num></label>
+            <label class="full">Desconto máximo sem aprovação (%)<input type="number" min="0" step="0.5" data-cfg="descMax" data-num></label>
+          </div>
+          <p class="note">A margem e os custos da obra ficam na etapa 3, Valor e DRE.</p>
+        </section>
+        <section class="card">
+          <h2>Financeiras</h2>
+          <div class="scroll" id="ed-financeiras"></div>
+          <p class="note">As duas primeiras linhas aparecem na proposta como opções de financiamento.</p>
+        </section>
+        <section class="card" id="card-capa">
+          <h2>Capa da proposta</h2>
+          <div class="fields">
+            <label class="full">Estilo da capa
+              <select data-cfg="capa.estilo"><option value="aneis">Anéis ON (padrão)</option><option value="paineis">Painéis solares</option><option value="imagem">Minha imagem</option><option value="nenhum">Sem arte (só texto)</option></select>
+            </label>
+            <label class="full">Imagem da capa (campanha, foto de obra, arte)
+              <input type="file" id="capa-file" accept="image/*">
+            </label>
+            <div class="full" style="display:flex;gap:10px;align-items:center"><img id="capa-prev" alt="" style="max-height:90px;border-radius:8px;border:1px solid var(--line);display:none"><button class="btn alt small" id="capa-rm" type="button" style="display:none">Remover imagem</button></div>
+            <label class="full">Título acima de "Proposta comercial"<input type="text" data-cfg="capa.titulo"></label>
+            <label class="full">Campanha (faixa na capa, opcional)<input type="text" data-cfg="capa.campanha" placeholder="Ex.: Campanha de fim de ano: instalação com 5% off até 31/12"></label>
+            <label class="full">Detalhe da campanha<input type="text" data-cfg="capa.detalhe" placeholder="Regras, prazo, condição"></label>
+          </div>
+          <p class="note">A capa é branca para imprimir bem e não mostra valores nem dados técnicos. A imagem é reduzida automaticamente (largura 1400 px). Para valer em todos os orçamentos, use "Salvar como padrão para todos".</p>
+        </section>
+      </div>
+    </div>
+
+    <div id="sub-tec" class="hidden">
+      <div class="grid">
+        <section class="card">
+          <h2>Perdas do sistema</h2>
+          <div class="fields three">
+            <label>Temperatura (%)<input type="number" step="0.5" min="0" data-cfg="tec.perdas.temp" data-num></label>
+            <label>Sujeira (%)<input type="number" step="0.5" min="0" data-cfg="tec.perdas.sujeira" data-num></label>
+            <label>Sombreamento (%)<input type="number" step="0.5" min="0" data-cfg="tec.perdas.sombra" data-num></label>
+            <label>Cabos (%)<input type="number" step="0.5" min="0" data-cfg="tec.perdas.cabos" data-num></label>
+            <label>Inversor (%)<input type="number" step="0.5" min="0" data-cfg="tec.perdas.inversor" data-num></label>
+            <label>Outras (%)<input type="number" step="0.5" min="0" data-cfg="tec.perdas.outras" data-num></label>
+          </div>
+          <p class="note">Perdas totais resultantes: <strong id="pr-show">-</strong></p>
+        </section>
+        <section class="card">
+          <h2>Parâmetros de projeto</h2>
+          <div class="fields">
+            <label>Degradação anual dos módulos (%)<input type="number" step="0.1" min="0" data-cfg="tec.degr" data-num></label>
+            <label>Dias por mês no cálculo<input type="number" step="0.1" min="28" max="31" data-cfg="tec.dias" data-num></label>
+            <label>Relação CC/CA mínima<input type="number" step="0.05" min="0.5" data-cfg="tec.ccaMin" data-num></label>
+            <label>Relação CC/CA máxima<input type="number" step="0.05" min="1" data-cfg="tec.ccaMax" data-num></label>
+            <label>Temperatura mínima do local (°C)<input type="number" step="1" data-cfg="tec.tmin" data-num></label>
+            <label>Temperatura máxima da célula (°C)<input type="number" step="1" data-cfg="tec.tcell" data-num></label>
+            <label>Simultaneidade (%)<input type="number" step="1" min="0" max="100" data-cfg="tec.simult" data-num></label>
+            <label>Itens complementares do kit (R$/kWp)<input type="number" step="5" min="0" data-cfg="tec.kitOutrosKwp" data-num></label>
+          </div>
+          <p class="note">A temperatura mínima limita a tensão máxima da string. A temperatura da célula define a tensão mínima de operação.</p>
+        </section>
+      </div>
+      <section class="card mt">
+        <h2>Tipos de telhado e estrutura</h2>
+        <div class="scroll" id="ed-telhados"></div>
+        <p class="note">Estrutura em R$ por módulo. O fator de área multiplica a área dos módulos para chegar à área útil necessária.</p>
+      </section>
+    </div>
+
+    <div id="sub-eqp" class="hidden">
+      <section class="card">
+        <h2>Módulos fotovoltaicos</h2>
+        <div class="scroll" id="ed-modulos"></div>
+        <p class="note">Os módulos de exemplo não têm marca real. Cadastre os modelos do seu fornecedor com os dados do datasheet.</p>
+      </section>
+      <section class="card">
+        <h2>Inversores</h2>
+        <div class="scroll" id="ed-inversores"></div>
+        <p class="note">Fases: 1 monofásico, 2 bifásico, 3 trifásico. O sistema escolhe o menor inversor compatível com o padrão de entrada e a relação CC/CA máxima.</p>
+      </section>
+    </div>
+
+    <div id="sub-tar" class="hidden">
+      <div class="grid">
+        <section class="card">
+          <h2>Concessionárias</h2>
+          <input id="conc-filter" type="search" placeholder="Filtrar por nome ou UF (ex.: RS, CERTEL)">
+          <div class="scroll" id="ed-conc" style="max-height:62vh;overflow:auto"></div>
+          <p class="note"><b>Tarifa s/ trib.</b> = TUSD+TE residencial B1 homologada pela ANEEL (dados abertos, vigências da coluna Vigência). <b>Tarifa c/ imp.</b> = a anterior com ICMS da UF (aproximado) e PIS/Cofins de 5% embutidos; é a que o orçador usa. <b>Fio B</b> está <b>estimado em 32,3% da tarifa c/ impostos</b> (proporção da RGE Sul); só o da RGE Sul vem de referência real. Confirme na fatura/resolução da distribuidora e ajuste aqui. Alterar a tarifa s/ trib. ou o ICMS não recalcula a c/ imp.: edite a coluna c/ imp.</p>
+        </section>
+        <section class="card">
+          <h2>Escalonamento do Fio B (Lei 14.300)</h2>
+          <div class="scroll" id="ed-fiob"></div>
+          <div class="fields" style="margin-top:12px">
+            <label class="full">Percentual dos demais anos (%)<input type="number" step="1" min="0" max="100" data-cfg="fioBDemais" data-num></label>
+          </div>
+          <p class="note">A proposta de referência mantém 90% após 2028. Ajuste conforme a regra vigente.</p>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="vendor/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/orcasolar.js?v=2"></script>
+</body>
+</html>
