@@ -976,7 +976,8 @@ function propInfo(){
   const conc=CONFIG.conc.find(c=>c.id===$("concsel").value);
   const lig={"30":"Monofásico","50":"Bifásico","100":"Trifásico"}[$("padrao").value];
   const g=id=>($(id).value||"").trim();
-  return {nome:g("cliente")||"Cliente", end:g("pend")||"", cid:g("pcid")||"", cep:g("pcep")||"", uc:g("ucnum")||"—", dist:conc?conc.nome:"Concessionária", lig, minimo:+$("padrao").value};
+  const _t=$("tensao"); const tensao=(_t&&_t.selectedOptions[0])?_t.selectedOptions[0].textContent:"";
+  return {tensao,nome:g("cliente")||"Cliente", end:g("pend")||"", cid:g("pcid")||"", cep:g("pcep")||"", uc:g("ucnum")||"—", dist:conc?conc.nome:"Concessionária", lig, minimo:+$("padrao").value};
 }
 function propRef(){ const d=new Date(), p2=n=>String(n).padStart(2,"0"); return "P"+String(d.getFullYear()).slice(2)+p2(d.getMonth()+1)+"-"+((typeof NEG!=="undefined"&&NEG)?NEG.replace(/-/g,"").slice(0,4).toUpperCase():"0000"); }
 const PP = () => { const o=Object.assign({}, DEF.prop, CONFIG.prop||{}); ["resp","crea","assin","razao","cnpj"].forEach(k=>{ if(!o[k]) o[k]=DEF.prop[k]; }); return o; };
@@ -989,12 +990,15 @@ function tabelaPrice(P,i,n){
 function finOpcoes(r){ return (CONFIG.financeiras||[]).slice(0,3).map(f=>{ const n=Math.max(1,+f.prazo||60), i=(+f.taxa||0)/100, ent=(+f.entrada||0)/100, entV=r.invest*ent, P=r.invest-entV, t=tabelaPrice(P,i,n); return {nome:f.nome,n,i,ent,entV,P,t}; }); }
 function basesTxt(r){ return `<b>Importante:</b> os valores da tabela são estimados. * Inflação anual (reajuste da tarifa): ${num(r.reaj*100,2)}%. ** Simultaneidade de ${num(r.sim*100,2)}%. *** Conforme especificação dos fabricantes, os módulos podem perder até 20% de eficiência em 25 anos (considerado ${num(r.degr*100,2)}% ao ano). **** Após ${CONFIG.fioB.length?Math.max(...CONFIG.fioB.map(x=>+x.ano)):2028}, considera-se a continuidade do pagamento de ${num(CONFIG.fioBDemais,0)}% do Fio B.${r.aum>0?` Considerado aumento de consumo de ${num(r.aum*100,1)}%.`:""}`; }
 function bancosHtml(){ const b=PP().bancos||[]; return `<div class="bks">${b.map(x=>x.logo?`<span class="bk"><img src="${x.logo}" alt="${pesc(x.nome)}"></span>`:`<span class="bk t">${pesc(x.nome)}</span>`).join("")}</div>`; }
-function chartParcela(r,fin){
-  const maxA=Math.min(25,Math.max(5,Math.ceil(r.payback||5)+1,fin?Math.ceil(fin.n/12):0)), W=560,H=215,L=48,B=24,T=10,iw=W-L-8,ih=H-B-T;
-  const eco=[],par=[]; for(let a=1;a<=maxA;a++){ eco.push(r.rows[a-1].eco); par.push(fin&&a<=Math.ceil(fin.n/12)?fin.t.anos[a-1].pagto:0); }
-  const mx=Math.max(...eco,...par,1)*1.1, bw=iw/maxA, x=a=>L+(a-1)*bw, y=v_=>T+ih-(v_/mx)*ih;
+function chartParcela(r,fins,FC){
+  fins=Array.isArray(fins)?fins:(fins?[fins]:[]); FC=FC||["#1D3140","#8aa0b3","#2a8f9d"];
+  const maxA=Math.min(25,Math.max(5,Math.ceil(r.payback||5)+1,...fins.map(f=>Math.ceil(f.n/12)))), W=560,H=215,L=48,B=24,T=10,iw=W-L-8,ih=H-B-T;
+  const eco=[],par=fins.map(()=>[]); for(let a=1;a<=maxA;a++){ eco.push(r.rows[a-1].eco); fins.forEach((f,k)=>par[k].push(a<=Math.ceil(f.n/12)?f.t.anos[a-1].pagto:0)); }
+  const mx=Math.max(...eco,...par.flat(),1)*1.1, bw=iw/maxA, x=a=>L+(a-1)*bw, sw=bw*.8/(1+fins.length);
   let s=""; for(let k=0;k<=4;k++){ const yy=T+ih*(1-k/4); s+=`<line x1="${L}" x2="${W-8}" y1="${yy}" y2="${yy}" stroke="#dce8f3"/><text x="${L-4}" y="${yy+3}" text-anchor="end">${num(mx*k/4/1000,1)} mil</text>`; }
-  for(let a=1;a<=maxA;a++){ const h1=ih*eco[a-1]/mx, h2=ih*par[a-1]/mx; s+=`<rect x="${x(a)+bw*.14}" y="${T+ih-h1}" width="${bw*.34}" height="${h1}" fill="#64ABDE"/>`; if(par[a-1]>0) s+=`<rect x="${x(a)+bw*.5}" y="${T+ih-h2}" width="${bw*.34}" height="${h2}" fill="#1D3140"/>`; s+=`<text x="${x(a)+bw/2}" y="${H-8}" text-anchor="middle">${a}</text>`; }
+  for(let a=1;a<=maxA;a++){ const h1=ih*eco[a-1]/mx; s+=`<rect x="${x(a)+bw*.1}" y="${T+ih-h1}" width="${sw}" height="${h1}" fill="#64ABDE"/>`;
+    fins.forEach((f,k)=>{ const h2=ih*par[k][a-1]/mx; if(par[k][a-1]>0) s+=`<rect x="${x(a)+bw*.1+sw*(k+1)}" y="${T+ih-h2}" width="${sw}" height="${h2}" fill="${FC[k]}"/>`; });
+    s+=`<text x="${x(a)+bw/2}" y="${H-8}" text-anchor="middle">${a}</text>`; }
   return s+`<text x="${L+iw/2}" y="${H}" text-anchor="middle" font-size="9">anos</text>`;
 }
 function chartRetorno(r,pp){
@@ -1053,6 +1057,7 @@ function propostaHTML(){
   const faces=r.al.faces.filter(f=>f.n>0).map(f=>`${ORI[f.ori][0]} (${f.n})`).join(" · ")||"Norte";
   const detalhes=`<table class="kv"><tbody>
       <tr><td>Concessionária</td><td>${pesc(I.dist)} · UC ${pesc(I.uc)} · ${I.lig}</td></tr>
+      ${I.tensao?`<tr><td>Rede de baixa tensão</td><td>${pesc(I.tensao)}</td></tr>`:""}
       <tr><td>Consumo médio mensal</td><td><b>${num(v("consumo"))} kWh</b>${r.aum>0?` · considerado aumento de <b>${num(r.aum*100,1)}%</b> (${num(r.cons)} kWh)`:""} · tarifa R$ ${num(r.tar,4)}/kWh (com impostos)</td></tr>
       ${r.rateio>0?`<tr><td>Rateio de energia</td><td>${num(r.rateio)} kWh/mês recebidos de outra unidade geradora</td></tr>`:""}
       <tr><td>Local e irradiação</td><td>${pesc(I.cid||"—")} · ${num(r.hsp,2)} kWh/m²·dia</td></tr>
@@ -1097,7 +1102,7 @@ function propostaHTML(){
       
       `;
     const porque=`<h3 class="sub">Por que energia solar</h3>
-      <ul class="li"><li>Reduz a conta de luz e protege você dos reajustes da tarifa.</li><li>Sistema conectado à rede, sem baterias, com manutenção simples.</li><li>Módulos com garantia de desempenho de longo prazo.</li><li>Valoriza o imóvel e reduz emissões de CO₂.</li></ul>`, sobreEmp=`<div class="sobre"><b>${pesc(pp.razao)}</b><p>CNPJ ${pesc(pp.cnpj)} · ${pesc(P_EMP.end)} · ${pesc(CONFIG.contato||"")}</p></div>`;
+      <ul class="li"><li>Reduz a conta de luz e protege você dos reajustes da tarifa.</li><li>Sistema conectado à rede, sem baterias, com manutenção simples.</li><li>Módulos com garantia de desempenho de longo prazo.</li><li>Valoriza o imóvel e reduz emissões de CO₂.</li></ul>`, sobreEmp=`<div class="sobre"><b>${pesc(pp.razao)}</b><p>CNPJ ${pesc(pp.cnpj)} · ${pesc(P_EMP.end)} · ${pesc(CONFIG.contato||"")}</p><p>Site: <a href="https://onengenhariaeletrica.com.br/">onengenhariaeletrica.com.br</a> · Instagram: <a href="https://www.instagram.com/on_engenharia_/">@on_engenharia_</a></p></div>`;
     const det=`<h2 class="h2b">Detalhes do projeto</h2>${kp4}${detalhes}`;
     const meses=MESES.map((m,i)=>`<tr><td>${m}</td><td>${num(r.gerM[i])}</td><td>${num(r.consM[i])}</td><td class="${r.gerM[i]+r.rateio>=r.consM[i]?"":"neg"}">${num(r.gerM[i]+r.rateio-r.consM[i])}</td></tr>`).join("");
     const ger=`<h2>Geração de energia</h2>${chartGenSvg}<table class="data"><thead><tr><th>Mês</th><th>Geração (kWh)</th><th>Consumo (kWh)</th><th>Saldo (kWh)</th></tr></thead><tbody>${meses}</tbody></table>
@@ -1105,36 +1110,38 @@ function propostaHTML(){
     const proj=`<h2>Projeção anual</h2><h3 class="sub s0">Conta de energia antes e depois (1º ano)</h3>${eco3}<p class="small" style="margin-bottom:8px">Estimativa sem bandeira tarifária, com o Fio B escalonado pela Lei 14.300.</p><table class="data tight"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th><th>Acumulado</th></tr></thead><tbody>${r.rows.map(o=>{const sem=r.cons*12*o.t, com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td>${brl(o.eco)}</td><td class="${o.acum>=0?"":"neg"}">${brl(o.acum)}</td></tr>`}).join("")}</tbody></table><p class="small">${basesTxt(r)}</p>`;
     const limpa=l=>l.replace(/^\s*\d{5,}\s*[–—-]\s*/,"").replace(/^[–—-]\s*/,"").trim();
     const distLinhas=($("disttxt").value||"").split(/\n+/).map(limpa).filter(l=>l&&!/frete/i.test(l)).slice(0,40);
-    const CATS=[["mod",/m[óo]dulo|painel|placa|fotovolt|\bwp\b|bifacial|half.?cell|topcon|n-?type|gokin|jinko|trina|canadian|longi/i],["inv",/inversor|micro.?inversor|\bsf\s?\d+k|sofar|growatt|fronius|goodwe|deye|solis|\bmppt\b/i],["estr",/estrutura|perfil|trilho|minitrilho|fixador|gancho|grampo|parafuso|suporte/i],["cabo",/cabo|conector|mc4|fio\b|eletroduto|terminal|materiais?\s*ca\b/i],["prot",/string.?box|\bdps\b|disjuntor|prote[çc]|quadro|aterramento|haste|\bdr\b/i],["inst",/projeto|m[ãa]o.?de.?obra|m[ãa]o obra|instala|homolog|\bart\b/i]];
-    const porCat={mod:[],inv:[],estr:[],cabo:[],prot:[],inst:[]}, sobra=[];
-    distLinhas.forEach(l=>{ const c=CATS.find(x=>x[1].test(l)); if(c) porCat[c[0]].push(l); else sobra.push(l); });
+    const porCat={mod:[],inv:[],estr:[],cabo:[],prot:[],inst:[]}, sobra=distLinhas.slice();
     const li=a_=>a_.map(x=>`<li>${x}</li>`).join("");
     const row=(ic,titulo,sub,base,extra)=>`<div class="eqr"><div class="ico">${iconProd(ic)}</div><div class="eqt"><h4>${titulo}</h4>${sub?`<b>${pesc(sub)}</b>`:""}</div><ul>${li(base.map(x=>pesc(x)))}${li(extra.map(x=>pesc(x)))}</ul></div>`;
     const rows=[
-      row("mod",`Módulos fotovoltaicos · ${r.modulos} un.`,(mod.marca+" "+mod.modelo).trim()||`${mod.wp} Wp`,[`Potência ${mod.wp} Wp · ${num(r.kwp,2)} kWp no total`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Garantia de produto e de desempenho conforme o fabricante`],porCat.mod),
+      row("mod",`Módulos fotovoltaicos · ${r.modulos} un.`,(mod.marca+" "+mod.modelo).trim()||`${mod.wp} Wp`,[`Potência ${mod.wp} Wp · ${num(r.kwp,2)} kWp no total`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Coeficiente de temperatura da potência ${num(mod.coefP,2)} %/°C`,`Garantia de desempenho de ${mod.garantia||25} anos, conforme o fabricante`],porCat.mod),
       row("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`,`Relação CC/CA ${num(r.ratio,2)}`],porCat.inv),
-      row("estr","Estrutura de fixação",`Para ${r.tel.nome.toLowerCase()}`,[`${r.modulos} módulos fixados em perfis e fixadores`],porCat.estr),
+      row("estr","Estrutura de fixação",`Para ${r.tel.nome.toLowerCase()}`,[`Estrutura selecionada: ${r.tel.nome.toLowerCase()}`,`${r.modulos} módulos fixados em perfis e fixadores`,`Área útil estimada de ${num(r.areaTotal,1)} m²`],porCat.estr),
       row("cabo","Cabos e conectores","",[`Cabos CC solares e conectores MC4 para ${num(r.kwp,2)} kWp`,`Cabeamento CA até o quadro de entrada`],porCat.cabo),
       row("prot","String box e proteções","",[`Proteções CC e CA: DPS e disjuntores`,`Aterramento conforme projeto e normas da concessionária`],porCat.prot),
       row("inst","Projeto, ART, instalação e homologação","",[`Projeto elétrico com ART do responsável técnico`,`Instalação por equipe própria e comissionamento`,`Solicitação de acesso e homologação junto à concessionária`],porCat.inst)
     ];
     const prod=`<h2>Produtos e equipamentos</h2><p class="lead">Itens que compõem o seu sistema de ${num(r.kwp,2)} kWp.</p>
       <div class="eq">${rows.join("")}</div>
-      ${sobra.length?`<h3 class="sub">Outros itens do fornecedor</h3><div class="dist">${sobra.map(x=>`<p>${pesc(x)}</p>`).join("")}</div>`:""}
+      ${sobra.length?`<h3 class="sub">Observações</h3><div class="dist">${sobra.map(x=>`<p>${pesc(x)}</p>`).join("")}</div>`:""}
       <p class="small">As especificações seguem os datasheets dos fabricantes. Marcas, modelos e quantidades finais são confirmados na cotação antes da assinatura.</p>`;
     const pag=`<h2>Investimento e pagamento</h2>
       <div class="total"><span>Valor total da proposta</span><strong>${brl2(r.invest)}</strong><em>${brl2(r.invest/(r.kwp*1000))} por Wp</em></div>
       <table class="data l"><thead><tr><th>Condição</th><th>Detalhes</th></tr></thead><tbody>
-        <tr><td>À vista</td><td>${brl2(r.invest)} · pagamento único na contratação</td></tr>
         <tr><td>Entrega</td><td>${v("prazo")||45} dias após a contratação, com instalação e homologação inclusas</td></tr>
         <tr><td>Validade</td><td>${validade}</td></tr></tbody></table>
-      <h3 class="sub">Simulação de financiamento</h3>${simulHead}${msgFin}${bancosHtml()}
-      ${fin1?`<h3 class="sub">Tabela Price · ${pesc(fin1.nome)} (${fin1.n}x de ${brl2(fin1.t.pm)})</h3><table class="data tight"><thead><tr><th>Ano</th><th>Parcelas</th><th>Pago no ano</th><th>Juros</th><th>Amortização</th><th>Saldo devedor</th></tr></thead><tbody>${fin1.t.anos.map(a=>`<tr><td>${a.ano}</td><td>${a.parc}</td><td>${brl(a.pagto)}</td><td>${brl(a.juros)}</td><td>${brl(a.amort)}</td><td>${brl(a.saldo)}</td></tr>`).join("")}</tbody></table>`:""}`;
-    const ecoParc=fin1?`<h2>Economia × parcela</h2>
-      <p class="lead">Na simulação de <b>${fin1.n}x</b>, a parcela é de <b>${brl2(fin1.t.pm)}</b> e a economia média do 1º ano é de <b>${brl2(r.ecoMes1)}</b> por mês: ${r.ecoMes1>=fin1.t.pm?`o sistema <b>se paga com folga de ${brl2(r.ecoMes1-fin1.t.pm)} por mês</b> desde o início`:`a diferença de <b>${brl2(fin1.t.pm-r.ecoMes1)}</b> por mês é coberta pelo reajuste da tarifa ao longo dos anos`}.</p>
-      <svg class="chart" viewBox="0 0 560 215" role="img" aria-label="Economia anual e parcelas">${chartParcela(r,fin1)}</svg>
-      <div class="leg"><span><i class="b"></i>Economia anual</span><span><i class="d"></i>Parcelas no ano</span><span class="sm">Payback do investimento: ${pbTxt}</span></div>
-      <table class="data"><thead><tr><th>Ano</th><th>Economia</th><th>Parcelas</th><th>Saldo do ano</th></tr></thead><tbody>${[1,2,3,4,5].map(a=>{const e=r.rows[a-1].eco, p=a<=Math.ceil(fin1.n/12)?fin1.t.anos[a-1].pagto:0; return `<tr><td>${r.rows[a-1].year}</td><td>${brl(e)}</td><td>${brl(p)}</td><td class="${e-p>=0?"":"neg"}">${brl(e-p)}</td></tr>`}).join("")}</tbody></table>
+      <h3 class="sub">Simulação de financiamento</h3>${simulHead}${msgFin}${bancosHtml()}`;
+    const FC=["#1D3140","#8aa0b3","#2a8f9d"];
+    const anosEco=Math.min(10,Math.max(5,...fins.map(f=>Math.ceil(f.n/12))));
+    const cardsFin=fins.map((f,k)=>{ const s=r.ecoMes1-f.t.pm; return `<div class="fcard"><i style="background:${FC[k]}"></i><b>${pesc(f.nome)}</b><span>${f.n}x de <strong>${brl2(f.t.pm)}</strong>${f.ent>0?` · entrada ${brl2(f.entV)}`:" · sem entrada"}</span><span>Economia média 1º ano: ${brl2(r.ecoMes1)}/mês</span><em class="${s>=0?"ok":"neg"}">${s>=0?"Sobra":"Diferença"} de ${brl2(Math.abs(s))} por mês${s>=0?"":", coberta pelo reajuste da tarifa"}</em></div>`; }).join("");
+    const thFin=fins.map(f=>`<th>${f.n}x · parcelas</th><th>${f.n}x · saldo</th>`).join("");
+    const linhasEco=Array.from({length:anosEco},(_,i)=>i+1).map(a=>{ const e=r.rows[a-1].eco; return `<tr><td>${r.rows[a-1].year}</td><td>${brl(e)}</td>${fins.map(f=>{ const pg=a<=Math.ceil(f.n/12)?f.t.anos[a-1].pagto:0; return `<td>${brl(pg)}</td><td class="${e-pg>=0?"":"neg"}">${brl(e-pg)}</td>`; }).join("")}</tr>`; }).join("");
+    const ecoParc=fins.length?`<h2>Economia × parcela</h2>
+      <p class="lead">Simulação para cada condição de financiamento oferecida, comparada com a economia na conta de luz.</p>
+      <div class="fcards">${cardsFin}</div>
+      <svg class="chart" viewBox="0 0 560 215" role="img" aria-label="Economia anual e parcelas">${chartParcela(r,fins,FC)}</svg>
+      <div class="leg"><span><i class="b"></i>Economia anual</span>${fins.map((f,k)=>`<span><i style="background:${FC[k]}"></i>Parcelas ${f.n}x</span>`).join("")}<span class="sm">Payback: ${pbTxt}</span></div>
+      <table class="data tight ecot"><thead><tr><th>Ano</th><th>Economia</th>${thFin}</tr></thead><tbody>${linhasEco}</tbody></table>
       ${msgFin}`:`<h2>Economia</h2>${eco3}`;
     const ch=chartRetorno(r,pp);
     const pts=[5,10,15,20,25];
@@ -1162,7 +1169,7 @@ function propostaHTML(){
   const todas=[...paginas,...seguroP];
   const total=1+todas.length;
   const head=()=>`<header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${pesc(nome)}</span></header>`;
-  const foot=n=>`<footer class="pf"><span>${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")}</span><span>Folha ${n} de ${total}</span></footer>`;
+  const foot=n=>`<footer class="pf"><div class="pf1"><b>Proposta ${pesc(ref)}</b><span>Folha ${n} de ${total}</span></div><div class="pf2">${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")} · <a href="https://onengenhariaeletrica.com.br/">onengenhariaeletrica.com.br</a> · <a href="https://www.instagram.com/on_engenharia_/">@on_engenharia_</a></div></footer>`;
   const corpo=[capaHtml].concat(todas.map((b,i)=>`<section class="pg">${head()}<div class="pb">${b}</div>${foot(i+2)}</section>`));
   return `<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1252,7 +1259,10 @@ h2{font-size:23px;margin-bottom:13px}.h2b{margin-top:6mm}h3.sub{font-size:15.5px
 .cards3{gap:12px;margin:10px 0 12px}.cards3 div{padding:13px 14px}.cards3 h4{font-size:13.5px}.cards3 p{font-size:12px}
 ul.li{font-size:13px}ul.li li{margin:5px 0}.sobre{margin-top:16px}.sobre b{font-size:12px}.sobre p{font-size:11.5px}
 .callout{font-size:11.5px;padding:9px 13px}
-.eq{display:block;margin-top:2px}
+.pf{display:block!important;padding:3mm 0 6mm!important}.pf1{display:flex;justify-content:space-between;font-size:10px;color:var(--dark)}.pf2{font-size:9.5px;color:var(--muted);margin-top:2px}.pf a{color:var(--muted);text-decoration:none}.sobre a{color:var(--blue);text-decoration:none}
+.fcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px;margin:6px 0 10px}.fcard{background:var(--bl);border-radius:10px;padding:10px 12px;display:grid;gap:3px;border-top:3px solid var(--blue);position:relative}.fcard i{position:absolute;top:10px;right:10px;width:11px;height:11px;border-radius:3px}.fcard b{font-size:12px;color:var(--dark);padding-right:16px}.fcard span{font-size:10.5px;color:var(--dark2)}.fcard em{font-style:normal;font-weight:700;font-size:11px}.fcard em.ok{color:#2e7d4f}.fcard em.neg{color:#c0392b}
+.ecot th,.ecot td{font-size:10.5px!important}.eq{display:block;margin-top:2px}
+
 .eqr{display:grid;grid-template-columns:17mm 52mm 1fr;column-gap:12px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line)}
 .eqr:last-child{border-bottom:0}
 .eqr .ico{width:17mm;height:17mm;border-radius:50%;background:var(--bl);border:1.5px solid var(--bm);padding:2.2mm}
@@ -1286,7 +1296,7 @@ ul.li{margin:4px 0;padding-left:18px;font-size:12px}ul.li li{margin:3px 0}
 .bks{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .bk{height:9mm;min-width:24mm;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;padding:2px 8px;background:#fff}
 .bk img{max-height:7mm;max-width:28mm}.bk.t{font-size:10px;font-weight:700;color:var(--dark2)}
-.sign.big{margin-top:30px}.sign .assin{position:absolute;max-height:16mm;margin-top:-17mm}.sign div{position:relative}
+.sign.big{margin-top:36mm}.sign .assin{position:absolute;max-height:16mm;margin-top:-17mm}.sign div{position:relative}
 ${modo==="resumida"?`body{font-size:13px}.pb{padding:6mm 14mm 0}
 h2{font-size:20px;margin-bottom:10px}h3.sub{font-size:14px;margin:16px 0 6px}
 .lead{font-size:12.5px;margin:0 0 8px}.small{font-size:10px}
@@ -1706,5 +1716,9 @@ histSel(); initCapas();
 function tabProjTxt(){ $("tabproj-txt").value=(CONFIG.tabProj||[]).map(r=>[r.ate,r.v,r.v2].join(" ; ")).join("\n"); }
 $("tabproj-txt").addEventListener("input",e=>{ CONFIG.tabProj=e.target.value.split(/\n/).map(l=>l.split(/[;\t]/).map(x=>parseFloat(String(x).replace(/\./g,"").replace(",",".")))).filter(a=>isFinite(a[0])&&isFinite(a[1])).map(a=>({ate:a[0],v:a[1],v2:isFinite(a[2])?a[2]:0})); saveCfg(); calc(); if(typeof renderPreco==="function") renderPreco(); });
 tabProjTxt();
+
+/* ---- tensão sugerida pelo padrão de entrada (editável) */
+$("padrao").addEventListener("change",()=>{ $("tensao").value={"30":"mono220","50":"bi220","100":"tri380"}[$("padrao").value]||"mono220"; if(typeof atualizarPrev==="function") atualizarPrev(); });
+$("tensao").addEventListener("change",()=>{ if(typeof atualizarPrev==="function") atualizarPrev(); if(typeof agendar==="function") agendar(); });
 
 integrar();

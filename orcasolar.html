@@ -235,6 +235,14 @@ table.ed td:first-child input{min-width:96px}
                 <option value="100">Trifásico (mínimo 100 kWh)</option>
               </select>
             </label>
+            <label>Tensão da rede de baixa tensão
+              <select id="tensao">
+                <option value="mono220">Monofásico · 220 V</option>
+                <option value="bi220">Bifásico · 220 V (127/220 V)</option>
+                <option value="tri380">Trifásico · 380/220 V</option>
+                <option value="tri220">Trifásico · 220/127 V</option>
+              </select>
+            </label>
             <label>Tarifa com impostos (R$/kWh)<input id="tarifa" type="number" min="0" step="0.0001" data-own></label>
             <label>Consumo médio mensal (kWh)<input id="consumo" type="number" min="1" step="1" value="500"></label>
             <label>Meta de compensação (%)<span class="tg"><button class="btn alt small" type="button" data-metabtn="-5">−</button><input id="meta" type="number" min="10" max="150" step="5" value="100"><button class="btn alt small" type="button" data-metabtn="5">+</button></span></label>
@@ -359,7 +367,7 @@ table.ed td:first-child input{min-width:96px}
     <section class="card mt">
       <h2>Produtos e texto do distribuidor</h2>
       <p class="note" style="margin-top:0">Cole o texto da proposta do distribuidor (ou leia de um print). O texto vai para a base de equipamentos e aparece na página de produtos da proposta, junto com os datasheets.</p>
-      <label class="full">Texto do distribuidor<textarea id="disttxt" rows="6" placeholder="Cole aqui a descrição do kit, módulos, inversor, estrutura, garantias..."></textarea></label>
+      <label class="full">Observações adicionais na página de produtos (opcional)<textarea id="disttxt" rows="4" placeholder="Módulos, inversor e estrutura vêm da seleção feita no Sistema. Use este campo só para observações extras."></textarea></label>
       <div class="row2 mt"><button class="btn alt small" type="button" id="btn-ocr">Ler de um print (OCR)</button><input type="file" id="ocr-file" accept="image/*" hidden><button class="btn alt small" type="button" id="btn-txtsave">Guardar na base de textos</button><select id="txtbase" style="max-width:260px"><option value="">Base de textos salvos…</option></select><span class="mini" id="txt-msg"></span></div>
     </section>
     <section class="card mt">
