@@ -357,6 +357,7 @@ function alloc(N,AA){
   const fator=tot>0?ord.reduce((s,f)=>s+f.n*f.fat,0)/tot:1;
   return {fator,ok:rem===0,faces:ord};
 }
+function isAdm(){ return !NEG || ISADM; }
 function compute(){
   const mod=byId(CONFIG.modulos,$("modsel").value), tel=byId(CONFIG.telhados,$("telsel").value);
   if(!mod || !tel || !HSPM.length) return null;
@@ -426,7 +427,7 @@ function compute(){
     {nome:"Itens complementares (string box, cabos CC, conectores)", qtd:kwp, un:T.kitOutrosKwp, unid:"kWp"}
   ];
   const Kest = kitItems.reduce((s,i)=>s+i.qtd*i.un,0);
-  const P = pricing(kwp,desc,Kest);
+  const P = pricing(kwp,desc,Kest,N);
   const invest = $("origem").value==="preco" ? P.receita : kwp*1000*preco*(1-desc);
 
   // geração mensal e comparação com o consumo
@@ -466,17 +467,17 @@ function compute(){
 }
 
 /* ============ PRECIFICAÇÃO E DRE ============ */
-function lineValue(l,kwp,rec){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="km" ? l.valor*v("dist") : l.valor/100*rec; }
-function fixedOf(l,kwp){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="km" ? l.valor*v("dist") : 0; }
-function pricing(kwp,desc,Kest){
+function lineValue(l,kwp,rec,K,N){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : l.valor/100*rec; }
+function fixedOf(l,kwp,K,N){ return l.modo==="fixo" ? l.valor : l.modo==="kwp" ? l.valor*kwp : l.modo==="mod" ? l.valor*(N||0) : l.modo==="km" ? l.valor*v("dist") : l.modo==="pctkit" ? l.valor/100*(K||0) : 0; }
+function pricing(kwp,desc,Kest,N){
   const cot=v("kitcot"), mt=$("metodo").value, mv=v("margem"), meta=v("meta-liq")/100;
   const K = cot>0 ? cot : Kest;
   const lista = mt==="venda" ? K/(1-Math.min(mv/100,0.95)) : mt==="markup" ? K*(1+mv/100) : K+mv;
   const receita = lista*(1-desc);
   const sec = {}; let fixed = K, pct = 0;
   for (const s of Object.keys(COSTS)){
-    sec[s] = COSTS[s].map(l => ({l, val:lineValue(l,kwp,receita)}));
-    COSTS[s].forEach(l => { if(l.modo==="pct") pct += l.valor/100; else fixed += fixedOf(l,kwp); });
+    sec[s] = COSTS[s].map(l => ({l, val:lineValue(l,kwp,receita,K,N)}));
+    COSTS[s].forEach(l => { if(l.modo==="pct") pct += l.valor/100; else fixed += fixedOf(l,kwp,K,N); });
   }
   const priceFor = t => { const d = 1-pct-t; return d>0 ? fixed/d : null; };
   return {K,lista,receita,sec,pct,fixed,kwp,desc,meta,minimo:priceFor(0),alvo:priceFor(meta)};
@@ -490,8 +491,10 @@ function renderEditor(){
         <select aria-label="Tipo de valor" data-sec="${s}" data-i="${i}" data-f="modo">
           <option value="fixo"${l.modo==="fixo"?" selected":""}>R$ fixo</option>
           <option value="kwp"${l.modo==="kwp"?" selected":""}>R$ por kWp</option>
+          <option value="mod"${l.modo==="mod"?" selected":""}>R$ por módulo (unidade)</option>
           <option value="km"${l.modo==="km"?" selected":""}>R$ por km</option>
-          <option value="pct"${l.modo==="pct"?" selected":""}>% da venda</option>
+          <option value="pctkit"${l.modo==="pctkit"?" selected":""}>% do kit</option>
+          <option value="pct"${l.modo==="pct"?" selected":""}>% da venda (geral)</option>
         </select>
         <input type="number" step="0.5" min="0" aria-label="Valor" data-sec="${s}" data-i="${i}" data-f="valor" value="${l.valor}">
         <button class="icon-btn" aria-label="Remover linha" data-del="${s}" data-i="${i}">×</button>
@@ -567,7 +570,9 @@ function renderPreco(){
     <div class="kpi"><div class="l">Margem de contribuição</div><div class="v">${num(mcPct,1)}%</div><div class="s">${brl(mcP)} após impostos e comissão</div></div>
     <div class="kpi"><div class="l">Resultado líquido ${Object.keys(REAL).length?"(com realizado)":"(previsto)"}</div><div class="v ${liqE<0?"neg":"pos"}">${brl(liqE)}</div><div class="s">${num(liqPct,1)}% da receita</div></div>
     <div class="kpi"><div class="l">Preço para ${num(P.meta*100)}% líquido</div><div class="v">${P.alvo?brl(P.alvo):"-"}</div><div class="s">${diffAlvo===null?"meta inviável com esses percentuais":(diffAlvo>=0?"você está "+brl(diffAlvo)+" acima":"faltam "+brl(-diffAlvo))}</div></div>
-    <div class="kpi"><div class="l">Preço mínimo (resultado zero)</div><div class="v">${P.minimo?brl(P.minimo):"-"}</div><div class="s">${P.minimo?num(P.minimo/(r.kwp*1000),2)+" R$/Wp":""}</div></div>`;
+    <div class="kpi"><div class="l">Preço mínimo (resultado zero)</div><div class="v">${P.minimo?brl(P.minimo):"-"}</div><div class="s">${P.minimo?num(P.minimo/(r.kwp*1000),2)+" R$/Wp":""}</div></div>
+    <div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl(P.lista*(1-v("desclib")/100))}</div><div class="s">${num(P.lista*(1-v("desclib")/100)/(r.kwp*1000),2)} R$/Wp · tabela ${brl(P.lista)}</div></div>`;
+  if(typeof isAdm==="function" && !isAdm()) $("preco-kpis").innerHTML = `<div class="kpi main"><div class="l">Preço de venda ${P.desc>0?"(após desconto)":""}</div><div class="v">${brl(recP)}</div><div class="s">${brl2(wpPrice)} por Wp</div></div><div class="kpi"><div class="l">Preço de tabela</div><div class="v">${brl(P.lista)}</div><div class="s">${num(P.lista/(r.kwp*1000),2)} R$/Wp</div></div><div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl(P.lista*(1-v("desclib")/100))}</div><div class="s">abaixo disso, só com aprovação</div></div>`;
 
   const segs=[{l:"Kit",v:P.K,c:"--s1"},{l:"Impostos e comissão",v:dedP,c:"--s2"},{l:"Custos da obra",v:obP,c:"--s3"},{l:"Rateio",v:raP,c:"--s4"},{l:"Resultado",v:Math.max(liqP,0),c:"--s5"}];
   const tot=segs.reduce((s,x)=>s+x.v,0)||1;
@@ -670,13 +675,14 @@ function renderOpts(r){
 function render(){
   const r = R;
   $("pr-show").textContent = num(cfgPerdasTotal(),1)+"%";
-  const dm = CONFIG.descMax;
-  $("desc-warn").textContent = v("desc")>dm ? `Desconto acima do limite de ${num(dm,1)}% definido em Configurações. Precisa de aprovação.` : "";
+  const dm = v("desclib");
+  $("desc-warn").textContent = v("desc")>dm ? `Desconto acima do limite liberado de ${num(dm,1)}%. Precisa de aprovação do administrador.` : "";
   $("desc-warn").className = "note"+(v("desc")>dm?" neg":"");
   $("irr-chart").innerHTML = HSPM.length ? chartIrr() : "";
   const cid=$("cidade").value, c=CIDADES[cid];
   $("irr-note").textContent = c ? (c.m ? "Fonte: Atlas Brasileiro de Energia Solar (2017), plano inclinado na latitude, orientação norte." : "Perfil mensal estimado a partir da média anual e da latitude. Para o valor real, confira no SunData (CRESESB) e edite os meses.") : "Valores editados manualmente.";
   if(!r){ renderStrip(null); return; }
+  if(typeof isAdm==="function" && !isAdm() && v("desc")>v("desclib")) $("desc").value=v("desclib");
   renderPreco();
   renderStrip(r);
   renderOpts(r);
@@ -1319,7 +1325,7 @@ async function integrar(){
   if(!session){ bloquear("<h2>Entre no Orça Rede</h2><p>Faça login em <a href=\"index.html\" target=\"_top\">index.html</a> e abra o negócio de novo.</p>"); return; }
   UID=session.user.id;
   try{ const r=await SB.schema("orcarede").rpc("meu_nivel"); NIVEL=r.data||null; }catch(e){}
-  ISADM=NIVEL==="admin"; CAN_EDIT=NIVEL==="admin"||NIVEL==="editar";
+  ISADM=NIVEL==="admin"; CAN_EDIT=NIVEL==="admin"||NIVEL==="editar"; document.body.classList.toggle("nadm",!ISADM); $("desclib").disabled=!ISADM;
   if(!NIVEL){ bloquear("<h2>Sem acesso ao orçamento</h2><p>Seu usuário não tem permissão no OrçaRede. Peça ao administrador.</p>"); return; }
   const [rc,rn,ro]=await Promise.all([
     SB.from("solar_config").select("dados").eq("id","geral").maybeSingle(),

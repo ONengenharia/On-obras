@@ -115,6 +115,7 @@ summary{cursor:pointer;font:600 13.5px var(--font-body);color:var(--accent)}
 #conc-filter{max-width:320px;margin-bottom:10px}
 table.ed tr.fh{display:none}
 table.ed input[type=number]{min-width:84px}
+.nadm .adm-only{display:none!important}
 /* v3: Entradas em colunas lado a lado */
 #view-ent>.grid{display:block;column-count:2;column-gap:16px}
 #view-ent>.grid>div{display:contents}
@@ -378,13 +379,13 @@ table.ed td:first-child input{min-width:96px}
       <div>
         <section class="card">
           <h2>Kit do projeto</h2>
-          <div class="scroll"><table id="tbl-kit"></table></div>
-          <div class="fields" style="margin-top:14px">
-            <label class="full">Valor do kit cotado no distribuidor (R$)<input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo"></label>
+          <div class="fields">
+            <label class="full"><b>1. Valor do kit cotado no distribuidor (R$)</b><input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo"></label>
           </div>
+          <details class="mt"><summary>Kit calculado do catálogo (referência)</summary><div class="scroll mt"><table id="tbl-kit"></table></div></details>
         </section>
         <section class="card">
-          <h2>Margem e preço</h2>
+          <h2>2. Margem e desconto</h2>
           <div class="fields">
             <label>Como informar a margem
               <select id="metodo" data-own>
@@ -401,14 +402,15 @@ table.ed td:first-child input{min-width:96px}
               </select>
             </label>
             <label>Valor direto (R$/Wp)<input id="preco" type="number" min="1" step="0.05" value="2.80"></label>
-            <label>Desconto comercial (%)<input id="desc" type="number" min="0" max="50" step="0.5" value="0"></label>
+            <label>Desconto aplicado (%)<input id="desc" type="number" min="0" max="50" step="0.5" value="0"></label>
+            <label>Desconto máximo liberado (%) <span class="mini">só o administrador altera</span><input id="desclib" type="number" min="0" max="50" step="0.5" value="5"></label>
             <label>Meta de resultado líquido (%)<input id="meta-liq" type="number" min="0" max="60" step="1" value="10"></label>
           </div>
           <p class="note" id="desc-warn"></p>
         </section>
-        <section class="card">
-          <h2>Custos da obra</h2>
-          <p class="note" style="margin:-4px 0 12px">Os valores abaixo são exemplos. Ajuste para a realidade da empresa.</p>
+        <section class="card adm-only">
+          <h2>3. Custos (você inclui e ajusta)</h2>
+          <p class="note" style="margin:-4px 0 12px">Inclua quantos custos quiser. Cada linha pode ser valor fixo, por kWp, por módulo (unidade), por km, % do kit ou % da venda (geral). Os valores iniciais são exemplos.</p>
           <div id="editor"></div>
         </section>
       </div>
@@ -417,14 +419,14 @@ table.ed td:first-child input{min-width:96px}
           <h2>Preço e margem</h2>
           <div class="kpis" id="preco-kpis"></div>
         </section>
-        <section class="card">
-          <h2>Para onde vai cada real da venda</h2>
-          <div id="stack"></div>
-        </section>
-        <section class="card">
+        <section class="card adm-only">
           <h2>DRE da obra</h2>
           <div class="scroll"><table id="tbl-dre"></table></div>
           <p class="note">Na coluna Realizado, preencha o que foi gasto de verdade. Campos vazios usam o previsto. O desvio mostra se a precificação estava certa.</p>
+        </section>
+        <section class="card adm-only">
+          <h2>Para onde vai cada real da venda</h2>
+          <div id="stack"></div>
         </section>
       </div>
     </div>
