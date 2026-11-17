@@ -116,6 +116,11 @@ summary{cursor:pointer;font:600 13.5px var(--font-body);color:var(--accent)}
 table.ed tr.fh{display:none}
 table.ed input[type=number]{min-width:84px}
 .nadm .adm-only{display:none!important}
+.capa-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin:2px 0 12px}
+.cpb{border:2px solid var(--line);border-radius:10px;background:#fff;padding:5px;cursor:pointer;display:grid;gap:4px;font:600 12px var(--font-body);color:var(--navy)}
+.cpb img{width:100%;aspect-ratio:210/297;object-fit:cover;border-radius:6px;display:block}
+.cpb.on{border-color:var(--onblue);box-shadow:0 0 0 2px var(--onblue)}
+.verbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 10px}
 /* v3: Entradas em colunas lado a lado */
 #view-ent>.grid{display:block;column-count:2;column-gap:16px}
 #view-ent>.grid>div{display:contents}
@@ -452,11 +457,14 @@ table.ed td:first-child input{min-width:96px}
     </section>
     <div class="row" style="margin:0 auto 14px;gap:10px;flex-wrap:wrap">
       <input type="hidden" id="pr-ver" value="0"><input type="hidden" id="pr-verdata" value=""><input type="hidden" id="pr-verkey" value=""><span class="mini" id="pr-vertxt"></span>
-      <label class="tg">Modelo <select id="pr-modo"><option value="completa">Completa (uma etapa por página)</option><option value="resumida">Resumida (3 folhas)</option></select></label>
+      <input type="hidden" id="pr-hist" value="[]"><label class="tg">Capa <select id="pr-capa"></select></label>
+      <label class="tg">Modelo <select id="pr-modo"><option value="completa">Completa (10 folhas)</option><option value="resumida">Resumida (3 folhas)</option></select></label>
+      <button class="btn alt small" id="pr-nova" type="button" title="Cria a próxima versão partindo da fatura de energia: consumo, tarifa e concessionária são mantidos; dimensionamento, desconto e kit voltam ao automático. A versão anterior fica guardada.">➕ Criar outra proposta (nova versão)</button>
+      <label class="tg">Versões anteriores <select id="pr-hsel"></select></label><button class="btn alt small" id="pr-hrest" type="button" title="Cria uma nova versão com os dados da versão escolhida">Duplicar como nova</button>
       <button class="btn" id="pr-abrir">Abrir proposta ON (imprimir / salvar em PDF)</button>
       <button class="btn alt small" id="pr-baixar">Baixar HTML</button>
       <span class="toast" id="toast" role="status"></span>
-      <span class="note" style="margin:0">Proposta de 3 folhas A4 com capa branca (boa para imprimir). Preliminar até a cotação real dos equipamentos.</span>
+      <span class="note" style="margin:0">Proposta completa (10 folhas A4) ou resumida (3 folhas), com a capa que você escolher. Preliminar até a cotação real dos equipamentos.</span>
     </div>
     <iframe id="prev" title="Prévia da proposta"></iframe>
     <article class="doc" id="doc" hidden></article>
@@ -524,6 +532,7 @@ table.ed td:first-child input{min-width:96px}
             <label class="full">Estilo da capa
               <select data-cfg="capa.estilo"><option value="aneis">Anéis ON (padrão)</option><option value="paineis">Painéis solares</option><option value="imagem">Minha imagem</option><option value="nenhum">Sem arte (só texto)</option></select>
             </label>
+            <div class="full capa-gal" id="capa-gal"></div>
             <label class="full">Imagem da capa (campanha, foto de obra, arte)
               <input type="file" id="capa-file" accept="image/*">
             </label>
@@ -532,7 +541,7 @@ table.ed td:first-child input{min-width:96px}
             <label class="full">Campanha (faixa na capa, opcional)<input type="text" data-cfg="capa.campanha" placeholder="Ex.: Campanha de fim de ano: instalação com 5% off até 31/12"></label>
             <label class="full">Detalhe da campanha<input type="text" data-cfg="capa.detalhe" placeholder="Regras, prazo, condição"></label>
           </div>
-          <p class="note">A capa é branca para imprimir bem e não mostra valores nem dados técnicos. A imagem é reduzida automaticamente (largura 1400 px). Para valer em todos os orçamentos, use "Salvar como padrão para todos".</p>
+          <p class="note">Os modelos de capa são fixos e recebem o nome do cliente, o endereço, o número da proposta e a versão. Nenhuma capa mostra valores. Na aba Proposta dá para trocar a capa só daquele orçamento. Para valer em todos, escolha aqui e use "Salvar como padrão para todos".</p>
         </section>
       </div>
     </div>
