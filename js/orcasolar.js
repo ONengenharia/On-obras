@@ -2,7 +2,7 @@
 const DEF = {
   empresa:"ON Engenharia Elétrica", contato:"(55) 99133-7296 · projetos.on.engenharia@gmail.com", validade:10, descMax:5,
   financeiras:[{id:"f1",nome:"Financiamento 36x (exemplo)",taxa:1.85,prazo:36,entrada:0},{id:"f2",nome:"Financiamento 60x (exemplo)",taxa:1.85,prazo:60,entrada:0}],
-  tabProj:[{ate:5,v:500,v2:250},{ate:10,v:630,v2:315},{ate:20,v:700,v2:350},{ate:30,v:820,v2:410},{ate:40,v:950,v2:475},{ate:50,v:1050,v2:525},{ate:60,v:1200,v2:600},{ate:70,v:1300,v2:650},{ate:80,v:1800,v2:900}],
+  tabProj:[{ate:5,v:500},{ate:10,v:630},{ate:20,v:700},{ate:30,v:820},{ate:40,v:950},{ate:50,v:1050},{ate:60,v:1200},{ate:70,v:1300},{ate:80,v:1800}],
   capa:{estilo:"prime",imagem:"",titulo:"Energia solar fotovoltaica",campanha:"",detalhe:""},
   tec:{perdas:{temp:10,sujeira:3,sombra:0,cabos:2,inversor:3,outras:3},
        degr:0.7, dias:30.4, ccaMin:0.9, ccaMax:1.5, simult:30, tmin:0, tcell:70, kitOutrosKwp:80},
@@ -1713,8 +1713,8 @@ $("pr-nova").onclick=criarOutraProposta; $("pr-hrest").onclick=duplicarVersao;
 histSel(); initCapas();
 
 /* ---- tabela de projeto */
-function tabProjTxt(){ $("tabproj-txt").value=(CONFIG.tabProj||[]).map(r=>[r.ate,r.v,r.v2].join(" ; ")).join("\n"); }
-$("tabproj-txt").addEventListener("input",e=>{ CONFIG.tabProj=e.target.value.split(/\n/).map(l=>l.split(/[;\t]/).map(x=>parseFloat(String(x).replace(/\./g,"").replace(",",".")))).filter(a=>isFinite(a[0])&&isFinite(a[1])).map(a=>({ate:a[0],v:a[1],v2:isFinite(a[2])?a[2]:0})); saveCfg(); calc(); if(typeof renderPreco==="function") renderPreco(); });
+function tabProjTxt(){ $("tabproj-txt").value=(CONFIG.tabProj||[]).map(r=>[r.ate,r.v].join(" ; ")).join("\n"); }
+$("tabproj-txt").addEventListener("input",e=>{ CONFIG.tabProj=e.target.value.split(/\n/).map(l=>l.split(/[;\t]/).map(x=>parseFloat(String(x).replace(/\./g,"").replace(",",".")))).filter(a=>isFinite(a[0])&&isFinite(a[1])).map(a=>({ate:a[0],v:a[1]})); saveCfg(); calc(); if(typeof renderPreco==="function") renderPreco(); });
 tabProjTxt();
 
 /* ---- tensão sugerida pelo padrão de entrada (editável) */
