@@ -1304,7 +1304,7 @@ h2{font-size:20px;margin-bottom:10px}h3.sub{font-size:14px;margin:16px 0 6px}
 .data th{padding:6px 9px;font-size:10.5px}.data td{padding:6px 9px;font-size:12px}
 .data.tight td,.data.tight th{padding:3.5px 7px;font-size:10px}
 .kpis4,.kpis3{gap:8px;margin-bottom:8px}.kpis4 div,.kpis3 div{padding:8px 10px;border-radius:8px}.kpis4 b{font-size:17px}.kpis3 b{font-size:18px}.kpis4 span,.kpis3 span{font-size:9.5px}
-.chart{max-height:36mm}.chart.cx{max-height:44mm}.leg{font-size:10px;margin-top:2px}
+.chart{max-height:32mm}.chart.cx{max-height:44mm}.leg{font-size:10px;margin-top:2px}
 .total{padding:8px 14px;margin:8px 0}.total strong{font-size:26px}
 .callout{font-size:10.5px;padding:7px 11px}`:""}
 </style></head><body>
