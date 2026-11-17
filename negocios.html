@@ -291,6 +291,7 @@ img.logo{width:auto;height:38px;border-radius:0;object-fit:contain;background:no
 .rzR .pick button{padding:3px 8px 3px 4px;font-size:11.5px;gap:5px}.rzR .pick button .dot{width:18px;height:18px;font-size:8px}
 .rzR .pick{gap:4px}.rzR .lb{font-size:10.5px;padding:2px 7px}
 .rz .btn{padding:5px 10px;font-size:12px}.rz .note{font-size:10.5px}
+.vtile .pvtxt{display:block;font-size:12.5px;font-weight:700;margin-top:6px;opacity:.95;text-align:center}.vtile .pvtxt:empty{display:none}
 </style>
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
@@ -690,6 +691,10 @@ async function abrirCalendario(){
   $c("#cA").onclick=mv(-1);$c("#cN").onclick=mv(1);$c("#cH").onclick=async()=>{ref=new Date();ref.setDate(1);sel=chv(new Date());await carrega();desenha()};
   await carrega();desenha();
 }
+async function pvFill(g,c){ // versão e data da última proposta emitida (abaixo do valor estimado)
+  if(c.quadro!=="solar")return;const el=g.querySelector("[data-pv]");if(!el)return;
+  try{const {data}=await sb.from("neg_orc_solar").select("resumo").eq("negocio_id",c.id).maybeSingle();const p=data&&data.resumo&&data.resumo.proposta;if(p&&p.versao)el.textContent="Proposta v"+p.versao+(p.data?" · "+p.data:"")}catch(e){}
+}
 async function abrir(id,manter){
   aberto=id;const c=CARDS.find(x=>x.id===id);if(!c){fechar();return}
   if(!manter)await carregarExtras(id);
@@ -722,7 +727,7 @@ async function abrir(id,manter){
   $(".gvf",g).onclick=$("#x",g).onclick=fechar;
   if($("#del",g))$("#del",g).onclick=async e=>{const b=e.target;if(!b.dataset.c){b.dataset.c=1;b.textContent="Confirmar exclusão";return}const {data:dx,error}=await sb.from("negocios").delete().eq("id",c.id).select("id");if(error){toast(error.message);return}if(!dx||!dx.length){toast("Sem permissão para excluir este negócio.");return}fechar();await recarregar();toast("Negócio excluído.")};
   g.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{abaCard=b.dataset.t;if(abaCard==="orc")orcAba="ent";abrir(id,true)});
-  g.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>{abaCard="orc";orcAba=b.dataset.orc;abrir(id,true)});
+  g.querySelectorAll("[data-orc]").forEach(b=>b.onclick=()=>{abaCard="orc";orcAba=b.dataset.orc;abrir(id,true)});pvFill(g,c);
   if($("#go",g))$("#go",g).onclick=()=>mover(id,prox.id);
   if($("#bNeg",g))$("#bNeg",g).onclick=()=>negociadaDialog(c);if($("#hubObra",g))$("#hubObra",g).onclick=()=>mover(id,cols.find(x=>x.gatilho).id);
   if($("#back",g))$("#back",g).onclick=()=>mover(id,ant.id);
@@ -737,7 +742,7 @@ async function abrir(id,manter){
      <div class="rzC">
       <label class="fld ttl">Título do negócio<input value="${esc(c.titulo)}" ${dis} data-f="titulo"></label>
       <div class="hero"><div class="orc"><div class="orcl"><small>Nº do orçamento · Gestão Click</small><input class="orcn" value="${esc(((c.cadastro||{}).gc_orc||{}).codigo||"")}" ${dis} data-gcnum placeholder="— sem nº —"></div><div class="orcr"><button class="btn" type="button" id="gcOrc" ${dis}>${((c.cadastro||{}).gc_orc||{}).id?"Atualizar valor do orçamento no Gestão Click":"Criar orçamento no Gestão Click"}</button><span class="note" id="gcOrcSt">${((c.cadastro||{}).gc_orc||{}).codigo?"✓ Orçamento nº <b>"+esc((c.cadastro||{}).gc_orc.codigo)+"</b> no Gestão Click":"Usa o valor estimado do negócio, em uma linha só."}</span></div></div>
-      <label class="fld vtile">Valor estimado (R$)<input value="${+c.valor?brlTxt(c.valor):""}" ${dis} data-f="valor" inputmode="decimal" placeholder="R$ 0,00"></label>
+      <label class="fld vtile">Valor estimado (R$)<input value="${+c.valor?brlTxt(c.valor):""}" ${dis} data-f="valor" inputmode="decimal" placeholder="R$ 0,00"><small class="pvtxt" data-pv></small></label>
       <div class="stt" style="--c:${esc((cols.find(x=>x.id===c.coluna)||{}).cor||"#2f6f9f")}"><small>Status atual</small><b>${esc((cols.find(x=>x.id===c.coluna)||{nome:"—"}).nome)}</b><span class="stx">${esc(((areaDe((cols.find(x=>x.id===c.coluna)||{}).area)||{}).nome)||"")}${(c.cadastro||{}).negociada?" · ✅ Negociada":((c.cadastro||{}).vendido||{}).sim?" · Vendido":""}${c.motivo_tipo?" · "+esc(c.motivo_tipo):""}</span></div></div>
       <div class="sec"><h4>Cadastro do cliente <small class="note">· Gestão Click</small></h4>
        <div class="g12">

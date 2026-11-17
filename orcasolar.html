@@ -449,6 +449,7 @@ table.ed td:first-child input{min-width:96px}
       <p class="note">Digite o valor à vista da cotação da seguradora; as parcelas e os limites de cobertura (base no valor do projeto) são calculados sozinhos. Vigência em branco não aparece.</p>
     </section>
     <div class="row" style="margin:0 auto 14px;gap:10px;flex-wrap:wrap">
+      <input type="hidden" id="pr-ver" value="0"><input type="hidden" id="pr-verdata" value=""><input type="hidden" id="pr-verkey" value=""><span class="mini" id="pr-vertxt"></span>
       <label class="tg">Modelo <select id="pr-modo"><option value="completa">Completa (uma etapa por página)</option><option value="resumida">Resumida (3 folhas)</option></select></label>
       <button class="btn" id="pr-abrir">Abrir proposta ON (imprimir / salvar em PDF)</button>
       <button class="btn alt small" id="pr-baixar">Baixar HTML</button>
