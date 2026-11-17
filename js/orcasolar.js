@@ -396,7 +396,7 @@ function compute(){
   if(injmax>0){ const Ni=Math.max(1,Math.ceil(injmax*1000/wp)); opts.push({id:"inj",nome:"Limitado à injeção",desc:`Potência de geração próxima de ${num(injmax,1)} kW injetáveis.`,N:Ni,...sizeFor(Ni)}); }
   let sel = opts.find(o=>o.id===OPT && !o.ref); if(!sel){ sel = opts.find(o=>o.id==="sug"); }
   // ajuste manual de módulos e inversor escolhido
-  const madd=Math.trunc(v("madd")), ovr=$("invsel").value, ovrInv=(ovr&&ovr!=="auto")?CONFIG.inversores.find(i=>i.id===ovr):null;
+  const madd=0, ovr=$("invsel").value, ovrInv=(ovr&&ovr!=="auto")?CONFIG.inversores.find(i=>i.id===ovr):null;
   const pickX = k => ovrInv ? {inv:ovrInv, qtd:Math.max(1,Math.ceil(k/(T.ccaMax*ovrInv.kw)))} : pickInverter(k,fase);
   let N = Math.max(1, sel.N+madd), pkx = pickX(N*wp/1000);
   const NmaxInv = pkx ? Math.floor(pkx.inv.kw*pkx.qtd*T.ccaMax*1000/wp) : N;
