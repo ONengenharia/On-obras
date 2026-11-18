@@ -191,7 +191,25 @@
     timer = setInterval(async () => { if (!aberto || document.hidden) return; const n = msgs.length && msgs[msgs.length - 1].id; await carregar(); if ((msgs.length && msgs[msgs.length - 1].id) !== n) { desenharLista(); marcarLido(); } await contar(); const sc = win.querySelector(".gc-chans"), x = sc.scrollLeft; sc.innerHTML = chips(); sc.scrollLeft = x; bindChips(); }, 2000);
   }
   function fechar() { aberto = false; win.hidden = true; fab.classList.remove("aberto"); clearInterval(timer); }
-  fab.onclick = () => aberto ? fechar() : abrir();
+  /* mover o botão do chat (arrastar); posição lembrada neste navegador */
+  let gpos = null; try { gpos = JSON.parse(localStorage.getItem("gc.pos") || "null") } catch (e) {}
+  function posFab() {
+    if (!gpos) return;
+    const x = Math.max(4, Math.min(innerWidth - 60, gpos.x)), y = Math.max(4, Math.min(innerHeight - 60, gpos.y));
+    Object.assign(fab.style, { left: x + "px", top: y + "px", right: "auto", bottom: "auto" });
+    const w = win.offsetWidth || 380, h = win.offsetHeight || 560;
+    const wx = Math.max(8, Math.min(innerWidth - w - 8, x + 56 - w)), wy = y > h + 16 ? y - h - 10 : Math.min(innerHeight - h - 8, y + 66);
+    Object.assign(win.style, { left: wx + "px", top: Math.max(8, wy) + "px", right: "auto", bottom: "auto" });
+  }
+  let arr = null, moveu = false;
+  fab.style.touchAction = "none";
+  fab.addEventListener("pointerdown", e => { const r = fab.getBoundingClientRect(); arr = { dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY }; moveu = false; fab.setPointerCapture(e.pointerId) });
+  fab.addEventListener("pointermove", e => { if (!arr) return; if (!moveu && Math.hypot(e.clientX - arr.x0, e.clientY - arr.y0) < 6) return; moveu = true; gpos = { x: e.clientX - arr.dx, y: e.clientY - arr.dy }; posFab() });
+  fab.addEventListener("pointerup", () => { if (arr && moveu) { try { localStorage.setItem("gc.pos", JSON.stringify(gpos)) } catch (e) {} } arr = null });
+  fab.addEventListener("dblclick", () => { if (!gpos) return; gpos = null; try { localStorage.removeItem("gc.pos") } catch (e) {} fab.removeAttribute("style"); fab.style.touchAction = "none"; win.removeAttribute("style") });
+  addEventListener("resize", posFab);
+  fab.onclick = () => { if (moveu) { moveu = false; return } aberto ? fechar() : abrir(); posFab() };
+  posFab();
   document.addEventListener("keydown", e => { if (e.key === "Escape" && aberto && !document.querySelector(".lb-ov")) fechar(); });
   document.addEventListener("mousedown", e => { if (aberto && !win.contains(e.target) && !fab.contains(e.target)) fechar(); });
   function alertaCurto(t) { const d = document.createElement("div"); d.className = "toast"; d.style.zIndex = 1400; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 3500); }
