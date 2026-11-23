@@ -711,7 +711,6 @@ function render(){
     <tr><td>Arranjo</td><td>${esc(r.arranjo)}</td></tr>
     <tr><td>Perdas de geração</td><td>${num((1-r.PR)*100,1)}%</td></tr>
     <tr><td>Área útil necessária (${esc(r.tel.nome)})</td><td>${num(r.areaTotal,1)} m²${r.comArea&&r.capT>0?` de ${num(r.capT*r.areaTotal/r.modulos,1)} m² disponíveis`:""}</td></tr>
-    <tr><td>Orientação</td><td>${r.al.faces.filter(f=>f.n>0).map(f=>`${ORI[f.ori][0]} (${f.n})`).join(" · ")||"Norte"} · fator ${num(r.al.fator,2)}</td></tr>
     <tr><td>Suporta mais</td><td>${r.maisMod} módulo(s) neste inversor${r.comArea?" e na área":""}</td></tr>
     <tr><td>Verificação</td><td><span class="pill ${okAll?"ok":"warn"}">${okAll?"Dentro dos limites":"Revisar"}</span></td></tr></tbody>`;
   $("checks").innerHTML = r.checks.map(c=>`<li><span class="pill ${c.ok?"ok":"warn"}">${c.ok?"OK":"Atenção"}</span><span>${esc(c.t)}</span></li>`).join("");
@@ -1123,7 +1122,7 @@ function propostaHTML(){
     const det=`<h2 class="h2b">Detalhes do projeto</h2>${kp4}${detalhes}${ucTab}`;
     const meses=MESES.map((m,i)=>`<tr><td>${m}</td><td>${num(r.gerM[i])}</td><td>${num(r.consM[i])}</td><td class="${r.gerM[i]+r.rateio>=r.consM[i]?"":"neg"}">${num(r.gerM[i]+r.rateio-r.consM[i])}</td></tr>`).join("");
     const ger=`<h2>Geração de energia</h2>${chartGenSvg}<table class="data"><thead><tr><th>Mês</th><th>Geração (kWh)</th><th>Consumo (kWh)</th><th>Saldo (kWh)</th></tr></thead><tbody>${meses}</tbody></table>
-      <p class="small">A energia gerada acima do consumo vira crédito na rede, válido por 60 meses. Estimativa com irradiação de ${num(r.hsp,2)} kWh/m²·dia e perdas de ${num((1-r.PR)*100,1)}%.</p>`;
+      <p class="small">A energia gerada acima do consumo vira crédito na rede, válido por 60 meses. Estimativa com irradiação de ${num(r.hsp,2)} kWh/m²·dia.</p>`;
     const proj=`<h2>Projeção anual</h2><h3 class="sub s0">Conta de energia antes e depois (1º ano)</h3>${eco3}<p class="small" style="margin-bottom:8px">Estimativa sem bandeira tarifária, com o Fio B escalonado pela Lei 14.300.</p><table class="data tight"><thead><tr><th>Ano</th><th>Produção (kWh)</th><th>Sem solar</th><th>Com solar</th><th>Economia</th><th>Acumulado</th></tr></thead><tbody>${r.rows.map(o=>{const sem=r.cons*12*o.t, com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td>${brl(o.eco)}</td><td class="${o.acum>=0?"":"neg"}">${brl(o.acum)}</td></tr>`}).join("")}</tbody></table><p class="small">${basesTxt(r)}</p>`;
     const limpa=l=>l.replace(/^\s*\d{5,}\s*[–—-]\s*/,"").replace(/^[–—-]\s*/,"").trim();
     const distLinhas=($("disttxt").value||"").split(/\n+/).map(limpa).filter(l=>l&&!/frete/i.test(l)).slice(0,40);
@@ -1132,7 +1131,7 @@ function propostaHTML(){
     const row=(ic,titulo,sub,base,extra)=>`<div class="eqr"><div class="ico">${iconProd(ic)}</div><div class="eqt"><h4>${titulo}</h4>${sub?`<b>${pesc(sub)}</b>`:""}</div><ul>${li(base.map(x=>pesc(x)))}${li(extra.map(x=>pesc(x)))}</ul></div>`;
     const rows=[
       row("mod",`Módulos fotovoltaicos · ${r.modulos} un.`,(mod.marca+" "+mod.modelo).trim()||`${mod.wp} Wp`,[`Potência ${mod.wp} Wp · ${num(r.kwp,2)} kWp no total`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Coeficiente de temperatura da potência ${num(mod.coefP,2)} %/°C`,`Garantia de desempenho de ${mod.garantia||25} anos, conforme o fabricante`].concat((mod.det||[]).slice(0,5).map(x=>"§"+x)),porCat.mod),
-      row("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`,`Relação CC/CA ${num(r.ratio,2)}`].concat((inv.det||[]).slice(0,5).map(x=>"§"+x)),porCat.inv),
+      row("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`].concat((inv.det||[]).slice(0,5).map(x=>"§"+x)),porCat.inv),
       row("estr","Estrutura de fixação",`Para ${r.tel.nome.toLowerCase()}`,[`Estrutura selecionada: ${r.tel.nome.toLowerCase()}`,`${r.modulos} módulos fixados em perfis e fixadores`,`Área útil estimada de ${num(r.areaTotal,1)} m²`],porCat.estr),
       row("cabo","Cabos e conectores","",[`Cabos CC solares e conectores MC4 para ${num(r.kwp,2)} kWp`,`Cabeamento CA até o quadro de entrada`],porCat.cabo),
       row("prot","String box e proteções","",[`Proteções CC e CA: DPS e disjuntores`,`Aterramento conforme projeto e normas da concessionária`],porCat.prot),
