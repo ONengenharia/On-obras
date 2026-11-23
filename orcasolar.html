@@ -532,6 +532,7 @@ table.ed td:first-child input{min-width:96px}
       <input type="hidden" id="pr-hist" value="[]"><select id="pr-capa" hidden></select>
       <button class="btn alt small" id="pr-nova" type="button" title="Cria a próxima versão partindo da fatura de energia: consumo, tarifa e concessionária são mantidos; dimensionamento, desconto e kit voltam ao automático. A versão anterior fica guardada.">➕ Criar outra proposta (nova versão)</button>
       <label class="tg">Versões anteriores <select id="pr-hsel"></select></label><button class="btn alt small" id="pr-hrest" type="button" title="Cria uma nova versão com os dados da versão escolhida">Duplicar como nova</button>
+      <label class="tg">Imprimir versão <select id="pr-psel" title="Escolha qual versão abrir ou baixar (para levar mais de uma opção ao cliente)"></select></label>
       <button class="btn" id="pr-abrir">Abrir proposta ON (imprimir / salvar em PDF)</button>
       <button class="btn alt small" id="pr-baixar">Baixar HTML</button>
       <span class="toast" id="toast" role="status"></span>
@@ -720,6 +721,6 @@ table.ed td:first-child input{min-width:96px}
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
 <script src="js/cidades.js?v=1"></script>
-<script src="js/orcasolar.js?v=7"></script>
+<script src="js/orcasolar.js?v=9"></script>
 </body>
 </html>

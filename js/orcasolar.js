@@ -1447,7 +1447,7 @@ async function integrar(){
     SB.from("negocios").select("id,titulo,cliente,cidade,fone,valor,pot,quadro,cadastro").eq("id",NEG).maybeSingle(),
     SB.from("neg_orc_solar").select("dados,atualizado_em").eq("negocio_id",NEG).maybeSingle()]);
   if(rc.data&&rc.data.dados) aplicarConfig(rc.data.dados);
-  const neg=rn.data;
+  const neg=rn.data; window.ORC_EM=ro.data?ro.data.atualizado_em:null;
   try{ window.GC_NUM=String((((neg||{}).cadastro||{}).gc_orc||{}).codigo||""); }catch(e){}
   if(ro.data&&ro.data.dados&&ro.data.dados.f){ restore(ro.data.dados); setSv("Orçamento carregado · "+new Date(ro.data.atualizado_em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})); }
   else if(neg){
@@ -2086,5 +2086,66 @@ function invRotular(){
 const _fillInvSel0=fillInvSel; fillInvSel=function(){ _fillInvSel0.apply(this,arguments); invRotular(); };
 const _refreshSelects0=refreshSelects; refreshSelects=function(){ const r=_refreshSelects0.apply(this,arguments); invRotular(); return r; };
 try{ invRotular(); }catch(e){}
+
+/* ---- não sobrescrever o orçamento se outra pessoa salvou depois que abri ---- */
+var CONFLITO=false;
+salvar=async function(){
+  if(!NEG||!CAN_EDIT||!READY||!DIRTY||CONFLITO) return;
+  try{
+    const cur=await SB.from("neg_orc_solar").select("atualizado_em").eq("negocio_id",NEG).maybeSingle();
+    if(cur.data&&window.ORC_EM&&new Date(cur.data.atualizado_em).getTime()!==new Date(window.ORC_EM).getTime()){
+      CONFLITO=true; setSv("⚠ Outra pessoa alterou este orçamento depois que você abriu. Recarregue a página (suas alterações desta tela não foram salvas).","er");
+      try{ flash($("toast"),"Orçamento alterado por outra pessoa: recarregue a página."); }catch(e){}
+      return;
+    }
+  }catch(e){}
+  DIRTY=false; setSv("Salvando…");
+  const resumo=R?{kwp:R.kwp,modulos:R.modulos,gerMes:R.gerMes,invest:R.invest,payback:R.payback,tir:R.tir,cliente:$("cliente").value,itens:R.kitItems.map(i=>({nome:i.nome,qtd:+(+i.qtd).toFixed(2),un:+(+i.un).toFixed(2),unid:i.unid})),proposta:{versao:+$("pr-ver").value||0,data:$("pr-verdata").value,numero:window.GC_NUM||""}}:null;
+  const em=new Date().toISOString();
+  const {error}=await SB.from("neg_orc_solar").upsert({negocio_id:NEG,dados:snapshot(),resumo,atualizado_por:UID,atualizado_em:em});
+  if(error){ DIRTY=true; setSv("Não salvou: "+error.message,"er"); return; }
+  window.ORC_EM=em;
+  setSv("Salvo ✓ "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),"ok");
+  if(R){ const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100; SB.from("negocios").update({valor,pot,un:"kWp"}).eq("id",NEG).then(()=>{ try{ parent.postMessage({orcsolar:"valor",neg:NEG,valor,pot},location.origin); }catch(e){} }); }
+};
+
+/* ---- imprimir/baixar qualquer versão (sem alterar a versão atual) ---- */
+var VERBLK=false;
+const _agendar0=agendar; agendar=function(){ if(VERBLK) return; return _agendar0.apply(this,arguments); };
+function pselFill(){
+  const s=$("pr-psel"); if(!s) return; const cur=s.value, a=histGet(), vc=propVer();
+  const opts=[]; if(vc) opts.push(`<option value="cur">v${vc} · atual</option>`);
+  a.map((x,i)=>({x,i})).filter(o=>o.x.v!==vc).sort((p,q)=>q.x.v-p.x.v).forEach(o=>opts.push(`<option value="${o.i}">v${o.x.v} · ${esc(o.x.data||"")} · ${brl(o.x.invest)}</option>`));
+  s.innerHTML=opts.join("")||'<option value="cur">versão atual</option>';
+  if([...s.options].some(o=>o.value===cur)) s.value=cur;
+}
+const _histSel0=histSel; histSel=function(){ _histSel0.apply(this,arguments); pselFill(); };
+const _verTxt0=verTxt; verTxt=function(){ _verTxt0.apply(this,arguments); pselFill(); };
+async function htmlDaVersao(idx){
+  const x=histGet()[+idx]; if(!x||!x.snap||!R) return null;
+  await capaPronta();
+  const S=snapshot(), cur={v:$("pr-ver").value,d:$("pr-verdata").value}; VERBLK=true;
+  try{ restore(x.snap); $("pr-ver").value=x.v; $("pr-verdata").value=x.data||""; calc(); return propostaHTML(); }
+  finally{ restore(S); $("pr-ver").value=cur.v; $("pr-verdata").value=cur.d; calc(); VERBLK=false; }
+}
+const _abrir0=$("pr-abrir").onclick, _baixar0=$("pr-baixar").onclick;
+async function versaoPronta(){
+  if(NEG&&!CAN_EDIT){ flash($("toast"),"Sem permissão."); return false; }
+  if(NEG&&!window.GC_NUM){ flash($("toast"),"Registre uma versão no Gestão Click primeiro (gera o número do negócio)."); return false; }
+  if(typeof MARGEM_BAIXA!=="undefined"&&MARGEM_BAIXA&&!ISADM){ flash($("toast"),"Margem abaixo do mínimo: peça autorização ao administrador."); return false; }
+  return true;
+}
+$("pr-abrir").onclick=async function(){
+  const sv=$("pr-psel").value; if(!sv||sv==="cur") return _abrir0.apply(this,arguments);
+  if(!(await versaoPronta())) return; const w=window.open("","_blank"); if(!w){ flash($("toast"),"Libere pop-ups para abrir a proposta."); return; }
+  const h=await htmlDaVersao(sv); if(!h){ try{ w.close(); }catch(e){} return; } w.document.open(); w.document.write(h); w.document.close();
+};
+$("pr-baixar").onclick=async function(){
+  const sv=$("pr-psel").value; if(!sv||sv==="cur") return _baixar0.apply(this,arguments);
+  if(!(await versaoPronta())) return; const x=histGet()[+sv], h=await htmlDaVersao(sv); if(!h) return;
+  const b=new Blob([h],{type:"text/html"}), a=document.createElement("a"); a.href=URL.createObjectURL(b);
+  a.download="Proposta - "+(($("cliente").value||"cliente").replace(/[\\/:*?"<>|]/g,"").trim())+" - v"+x.v+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+};
+try{ pselFill(); }catch(e){}
 
 integrar();
