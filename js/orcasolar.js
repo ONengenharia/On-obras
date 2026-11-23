@@ -825,7 +825,7 @@ function show(which){
     $("view-"+n).classList.toggle("hidden",n!==which);
     $("tab-"+n).setAttribute("aria-selected",n===which);
   });
-  $("strip").style.display = which==="ent" ? "none" : "";
+  $("strip").style.display = "none";
   if(which==="prop") renderDoc();
   if(which==="preco") renderPreco();
 }
