@@ -532,8 +532,9 @@ $("tbl-dre").addEventListener("input", e => {
 
 function renderPreco(){
   const r=R; if(!r) return; const P=r.P;
-  { const kr=$("kit-ref"); if(kr) kr.innerHTML = v("kitcot")>0 ? "Kit cotado em uso no preço: <b>"+brl(v("kitcot"))+"</b> · catálogo (referência): "+brl(r.Kest) : "Sem cotação: usando o kit calculado do catálogo, <b>"+brl(r.Kest)+"</b>."; }
+  { const kr=$("kit-ref"); if(kr) kr.innerHTML = v("kitcot")>0 ? "Kit cotado em uso no preço: <b>"+brl(v("kitcot"))+"</b> · catálogo (referência): "+brl(r.Kest) : "<b class=neg>Informe o valor do kit cotado.</b> A base de preço de todos os orçamentos é o valor do kit; sem ele, o preço usa uma estimativa do catálogo (sem preços atualizados) e não serve para proposta."; }
   if(typeof kitMargemSync==="function") kitMargemSync(r);
+  { const ka=$("kit-aviso"); if(ka) ka.style.display = v("kitcot")>0 ? "none" : ""; }
   $("tbl-kit").innerHTML = `<thead><tr><th>Item</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>`+
     r.kitItems.map(i=>`<tr><td>${esc(i.nome)}</td><td>${num(i.qtd,i.unid==="kWp"?2:0)} ${i.unid}</td><td>${brl2(i.un)}</td><td>${brl(i.qtd*i.un)}</td></tr>`).join("")+
     `<tr><td><strong>Kit calculado do catálogo</strong></td><td></td><td></td><td><strong>${brl(r.Kest)}</strong></td></tr>`+
@@ -702,6 +703,7 @@ function render(){
   renderOpts(r);
 
   const okAll = r.checks.every(c=>c.ok);
+  if(typeof renderEquip==="function") renderEquip(r);
   $("tbl-tec").innerHTML = `<tbody>
     <tr><td>Módulos</td><td>${r.modulos} × ${esc((r.mod.marca+" "+r.mod.modelo).trim())}</td></tr>
     <tr><td>Potência CC</td><td>${num(r.kwp,2)} kWp</td></tr>
@@ -1884,5 +1886,19 @@ function finUI(){
 ["pr-fin","pr-fin0","pr-fin1","pr-fin2"].forEach(id=>$(id).addEventListener("change",()=>{ finUI(); if(typeof atualizarPrev==="function") atualizarPrev(); if(typeof agendar==="function") agendar(); }));
 document.getElementById("tab-prop").addEventListener("click",finUI);
 finUI();
+
+/* ---- equipamentos do sistema (descritivo sem valores) ---- */
+function renderEquip(r){
+  const el=$("equip-list"); if(!el||!r||!r.mod) return;
+  const m=r.mod, i=r.inv||{}, tipoF=x=>x===1?"monofásico":x===2?"bifásico":"trifásico";
+  const lnk=x=>x&&x.ds&&x.ds.url?` <a href="${esc(x.ds.url)}" target="_blank" rel="noopener" class="mini">datasheet ↗</a>`:"";
+  const itens=[
+    {n:r.modulos+" un.",t:"Módulos fotovoltaicos",s:((m.marca||"")+" "+(m.modelo||"")).trim()+" · "+m.wp+" Wp",d:(m.det||[]).slice(0,3),x:lnk(m)},
+    {n:(r.qtdInv||0)+" un.",t:"Inversor",s:((i.marca||"")+" "+(i.modelo||"")).trim()+" · "+num(i.kw||0,1)+" kW · "+tipoF(i.fases),d:(i.det||[]).slice(0,3),x:lnk(i)},
+    {n:r.modulos+" módulos",t:"Estrutura de fixação",s:"Para "+r.tel.nome.toLowerCase(),d:[],x:""},
+    {n:"1 kit",t:"Cabos, conectores, string box e proteções",s:"Cabos CC solares, conectores MC4, DPS e disjuntores CC/CA",d:[],x:""},
+    {n:"1",t:"Projeto, ART, instalação e homologação",s:"Projeto elétrico com ART, instalação por equipe própria e homologação na concessionária",d:[],x:""}];
+  el.innerHTML=`<table class="data tight" style="text-align:left"><thead><tr><th style="text-align:left">Item</th><th style="text-align:left">Qtd.</th><th style="text-align:left">Descrição</th></tr></thead><tbody>`+itens.map(k=>`<tr><td style="text-align:left"><b>${esc(k.t)}</b></td><td style="text-align:left;white-space:nowrap">${esc(k.n)}</td><td style="text-align:left">${esc(k.s)}${k.x}${k.d.length?`<div class="mini" style="margin-top:3px">${k.d.map(esc).join(" · ")}</div>`:""}</td></tr>`).join("")+`</tbody></table>`;
+}
 
 integrar();
