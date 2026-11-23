@@ -1773,11 +1773,10 @@ function cadPuxar(neg){
   const c=(neg&&neg.cadastro)||{};
   window.CAD_DOC=fmtDocBR(c.doc);
   const end=[c.endereco,c.numero,c.complemento,c.bairro].map(s=>String(s||"").trim()).filter(Boolean).join(", ");
-  const cid=[(neg&&neg.cidade)||c.cidade,c.uf].map(s=>String(s||"").trim()).filter(Boolean).join(" / ");
+  const cidB=String((neg&&neg.cidade)||c.cidade||"").trim(), cid=/\(\s*[A-Za-z]{2}\s*\)\s*$/.test(cidB)||!c.uf?cidB:cidB+" / "+String(c.uf).trim();
   let n=0;
   [["pend",end],["pcid",cid],["pcep",fmtCepBR(c.cep)]].forEach(([id,val])=>{ const e=$(id); if(e&&val){ e.value=val; e.readOnly=true; e.style.opacity=".75"; e.title="Vem do cadastro do cliente (edite no cadastro do negócio)"; n++; } });
-  if(cid){ const mc=aplicarCidade(cid); if(mc&&mc.exato) { /* ok */ } }
-  cidErro();
+  if(cid){ const f=()=>{ aplicarCidade(cid); cidErro(); }; if(window.CID) CID.load().then(f,f); else f(); } else cidErro();
   if($("cad-note")) $("cad-note").textContent=n?"Endereço, cidade e CEP vêm do cadastro do cliente no negócio. Para alterar, edite o cadastro.":"Cadastro do cliente sem endereço: preencha aqui ou complete o cadastro no negócio.";
 }
 
@@ -1900,5 +1899,43 @@ function renderEquip(r){
     {n:"1",t:"Projeto, ART, instalação e homologação",s:"Projeto elétrico com ART, instalação por equipe própria e homologação na concessionária",d:[],x:""}];
   el.innerHTML=`<table class="data tight" style="text-align:left"><thead><tr><th style="text-align:left">Item</th><th style="text-align:left">Qtd.</th><th style="text-align:left">Descrição</th></tr></thead><tbody>`+itens.map(k=>`<tr><td style="text-align:left"><b>${esc(k.t)}</b></td><td style="text-align:left;white-space:nowrap">${esc(k.n)}</td><td style="text-align:left">${esc(k.s)}${k.x}${k.d.length?`<div class="mini" style="margin-top:3px">${k.d.map(esc).join(" · ")}</div>`:""}</td></tr>`).join("")+`</tbody></table>`;
 }
+
+
+/* ---- cidade: todos os municípios do Brasil (IBGE) + irradiação estimada ---- */
+function ufDe(txt){ const m=String(txt||"").match(/\(\s*([A-Za-z]{2})\s*\)\s*$|[\/\-,]\s*([A-Za-z]{2})\s*$/); return m?(m[1]||m[2]).toUpperCase():""; }
+let _baseCoords=null;
+function baseCoords(){
+  if(_baseCoords) return _baseCoords;
+  _baseCoords=Object.keys(CIDADES).map(k=>{ const e=window.CID&&CID.lista?CID.exato(k):null; return e?{k,lat:e.lat,lon:e.lon,h:CIDADES[k].h}:null; }).filter(Boolean);
+  return _baseCoords;
+}
+function irrEstimar(e){
+  const ds=baseCoords().map(b=>({b,d:Math.max(CID.dist(e,b),1)})).sort((x,y)=>x.d-y.d).slice(0,3);
+  const w=ds.map(x=>1/(x.d*x.d)), sw=w.reduce((a,b)=>a+b,0);
+  return {h:ds.reduce((s,x,i)=>s+x.b.h*w[i],0)/sw, perto:ds[0]};
+}
+function cidInfo(t){ const el=$("cid-info"); if(el) el.textContent=t||""; }
+aplicarCidade=function(txt){
+  const m=cidadeMatch(txt);
+  const e=window.CID&&CID.lista?CID.exato(txt,ufDe(txt)):null;
+  if(e){
+    const k=CID.fmt(e);
+    if(CIDADES[k]){ $("cidade").value=k; setHspm(monthlyFor(k)); cidInfo("Irradiação de "+k+" da base do orçador."); }
+    else { const s=irrEstimar(e); $("cidade").value="__custom"; setHspm(seasonal(s.h,e.lat)); cidInfo("Irradiação estimada para "+k+" (média das cidades mais próximas da base, a mais próxima é "+s.perto.b.k+", a "+Math.round(s.perto.d)+" km). Confira em Configurações → Técnicas se precisar ajustar."); }
+    if(!$("pcid").value) $("pcid").value=txt;
+    return {k:k,exato:true,est:!CIDADES[k]};
+  }
+  if(!m) return null;
+  $("cidade").value=m.k; setHspm(monthlyFor(m.k)); cidInfo("");
+  if(!$("pcid").value) $("pcid").value=txt;
+  return m;
+};
+cidErro=function(){
+  const el=$("cid-err"); if(!el) return; const t=($("pcid").value||"").trim();
+  if(!t||!(window.CID&&CID.lista)){ el.style.display="none"; return; }
+  if(CID.exato(t,ufDe(t))){ el.style.display="none"; return; }
+  el.style.display=""; el.textContent="⚠ Cidade “"+t+"” não está na lista de municípios do Brasil"+(CID.parse(t).uf?"":" (ou falta a UF)")+". Corrija no cadastro do cliente, no formato Nome (UF). Enquanto isso o orçamento usa a irradiação da cidade mais próxima da lista.";
+};
+if(window.CID) CID.load().then(()=>{ cidErro(); }).catch(()=>{});
 
 integrar();

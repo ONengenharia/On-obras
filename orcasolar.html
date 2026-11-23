@@ -625,7 +625,8 @@ table.ed td:first-child input{min-width:96px}
       <div class="grid">
         <section class="card">
           <h2>Local e irradiação solar</h2>
-          <p class="note" style="margin:0 0 8px">A cidade vem do cadastro do cliente no negócio. Se ela não estiver na base, aparece um erro e o orçamento usa a cidade mais próxima da lista.</p>
+          <p class="note" style="margin:0 0 8px">A cidade vem do cadastro do cliente no negócio. Se ela não estiver na base, aparece um erro e todos os municípios do Brasil são aceitos; se o cadastro tiver uma cidade fora da lista, aparece um erro.</p>
+          <p class="note" id="cid-info" style="margin:0 0 8px"></p>
           <div class="fields">
             <label>Cidade<select id="cidade" data-own></select></label>
             <label>Irradiação média anual (kWh/m²·dia)<input id="hsp" type="number" step="0.01" min="2" max="8" data-own></label>
@@ -708,6 +709,7 @@ table.ed td:first-child input{min-width:96px}
 
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
-<script src="js/orcasolar.js?v=3"></script>
+<script src="js/cidades.js?v=1"></script>
+<script src="js/orcasolar.js?v=4"></script>
 </body>
 </html>
