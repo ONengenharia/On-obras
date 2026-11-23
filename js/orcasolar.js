@@ -2052,4 +2052,19 @@ async function importarDatasheets(files){
   msg.textContent="Importado: "+res.join("; ")+"."+extra+(mexp?" Revise os valores em Configurações → Equipamentos.":"");
 }
 
+/* ---- margem mínima: abaixo de 40% precisa de autorização do administrador ---- */
+var MARGEM_MIN=40, MARGEM_BAIXA=false;
+const _kmSync0=kitMargemSync;
+kitMargemSync=function(r){
+  _kmSync0(r);
+  const P=r.P, pc=P.lista>0?(P.lista-P.K)/P.lista*100:0, min=+(CONFIG.margemMin||MARGEM_MIN), el=$("km-aviso");
+  MARGEM_BAIXA=P.lista>0 && P.K>0 && pc<min-0.05;
+  if(el){ el.hidden=!MARGEM_BAIXA; el.textContent=MARGEM_BAIXA?("Margem de "+num(pc,1)+"% está abaixo de "+num(min,0)+"%. "+(ISADM?"Como administrador você pode liberar.":"Peça autorização ao administrador para emitir a proposta.")):""; }
+};
+const _garantirGC0=garantirGC;
+garantirGC=async function(){
+  if(MARGEM_BAIXA && !ISADM){ flash($("toast"),"Margem abaixo de "+(CONFIG.margemMin||MARGEM_MIN)+"%: peça autorização ao administrador."); try{ gcMsg("Margem abaixo de "+(CONFIG.margemMin||MARGEM_MIN)+"%: só o administrador pode liberar a proposta.",true); }catch(e){} return false; }
+  return _garantirGC0();
+};
+
 integrar();
