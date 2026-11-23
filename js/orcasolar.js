@@ -1447,7 +1447,7 @@ async function integrar(){
     SB.from("negocios").select("id,titulo,cliente,cidade,fone,valor,pot,quadro,cadastro").eq("id",NEG).maybeSingle(),
     SB.from("neg_orc_solar").select("dados,atualizado_em").eq("negocio_id",NEG).maybeSingle()]);
   if(rc.data&&rc.data.dados) aplicarConfig(rc.data.dados);
-  const neg=rn.data;
+  const neg=rn.data; window.ORC_EM=ro.data?ro.data.atualizado_em:null;
   try{ window.GC_NUM=String((((neg||{}).cadastro||{}).gc_orc||{}).codigo||""); }catch(e){}
   if(ro.data&&ro.data.dados&&ro.data.dados.f){ restore(ro.data.dados); setSv("Orçamento carregado · "+new Date(ro.data.atualizado_em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})); }
   else if(neg){
@@ -2086,5 +2086,27 @@ function invRotular(){
 const _fillInvSel0=fillInvSel; fillInvSel=function(){ _fillInvSel0.apply(this,arguments); invRotular(); };
 const _refreshSelects0=refreshSelects; refreshSelects=function(){ const r=_refreshSelects0.apply(this,arguments); invRotular(); return r; };
 try{ invRotular(); }catch(e){}
+
+/* ---- não sobrescrever o orçamento se outra pessoa salvou depois que abri ---- */
+var CONFLITO=false;
+salvar=async function(){
+  if(!NEG||!CAN_EDIT||!READY||!DIRTY||CONFLITO) return;
+  try{
+    const cur=await SB.from("neg_orc_solar").select("atualizado_em").eq("negocio_id",NEG).maybeSingle();
+    if(cur.data&&window.ORC_EM&&new Date(cur.data.atualizado_em).getTime()!==new Date(window.ORC_EM).getTime()){
+      CONFLITO=true; setSv("⚠ Outra pessoa alterou este orçamento depois que você abriu. Recarregue a página (suas alterações desta tela não foram salvas).","er");
+      try{ flash($("toast"),"Orçamento alterado por outra pessoa: recarregue a página."); }catch(e){}
+      return;
+    }
+  }catch(e){}
+  DIRTY=false; setSv("Salvando…");
+  const resumo=R?{kwp:R.kwp,modulos:R.modulos,gerMes:R.gerMes,invest:R.invest,payback:R.payback,tir:R.tir,cliente:$("cliente").value,itens:R.kitItems.map(i=>({nome:i.nome,qtd:+(+i.qtd).toFixed(2),un:+(+i.un).toFixed(2),unid:i.unid})),proposta:{versao:+$("pr-ver").value||0,data:$("pr-verdata").value,numero:window.GC_NUM||""}}:null;
+  const em=new Date().toISOString();
+  const {error}=await SB.from("neg_orc_solar").upsert({negocio_id:NEG,dados:snapshot(),resumo,atualizado_por:UID,atualizado_em:em});
+  if(error){ DIRTY=true; setSv("Não salvou: "+error.message,"er"); return; }
+  window.ORC_EM=em;
+  setSv("Salvo ✓ "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),"ok");
+  if(R){ const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100; SB.from("negocios").update({valor,pot,un:"kWp"}).eq("id",NEG).then(()=>{ try{ parent.postMessage({orcsolar:"valor",neg:NEG,valor,pot},location.origin); }catch(e){} }); }
+};
 
 integrar();
