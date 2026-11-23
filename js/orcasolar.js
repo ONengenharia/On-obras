@@ -343,7 +343,7 @@ function irr(flows){
 }
 
 const ORI = {N:["Norte",1],NE:["Nordeste",0.97],NO:["Noroeste",0.97],L:["Leste",0.86],O:["Oeste",0.86],SE:["Sudeste",0.78],SO:["Sudoeste",0.78],S:["Sul",0.70]};
-function facesIn(){ return [1,2,3].map(i=>({i,ori:$("fo"+i).value||"N",area:v("fa"+i)})).map(f=>({...f,fat:(ORI[f.ori]||ORI.N)[1]})); }
+function facesIn(){ return [1,2,3].map(i=>({i,ori:"N",area:0,fat:1})); }
 function temArea(){ return facesIn().some(f=>f.area>0); }
 function capFace(f,AA){ const c=Math.floor(f.area/AA); return c>=4?c:0; }
 function capTotal(AA){ return facesIn().filter(f=>f.area>0).reduce((s,f)=>s+capFace(f,AA),0); }
@@ -364,7 +364,7 @@ function compute(){
   const mod=byId(CONFIG.modulos,$("modsel").value), tel=byId(CONFIG.telhados,$("telsel").value);
   if(!mod || !tel || !HSPM.length) return null;
   const T=CONFIG.tec;
-  const hsp=v("hsp"), aum=Math.max(0,v("aumcons"))/100, cons=v("consumo")*(1+aum), tar=v("tarifa"), fiobKwh=v("fiob"), meta=v("meta")/100, rateio=Math.max(0,v("rateio"));
+  const hsp=v("hsp"), aum=Math.max(0,v("aumcons"))/100, cons=v("consumo")*(1+aum), tar=v("tarifa"), fiobKwh=v("fiob"), meta=1, rateio=0;
   const fase = {"30":1,"50":2,"100":3}[$("padrao").value];
   const fee = +$("padrao").value;
   const preco=v("preco"), desc=v("desc")/100, reaj=v("reaj")/100, om=v("om"), invPct=v("inv")/100;
@@ -372,12 +372,13 @@ function compute(){
   const PR = 1 - v("perdas")/100;
   if (!(hsp>0 && cons>0 && wp>0 && PR>0)) return null;
   const compensavel = Math.max(cons - fee, 0);
-  const alvo = Math.max(0,(meta>1 ? cons*meta : Math.min(cons*meta, compensavel)) - rateio);
+  const UCS=ucsAtivas(aum), consEx=UCS.reduce((s,u)=>s+u.cons,0), consAll=cons+consEx;
+  const alvo = Math.max(0,(meta>1 ? cons*meta : Math.min(cons*meta, compensavel)) + UCS.reduce((s,u)=>s+(meta>1?u.cons*meta:Math.min(u.cons*meta,u.comp)),0) - rateio);
   const kwhKwp = hsp*T.dias*PR;
   const areaMod = mod.comp*mod.larg/1e6;
   const AA = areaMod*tel.fatorArea;
   const capT = capTotal(AA), comArea = temArea();
-  const sizeFor = Nf => { const kwp=Nf*wp/1000, al=alloc(Math.max(1,Math.ceil(Nf-1e-9)),AA), ger=kwp*kwhKwp*al.fator; return {Nf,kwp,ger,pct:(ger+rateio)/cons*100,area:Nf*AA,fator:al.fator}; };
+  const sizeFor = Nf => { const kwp=Nf*wp/1000, al=alloc(Math.max(1,Math.ceil(Nf-1e-9)),AA), ger=kwp*kwhKwp*al.fator; return {Nf,kwp,ger,pct:(ger+rateio)/consAll*100,area:Nf*AA,fator:al.fator}; };
 
   // opções de sistema
   const Nx = alvo/(kwhKwp*bestFat(AA))*1000/wp;
@@ -407,6 +408,7 @@ function compute(){
   if(comArea && capT>0 && N>capT){ N=capT; limitado="área"; }
   N=Math.max(1,N);
   const sz = sizeFor(N), kwp = sz.kwp, gerMes = sz.ger, areaTotal = sz.area, al = alloc(N,AA);
+  const SH=ucsShares(UCS,compensavel), gerMain=gerMes*SH.f0;
   const maisMod = Math.max(0, Math.min(NmaxInv, comArea&&capT>0?capT:Infinity) - N);
 
   // inversor e strings
@@ -434,16 +436,17 @@ function compute(){
 
   // geração mensal e comparação com o consumo
   const gerM = HSPM.map((h,i)=>kwp*h*DIAS_MES[i]*PR*al.fator);
-  const consM = consumoMensal(v("consumo")).map(x=>x*(1+aum));
+  const consM = consumoMensal(v("consumo")).map(x=>x*(1+aum)+consEx);
 
   // conta antes/depois
   const compRat = Math.min(rateio, compensavel);
-  const compMes = Math.min(gerMes+rateio, compensavel);
+  const compMes = Math.min(gerMain+rateio, compensavel);
   const fioMes = (compMes-compRat)*(1-sim)*fioPct(new Date().getFullYear())*fiobKwh + compRat*fiobKwh;
   const ecoRateioMes = compRat*(tar-fiobKwh);
-  const contaAntes = cons*tar;
-  const consumoPago = Math.max(cons-gerMes-rateio, fee);
-  const contaDepois = consumoPago*tar + fioMes;
+  const ucRes=ucsResult(UCS,SH,gerMes,fiobKwh,new Date().getFullYear());
+  const contaAntes = cons*tar + UCS.reduce((s,u)=>s+u.cons*u.tar,0);
+  const consumoPago = Math.max(cons-gerMain-rateio, fee);
+  const contaDepois = consumoPago*tar + fioMes + ucRes.depois;
 
   // projeção
   const y0 = new Date().getFullYear();
@@ -452,10 +455,11 @@ function compute(){
     const year=y0+a-1;
     const ger = gerMes*12*Math.pow(1-degr,a-1);
     const t = tar*Math.pow(1+reaj,a-1);
-    const compSis = Math.max(0, Math.min(ger+rateio*12, compensavel*12) - Math.min(rateio*12, compensavel*12));
+    const compSis = Math.max(0, Math.min(ger*SH.f0+rateio*12, compensavel*12) - Math.min(rateio*12, compensavel*12));
     const comp = compSis;
     const fio = comp*(1-sim)*fioPct(year)*fiobKwh*Math.pow(1+reaj,a-1);
-    const eco = comp*t - fio;
+    let eco = comp*t - fio;
+    UCS.forEach((u,k)=>{ const ci=Math.min(ger*SH.f[k], u.comp*12), g_=Math.pow(1+reaj,a-1); eco += ci*u.tar*g_ - ci*fioPct(year)*fiobKwh*g_; });
     let custo = om*Math.pow(1.04,a-1);
     if (a===12) custo += invest*invPct;
     const liq = eco-custo;
@@ -464,8 +468,8 @@ function compute(){
     rows.push({a,year,ger,t,fio,eco,custo,liq,acum});
   }
   return {P,mod,tel,inv,qtdInv,ratio,checks,arranjo:str.arranjo,kitItems,Kest,PR,opts,optSel:sel.id,
-          hsp,cons,tar,fee,wp,reaj,degr,sim,modulos:N,kwp,gerMes,gerM,consM,invest,contaAntes,contaDepois,fioMes,rows,payback,
-          tir:irr(flows),totalEco:rows.reduce((s,r)=>s+r.liq,0),areaTotal,rateio,aum,ecoRateioMes,atend:(gerMes+rateio)/cons*100,maisMod,NmaxInv,capT,comArea,limitado,madd,al,limArea,ecoAno1:rows[0].eco,ecoMes1:rows[0].eco/12,anos,desc};
+          ucs:ucRes.list,ucF0:SH.f0*100,consAll,consEx,hsp,cons,tar,fee,wp,reaj,degr,sim,modulos:N,kwp,gerMes,gerM,consM,invest,contaAntes,contaDepois,fioMes,rows,payback,
+          tir:irr(flows),totalEco:rows.reduce((s,r)=>s+r.liq,0),areaTotal,rateio,aum,ecoRateioMes,atend:(gerMes+rateio)/consAll*100,maisMod,NmaxInv,capT,comArea,limitado,madd,al,limArea,ecoAno1:rows[0].eco,ecoMes1:rows[0].eco/12,anos,desc};
 }
 
 /* ============ PRECIFICAÇÃO E DRE ============ */
@@ -726,6 +730,7 @@ function render(){
     <div class="kpi"><div class="l">Economia no 1º ano</div><div class="v">${brl(r.ecoAno1)}</div><div class="s">${brl(r.ecoMes1)} por mês</div></div>
     <div class="kpi"><div class="l">Retorno (payback)</div><div class="v">${r.payback===null?"> 25 anos":num(r.payback,1)+" anos"}</div><div class="s">${r.tir===null?"TIR indisponível":"TIR de "+num(r.tir*100,1)+"% ao ano"}</div></div>`;
   $("chart").innerHTML = chart(r);
+  if(typeof renderUcsSum==="function") renderUcsSum(r);
   $("atend").innerHTML = `<span>O sistema atende <b>${num(r.atend)}%</b> da fatura${r.aum>0?` (consumo com +${num(r.aum*100)}%)`:""}</span><span class="mini">Meta de compensação ${num(v("meta"))}%</span><button class="btn alt small" type="button" data-metabtn="-5">− 5%</button><button class="btn alt small" type="button" data-metabtn="5">+ 5%</button>`;
   $("sis-info").textContent = (r.limitado?`Ajuste limitado pelo ${r.limitado}. `:"")+`Este inversor suporta mais ${r.maisMod} módulo(s) dentro da relação CC/CA de ${num(CONFIG.tec.ccaMax,2)}${r.comArea?" e da área informada":""}. Use − / + para somar ou tirar módulos, ou escolha um inversor maior.`;
   { const cur=$("invsel").value; $("invsel").innerHTML='<option value="auto">Automático (menor compatível)</option>'+CONFIG.inversores.map(i=>`<option value="${i.id}">${esc((i.marca+" "+i.modelo).trim())} · ${num(i.kw,1)} kW</option>`).join(""); if([...$("invsel").options].some(o=>o.value===cur)) $("invsel").value=cur; }
@@ -1016,7 +1021,7 @@ function paginaAceite(r,I,hoje,validade,ref,pp,dataVer){
     <p class="lead">Proposta <b>${ref}</b> · emitida em ${dataVer} · válida até ${validade}</p>
     <table class="kv"><tbody>
       <tr><td>Contratante</td><td>${pesc(I.nome)}</td></tr>
-      <tr><td>CPF / CNPJ</td><td class="blank"></td></tr>
+      <tr><td>CPF / CNPJ</td>${window.CAD_DOC?`<td>${pesc(window.CAD_DOC)}</td>`:`<td class="blank"></td>`}</tr>
       <tr><td>Endereço da instalação</td><td>${pesc([I.end,I.cid,I.cep].filter(Boolean).join(" · "))||"&nbsp;"}</td></tr>
       <tr><td>Contratada</td><td>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</td></tr>
       <tr><td>Objeto</td><td>Fornecimento, instalação e homologação de sistema fotovoltaico de ${num(r.kwp,2)} kWp (${r.modulos} módulos de ${r.mod.wp} Wp e ${r.qtdInv} inversor de ${num(r.inv.kw,1)} kW)</td></tr>
@@ -1063,7 +1068,7 @@ function propostaHTML(){
       ${r.rateio>0?`<tr><td>Rateio de energia</td><td>${num(r.rateio)} kWh/mês recebidos de outra unidade geradora</td></tr>`:""}
       <tr><td>Local e irradiação</td><td>${pesc(I.cid||"—")} · ${num(r.hsp,2)} kWh/m²·dia</td></tr>
       <tr><td>Equipamentos</td><td>${r.modulos} módulos de ${mod.wp} Wp · ${r.qtdInv} inversor de ${num(inv.kw,1)} kW (${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"})</td></tr>
-      <tr><td>Instalação</td><td>Área útil necessária de ${num(r.areaTotal,1)} m² · orientação ${pesc(faces)} · ${pesc(r.tel.nome)}</td></tr>
+      <tr><td>Instalação</td><td>Área útil necessária de ${num(r.areaTotal,1)} m² · ${pesc(r.tel.nome)}</td></tr>
       <tr><td>Atendimento da fatura</td><td>${num(r.atend)}% do consumo compensado</td></tr>
     </tbody></table>`;
   const linhas=[1,5,10,15,20,25].map(a=>{const o=r.rows[a-1]; const sem=r.cons*12*o.t; const com=sem-o.eco; return `<tr><td>${o.year}</td><td>${num(o.ger)}</td><td>${brl(sem)}</td><td>${brl(com)}</td><td><b>${brl(o.eco)}</b></td></tr>`}).join("");
@@ -1104,7 +1109,8 @@ function propostaHTML(){
       `;
     const porque=`<h3 class="sub">Por que energia solar</h3>
       <ul class="li"><li>Reduz a conta de luz e protege você dos reajustes da tarifa.</li><li>Sistema conectado à rede, sem baterias, com manutenção simples.</li><li>Módulos com garantia de desempenho de longo prazo.</li><li>Valoriza o imóvel e reduz emissões de CO₂.</li></ul>`, sobreEmp=`<div class="sobre"><b>${pesc(pp.razao)}</b><p>CNPJ ${pesc(pp.cnpj)} · ${pesc(P_EMP.end)} · ${pesc(CONFIG.contato||"")}</p><p>Site: <a href="https://onengenhariaeletrica.com.br/">onengenhariaeletrica.com.br</a> · Instagram: <a href="https://www.instagram.com/on_engenharia_/">@on_engenharia_</a></p></div>`;
-    const det=`<h2 class="h2b">Detalhes do projeto</h2>${kp4}${detalhes}`;
+    const ucTab=(r.ucs&&r.ucs.length)?`<h3 class="sub">Geração compartilhada entre unidades consumidoras</h3><table class="data tight"><thead><tr><th>Unidade</th><th>Consumo (kWh/mês)</th><th>% da geração</th><th>Crédito (kWh/mês)</th></tr></thead><tbody><tr><td>UC principal · ${pesc(I.uc||"")}</td><td>${num(r.cons)}</td><td>${num(r.ucF0,1)}%</td><td>${num(Math.min(r.gerMes*r.ucF0/100,Math.max(r.cons-r.fee,0)))}</td></tr>${r.ucs.map((u,i)=>`<tr><td>UC ${i+2}${u.uc?" · "+pesc(u.uc):""}${u.desc?" · "+pesc(u.desc):""}</td><td>${num(u.cons)}</td><td>${num(u.pct,1)}%</td><td>${num(u.cred)}</td></tr>`).join("")}</tbody></table><p class="small">Os créditos das demais unidades passam pela rede da concessionária: o Fio B escalonado (Lei 14.300) incide sobre toda essa energia, já considerado na economia.</p>`:"";
+    const det=`<h2 class="h2b">Detalhes do projeto</h2>${kp4}${detalhes}${ucTab}`;
     const meses=MESES.map((m,i)=>`<tr><td>${m}</td><td>${num(r.gerM[i])}</td><td>${num(r.consM[i])}</td><td class="${r.gerM[i]+r.rateio>=r.consM[i]?"":"neg"}">${num(r.gerM[i]+r.rateio-r.consM[i])}</td></tr>`).join("");
     const ger=`<h2>Geração de energia</h2>${chartGenSvg}<table class="data"><thead><tr><th>Mês</th><th>Geração (kWh)</th><th>Consumo (kWh)</th><th>Saldo (kWh)</th></tr></thead><tbody>${meses}</tbody></table>
       <p class="small">A energia gerada acima do consumo vira crédito na rede, válido por 60 meses. Estimativa com irradiação de ${num(r.hsp,2)} kWh/m²·dia e perdas de ${num((1-r.PR)*100,1)}%.</p>`;
@@ -1424,6 +1430,7 @@ async function integrar(){
     setSv("Novo orçamento para "+(neg.cliente||neg.titulo||"o negócio"));
   }
   if(neg&&neg.cidade&&!$("pcid").value) aplicarCidade(neg.cidade);
+  try{ cadPuxar(neg); }catch(e){}
   if(!CAN_EDIT){ setSv("Somente leitura (seu nível é “ver”)","er"); document.querySelectorAll("#view-ent input,#view-ent select,#view-ent textarea,#view-preco input,#view-preco select,#view-sis input,#view-sis select").forEach(e=>e.disabled=true); }
   $("btn-aplicar").hidden=true;
   if(ISADM) $("cfg-save").hidden=false; else if(!ISADM){ document.querySelector('[data-sub="com"]'); }
@@ -1745,5 +1752,85 @@ $("pm-apl").onclick=()=>{
 };
 $("pm-del").onclick=()=>{ const a=pmList(), i=a.findIndex(x=>x.id===$("pm-sel").value); if(i<0) return; const n=a[i].nome; a.splice(i,1); saveCfg(); pmFill(); if(NEG&&ISADM) $("cfg-save").click(); pmMsg("Modelo \""+n+"\" excluído."); };
 pmFill();
+
+/* ============ v5: cadastro do negócio → dados da proposta ============ */
+function fmtDocBR(d){ d=String(d||"").replace(/\D/g,""); if(d.length===11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,"$1.$2.$3-$4"); if(d.length===14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,"$1.$2.$3/$4-$5"); return d; }
+function fmtCepBR(c){ c=String(c||"").replace(/\D/g,""); return c.length===8?c.slice(0,5)+"-"+c.slice(5):c; }
+function cadPuxar(neg){
+  const c=(neg&&neg.cadastro)||{};
+  window.CAD_DOC=fmtDocBR(c.doc);
+  const end=[c.endereco,c.numero,c.complemento,c.bairro].map(s=>String(s||"").trim()).filter(Boolean).join(", ");
+  const cid=[(neg&&neg.cidade)||c.cidade,c.uf].map(s=>String(s||"").trim()).filter(Boolean).join(" / ");
+  let n=0;
+  [["pend",end],["pcid",cid],["pcep",fmtCepBR(c.cep)]].forEach(([id,val])=>{ const e=$(id); if(e&&val){ e.value=val; e.readOnly=true; e.style.opacity=".75"; e.title="Vem do cadastro do cliente (edite no cadastro do negócio)"; n++; } });
+  if(cid){ const mc=aplicarCidade(cid); if(mc&&mc.exato) { /* ok */ } }
+  cidErro();
+  if($("cad-note")) $("cad-note").textContent=n?"Endereço, cidade e CEP vêm do cadastro do cliente no negócio. Para alterar, edite o cadastro.":"Cadastro do cliente sem endereço: preencha aqui ou complete o cadastro no negócio.";
+}
+
+/* ============ v5: outras UCs (geração compartilhada) ============ */
+function ucsGet(){ try{ return JSON.parse($("ucs-json").value||"[]"); }catch(e){ return []; } }
+function ucsSet(a){ $("ucs-json").value=JSON.stringify(a); }
+function ucsAtivas(aum){ return ucsGet().filter(u=>+u.consumo>0).map(u=>{ const fee=+u.padrao||30, c=(+u.consumo)*(1+(aum||0)); return {uc:u.uc||"",desc:u.desc||"",fee,tar:+u.tarifa||v("tarifa"),cons:c,comp:Math.max(c-fee,0),pct:+u.pct||0}; }); }
+function ucsShares(U,comp0){
+  const auto=$("ucs-auto")?$("ucs-auto").checked:true, tot=(comp0+U.reduce((s,u)=>s+u.comp,0))||1;
+  let f=(auto||U.every(u=>!(u.pct>0)))?U.map(u=>u.comp/tot):U.map(u=>Math.max(0,u.pct)/100);
+  const s=f.reduce((a,b)=>a+b,0); if(s>1) f=f.map(x=>x/s);
+  return {f,f0:Math.max(0,1-f.reduce((a,b)=>a+b,0))};
+}
+function ucsResult(U,SH,G,fiob,year){
+  let depois=0, ecoMes=0; const fp=fioPct(year);
+  const list=U.map((u,k)=>{ const gi=G*SH.f[k], cred=Math.min(gi,u.comp), sobra=Math.max(gi-u.comp,0), fio=cred*fp*fiob, eco=cred*u.tar-fio;
+    depois+=Math.max(u.cons-gi,u.fee)*u.tar+fio; ecoMes+=eco;
+    return {uc:u.uc,desc:u.desc,cons:u.cons,fee:u.fee,tar:u.tar,pct:SH.f[k]*100,cred,sobra,ecoMes:eco}; });
+  return {list,depois,ecoMes};
+}
+function ucsRender(){
+  const a=ucsGet(), auto=$("ucs-auto").checked, cls=$("pclasse").innerHTML;
+  $("ucs-list").innerHTML=a.map((u,i)=>`<div class="ucrow" data-i="${i}" style="border:1px solid var(--line,#2a3a4a);border-radius:10px;padding:10px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>UC ${i+2}</b><button class="btn alt small" type="button" data-del>Remover</button></div>
+    <div class="fields">
+      <label>Nº da UC<input data-k="uc" value="${esc(u.uc||"")}"></label>
+      <label>Titular / descrição<input data-k="desc" value="${esc(u.desc||"")}"></label>
+      <label>Classe<select data-k="classe">${cls}</select></label>
+      <label>Padrão de entrada<select data-k="padrao"><option value="30">Monofásico (mín. 30 kWh)</option><option value="50">Bifásico (mín. 50 kWh)</option><option value="100">Trifásico (mín. 100 kWh)</option></select></label>
+      <label>Tarifa com impostos (R$/kWh)<input data-k="tarifa" type="number" step="0.0001" min="0" value="${u.tarifa??""}"></label>
+      <label>Consumo médio (kWh/mês)<input data-k="consumo" type="number" step="1" min="0" value="${u.consumo??""}"></label>
+      <label>% dos créditos<input data-k="pct" type="number" step="1" min="0" max="100" value="${u.pct??""}" ${auto?"disabled":""}></label>
+    </div></div>`).join("");
+  document.querySelectorAll("#ucs-list .ucrow").forEach(row=>{ const u=a[+row.dataset.i]; row.querySelector('[data-k="classe"]').value=u.classe||"B1R"; row.querySelector('[data-k="padrao"]').value=u.padrao||"30"; });
+}
+function ucAdd(o){ const a=ucsGet(); a.push(Object.assign({uc:"",desc:"",classe:$("pclasse").value,padrao:"30",tarifa:v("tarifa")||"",consumo:"",pct:""},o||{})); ucsSet(a); ucsRender(); if(typeof agendar==="function") agendar(); calc(); }
+$("uc-add").onclick=()=>ucAdd();
+$("ucs-auto").addEventListener("change",()=>{ ucsRender(); calc(); if(typeof agendar==="function") agendar(); });
+$("ucs-list").addEventListener("input",e=>{ const row=e.target.closest(".ucrow"); if(!row||!e.target.dataset.k) return; const a=ucsGet(), u=a[+row.dataset.i]; if(!u) return; u[e.target.dataset.k]=e.target.value; ucsSet(a); calc(); if(typeof agendar==="function") agendar(); });
+$("ucs-list").addEventListener("click",e=>{ if(!e.target.closest("[data-del]")) return; const row=e.target.closest(".ucrow"), a=ucsGet(); a.splice(+row.dataset.i,1); ucsSet(a); ucsRender(); calc(); if(typeof agendar==="function") agendar(); });
+function renderUcsSum(r){
+  const el=$("ucs-sum"); if(!el) return;
+  if(!r.ucs||!r.ucs.length){ el.innerHTML=""; return; }
+  const mainCred=Math.min(r.gerMes*r.ucF0/100,Math.max(r.cons-r.fee,0));
+  const lin=r.ucs.map((u,i)=>`<tr><td>UC ${i+2}${u.uc?" · "+esc(u.uc):""}</td><td>${num(u.cons)}</td><td>${num(u.pct,1)}%</td><td>${num(u.cred)}</td><td>${brl(u.ecoMes)}</td></tr>`).join("");
+  const av=r.ucs.filter(u=>u.sobra>0.5).map(u=>`UC ${u.uc||u.desc||""}: sobram ${num(u.sobra)} kWh/mês de crédito acima do consumo compensável`).join("; ");
+  el.innerHTML=`<table class="data tight"><thead><tr><th>Unidade</th><th>Consumo</th><th>% geração</th><th>Crédito kWh/mês</th><th>Economia/mês</th></tr></thead><tbody><tr><td>UC principal</td><td>${num(r.cons)}</td><td>${num(r.ucF0,1)}%</td><td>${num(mainCred)}</td><td>${brl(r.ecoMes1-r.ucs.reduce((s,u)=>s+u.ecoMes,0))}</td></tr>${lin}</tbody></table><p class="note">Fio B escalonado (Lei 14.300) sobre todos os créditos injetados nas outras UCs; a UC principal abate o consumo simultâneo.${av?` <b style="color:#ff8a80">⚠ ${esc(av)}. Ajuste o percentual.</b>`:""}</p>`;
+}
+async function anexarPdf(file){ if(!(SB&&NEG&&CAN_EDIT)) return false; try{ const path=NEG+"/"+Date.now().toString(36)+Math.random().toString(36).slice(2,7)+".pdf"; const up=await SB.storage.from("negocios").upload(path,file,{contentType:"application/pdf"}); if(up.error) throw up.error; const url=SB.storage.from("negocios").getPublicUrl(path).data.publicUrl; const ins=await SB.from("neg_anexos").insert({negocio_id:NEG,nome:file.name||"fatura.pdf",tipo:"application/pdf",tam:file.size,url}); if(ins&&ins.error) throw ins.error; return true; }catch(e){ console.error(e); return false; } }
+$("uc-pdf").onclick=()=>$("uc-file").click();
+$("uc-file").addEventListener("change",async e=>{ const f=e.target.files[0]; e.target.value=""; if(!f) return; const msg=$("uc-msg"); msg.textContent="Lendo a fatura…";
+  try{ const pdf=await pdfDoc(f), o=parseFatura(await pdfLinhas(pdf,2)); if(!(o.consumo||o.tarifa)){ msg.textContent="Não encontrei dados nesse PDF. Use “Nova UC” e preencha manualmente."; return; }
+    const ok=await anexarPdf(f); ucAdd({uc:o.uc||"",desc:o.nome||"",classe:o.classe||$("pclasse").value,padrao:o.padrao||"30",tarifa:o.tarifa||v("tarifa"),consumo:o.consumo||""});
+    msg.textContent="UC importada"+(o.uc?" ("+o.uc+")":"")+(ok?" e fatura anexada ao negócio.":".")+(o.tarifaTipo==="estimada"?" Tarifa estimada: confira.":""); }
+  catch(err){ console.error(err); msg.textContent="Não consegui ler o PDF ("+err.message+")."; } });
+
+/* ---- cidade do cadastro: erro se fora da base ---- */
+function cidErro(){
+  const el=$("cid-err"); if(!el) return; const t=($("pcid").value||"").trim();
+  if(!t){ el.style.display="none"; return; }
+  const m=cidadeMatch(t);
+  if(m&&m.exato){ el.style.display="none"; return; }
+  el.style.display=""; el.textContent="⚠ Cidade “"+t+"” não encontrada na base de irradiação"+(m?"; usando "+m.k+" como aproximação":"")+". Corrija a cidade no cadastro do cliente ou escolha em Configurações → Técnicas → Local e irradiação.";
+}
+$("pcid").addEventListener("input",()=>{ cidErro(); });
+
+ucsRender();
 
 integrar();

@@ -245,9 +245,9 @@ table.ed td:first-child input{min-width:96px}
             </label>
             <label>Tarifa com impostos (R$/kWh)<input id="tarifa" type="number" min="0" step="0.0001" data-own></label>
             <label>Consumo médio mensal (kWh)<input id="consumo" type="number" min="1" step="1" value="500"></label>
-            <label>Meta de compensação (%)<span class="tg"><button class="btn alt small" type="button" data-metabtn="-5">−</button><input id="meta" type="number" min="10" max="150" step="5" value="100"><button class="btn alt small" type="button" data-metabtn="5">+</button></span></label>
+            <label hidden style="display:none">Meta de compensação (%)<span class="tg"><button class="btn alt small" type="button" data-metabtn="-5">−</button><input id="meta" type="number" min="10" max="150" step="5" value="100"><button class="btn alt small" type="button" data-metabtn="5">+</button></span></label>
             <label>Aumento de consumo previsto (%)<input id="aumcons" type="number" min="0" max="300" step="1" value="0"></label>
-            <label>Rateio de energia recebido (kWh/mês)<input id="rateio" type="number" min="0" step="1" value="0"></label>
+            <label hidden style="display:none">Rateio de energia recebido (kWh/mês)<input id="rateio" type="number" min="0" step="1" value="0"></label>
           </div>
           <p class="note" style="margin:8px 0 0">A tarifa vem da concessionária escolhida (Configurações → Tarifas). Se a fatura mostrar outro valor, corrija o campo acima: o orçamento usa o que estiver ali.</p>
           <details>
@@ -260,8 +260,8 @@ table.ed td:first-child input{min-width:96px}
             <div class="months" id="cm-grid"></div>
             <p class="note">Ao preencher, o consumo médio passa a ser a média dos meses informados e o gráfico de geração compara mês a mês.</p>
           </details>
-          <p class="note" id="rateio-note" style="margin-top:8px">Rateio soma na geração. Na viabilidade, a parte do rateio paga Fio B de 100% e não entra como retorno do investimento (só a geração própria entra).</p>
-          <details>
+          <p hidden style="display:none" class="note" id="rateio-note" style="margin-top:8px">Rateio soma na geração. Na viabilidade, a parte do rateio paga Fio B de 100% e não entra como retorno do investimento (só a geração própria entra).</p>
+          <details hidden style="display:none">
             <summary>Dados da fatura (uso interno, não vão para a proposta)</summary>
             <div class="fields mt">
               <label>Mês da fatura<input id="pref" type="text" placeholder="ex.: jul/2026"></label>
@@ -273,6 +273,8 @@ table.ed td:first-child input{min-width:96px}
 
         <section class="card" id="card-prop">
           <h2>Dados para a proposta</h2>
+          <p class="note" id="cid-err" style="display:none;color:#ff8a80;font-weight:600;margin:0 0 8px"></p>
+          <p class="note" id="cad-note" style="margin:0 0 8px">Endereço, cidade e CEP vêm do cadastro do cliente no negócio; se faltar algo, preencha aqui.</p>
           <div class="fields">
             <label class="full">Endereço da instalação<input id="pend" type="text" placeholder="Rua, número, bairro"></label>
             <label>Cidade / UF<input id="pcid" type="text" placeholder="Ibirubá / RS"></label>
@@ -280,9 +282,9 @@ table.ed td:first-child input{min-width:96px}
           </div>
         </section>
         <section class="card">
-          <h2>Área disponível e orientação</h2>
-          <div class="facetbl"><label>Face 1 · orientação<select id="fo1"><option value="N" selected>Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa1" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 2 · orientação<select id="fo2"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa2" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 3 · orientação<select id="fo3"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa3" type="number" min="0" step="1" placeholder="opcional"></label></div>
-          <p class="note">Informe a área livre de cada água do telhado/solo. Cada face precisa comportar no mínimo 4 módulos (limite do inversor/string). Sem área informada, o sistema não é limitado pelo espaço.</p>
+          <h2 hidden style="display:none">Área disponível e orientação</h2>
+          <div class="facetbl" hidden style="display:none"><label>Face 1 · orientação<select id="fo1"><option value="N" selected>Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa1" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 2 · orientação<select id="fo2"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa2" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 3 · orientação<select id="fo3"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa3" type="number" min="0" step="1" placeholder="opcional"></label></div>
+          <p class="note" hidden style="display:none">Informe a área livre de cada água do telhado/solo. Cada face precisa comportar no mínimo 4 módulos (limite do inversor/string). Sem área informada, o sistema não é limitado pelo espaço.</p>
         </section>
         <section class="card">
           <h2>Premissas do dimensionamento</h2>
@@ -311,19 +313,19 @@ table.ed td:first-child input{min-width:96px}
       </div>
 
       <div class="sticky">
-        <section class="card">
-          <h2>Local e irradiação solar</h2>
-          <div class="fields">
-            <label>Cidade<select id="cidade" data-own></select></label>
-            <label>Irradiação média anual (kWh/m²·dia)<input id="hsp" type="number" step="0.01" min="2" max="8" data-own></label>
+        <section class="card" id="card-ucs">
+          <h2>Geração compartilhada · outras UCs</h2>
+          <p class="note" style="margin:0 0 8px">Adicione as unidades consumidoras que vão receber créditos desta usina (autoconsumo remoto / geração compartilhada). O sistema é dimensionado para a soma dos consumos; cada UC entra com a própria tarifa, o próprio mínimo (custo de disponibilidade) e o Fio B escalonado (Lei 14.300) sobre os créditos recebidos.</p>
+          <div id="ucs-list"></div>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn alt small" id="uc-add" type="button">➕ Nova UC</button>
+            <button class="btn alt small" id="uc-pdf" type="button">📄 Importar fatura da UC (PDF)</button>
+            <input type="file" id="uc-file" accept="application/pdf" hidden>
+            <label class="tg" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ucs-auto" checked> Distribuir créditos proporcional ao consumo</label>
           </div>
-          <button class="btn alt small mt" type="button" id="irr-tog" aria-expanded="false">Mostrar gráfico de irradiação</button>
-          <svg id="irr-chart" class="chart mt" viewBox="0 0 560 200" role="img" aria-label="Irradiação solar diária média mensal" style="display:none"></svg>
-          <details>
-            <summary>Editar valores mensais</summary>
-            <div class="months" id="hm-grid"></div>
-          </details>
-          <p class="note" id="irr-note"></p>
+          <p class="note" id="uc-msg"></p>
+          <div id="ucs-sum"></div>
+          <input type="hidden" id="ucs-json" value="[]">
         </section>
       </div>
     </div>
@@ -576,6 +578,21 @@ table.ed td:first-child input{min-width:96px}
 
     <div id="sub-tec" class="hidden">
       <div class="grid">
+        <section class="card">
+          <h2>Local e irradiação solar</h2>
+          <p class="note" style="margin:0 0 8px">A cidade vem do cadastro do cliente no negócio. Se ela não estiver na base, aparece um erro e o orçamento usa a cidade mais próxima da lista.</p>
+          <div class="fields">
+            <label>Cidade<select id="cidade" data-own></select></label>
+            <label>Irradiação média anual (kWh/m²·dia)<input id="hsp" type="number" step="0.01" min="2" max="8" data-own></label>
+          </div>
+          <button class="btn alt small mt" type="button" id="irr-tog" aria-expanded="false">Mostrar gráfico de irradiação</button>
+          <svg id="irr-chart" class="chart mt" viewBox="0 0 560 200" role="img" aria-label="Irradiação solar diária média mensal" style="display:none"></svg>
+          <details>
+            <summary>Editar valores mensais</summary>
+            <div class="months" id="hm-grid"></div>
+          </details>
+          <p class="note" id="irr-note"></p>
+        </section>
         <section class="card">
           <h2>Perdas do sistema</h2>
           <div class="fields three">
