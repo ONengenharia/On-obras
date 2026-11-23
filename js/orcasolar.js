@@ -1038,7 +1038,7 @@ function paginaAceite(r,I,hoje,validade,ref,pp,dataVer){
       <tr><td>Valor</td><td><b>${brl2(r.invest)}</b></td></tr>
       <tr><td>Prazo de entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr>${comSg?`<tr><td>Seguro solar</td><td>Opcional · valor do projeto segurado ${brl2(sg.proj)}${sg.cond?" · "+pesc(sg.cond):""}</td></tr>`:""}
     </tbody></table>
-    <p class="small" style="font-size:10.5px;color:#1D3140;margin:12px 0 4px">Declaro que li e estou de acordo com os produtos, quantidades, valores e condições descritos nesta proposta. Estou ciente de que as marcas e modelos finais são confirmados na cotação com o fornecedor antes da assinatura e de que o financiamento, quando escolhido, está sujeito à aprovação de crédito.</p>
+    <p class="small" style="font-size:10.5px;color:#1D3140;margin:12px 0 4px">Declaro que li e estou de acordo com os produtos, quantidades, valores e condições descritos nesta proposta. Estou ciente de que as marcas e modelos finais são confirmados na cotação com o fornecedor antes da assinatura, de que materiais sem disponibilidade poderão ser substituídos por equivalentes de especificação técnica equivalente ou superior, e de que o financiamento, quando escolhido, está sujeito à aprovação de crédito.</p>
     <p class="chk"><b>Forma de pagamento:</b> <span><i class="bx"></i>À vista</span>${finOpt}<span><i class="bx"></i>Outra: ______________</span></p>
     ${segRow}
     <p class="small" style="font-size:10.5px">Local e data: ______________________________, ____ / ____ / ________</p>
@@ -1140,7 +1140,7 @@ function propostaHTML(){
     const prod=`<h2>Produtos e equipamentos</h2><p class="lead">Itens que compõem o seu sistema de ${num(r.kwp,2)} kWp.</p>
       <div class="eq">${rows.join("")}</div>
       ${sobra.length?`<h3 class="sub">Observações</h3><div class="dist">${sobra.map(x=>`<p>${pesc(x)}</p>`).join("")}</div>`:""}
-      <p class="small">As especificações seguem os datasheets dos fabricantes. Marcas, modelos e quantidades finais são confirmados na cotação antes da assinatura.</p>`;
+      <p class="small">As especificações seguem os datasheets dos fabricantes. Marcas, modelos e quantidades finais são confirmados na cotação antes da assinatura. Caso algum material não esteja mais disponível, ele poderá ser substituído por equivalente, de mesma qualidade e com especificações técnicas equivalentes ou superiores.</p>`;
     const pag=`<h2>Investimento e pagamento</h2>
       <div class="total"><span>Valor total da proposta</span><strong>${brl2(r.invest)}</strong><em>${brl2(r.invest/(r.kwp*1000))} por Wp</em></div>
       <table class="data l"><thead><tr><th>Condição</th><th>Detalhes</th></tr></thead><tbody>
