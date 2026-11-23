@@ -354,6 +354,7 @@ table.ed td:first-child input{min-width:96px}
       <div>
         <section class="card">
           <h2>Dimensionamento técnico</h2>
+          <p class="note" style="margin:-6px 0 8px">Uso interno do projeto: arranjo, perdas e verificações não vão para a proposta.</p>
           <table class="tec" id="tbl-tec"></table>
           <ul class="checks" id="checks"></ul>
         </section>
@@ -380,20 +381,6 @@ table.ed td:first-child input{min-width:96px}
       <div class="row2 mt"><input id="txm-nome" placeholder="Nome do modelo (ex.: Padrão residencial)" style="max-width:260px"><button class="btn alt small" type="button" id="txm-sal">Salvar como modelo</button><button id="btn-ocr" type="button" hidden></button><input type="file" id="ocr-file" accept="image/*" hidden><span class="mini" id="txt-msg"></span></div>
       <select id="txtbase" hidden></select><button id="btn-txtsave" type="button" hidden></button>
     </section>
-    <section class="card mt">
-      <h2>Retorno para o cliente</h2>
-      <div class="grid">
-        <div class="kpis" id="ret-kpis"></div>
-        <div>
-          <svg id="chart" class="chart" viewBox="0 0 560 260" role="img" aria-label="Fluxo de caixa acumulado em 25 anos"></svg>
-          <div class="note" id="chart-note"></div>
-        </div>
-      </div>
-      <details>
-        <summary>Projeção ano a ano</summary>
-        <div class="scroll mt"><table id="tbl-anos"></table></div>
-      </details>
-    </section>
   </main>
 
   <!-- ===== 3. VALOR E DRE ===== -->
@@ -405,6 +392,9 @@ table.ed td:first-child input{min-width:96px}
           <div class="fields">
             <label class="full"><b style="font-size:15px;color:var(--accent)">Valor do kit cotado no distribuidor (R$)</b><input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo" style="font-size:26px;font-weight:700;padding:14px 12px;border:2px solid var(--accent)"></label>
             <p class="note full" id="kit-ref" style="margin:2px 0 0"></p>
+            <label class="adm-only">Margem de contribuição (%)<input data-own id="km-pct" type="number" min="0" step="0.5" style="font-size:18px;font-weight:600"></label>
+            <label class="adm-only">Margem de contribuição (R$)<input data-own id="km-rs" type="number" min="0" step="50" style="font-size:18px;font-weight:600"></label>
+            <div class="full adm-only" id="kit-soma" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:15px"></div>
           </div>
           <details class="mt"><summary>Kit calculado do catálogo (referência)</summary><div class="scroll mt"><table id="tbl-kit"></table></div></details>
         </section>
@@ -423,6 +413,20 @@ table.ed td:first-child input{min-width:96px}
         </section>
       </div>
     </div>
+    <section class="card mt">
+      <h2>Retorno para o cliente</h2>
+      <div class="grid">
+        <div class="kpis" id="ret-kpis"></div>
+        <div>
+          <svg id="chart" class="chart" viewBox="0 0 560 260" role="img" aria-label="Fluxo de caixa acumulado em 25 anos"></svg>
+          <div class="note" id="chart-note"></div>
+        </div>
+      </div>
+      <details>
+        <summary>Projeção ano a ano</summary>
+        <div class="scroll mt"><table id="tbl-anos"></table></div>
+      </details>
+    </section>
   </main>
 
   <!-- ===== DRE (somente administrador) ===== -->
@@ -446,9 +450,6 @@ table.ed td:first-child input{min-width:96px}
         <section class="card">
           <h2>Margem e preço de venda</h2>
           <div class="fields">
-            <label>Margem de contribuição (%)<input data-own id="km-pct" type="number" min="0" step="0.5" style="font-size:18px;font-weight:600"></label>
-            <label>Margem de contribuição (R$)<input data-own id="km-rs" type="number" min="0" step="50" style="font-size:18px;font-weight:600"></label>
-            <div class="full" id="kit-soma" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:15px"></div>
             <label>Como informar a margem
               <select id="metodo" data-own>
                 <option value="venda" selected>% sobre o preço de venda</option>
@@ -625,7 +626,8 @@ table.ed td:first-child input{min-width:96px}
       <div class="grid">
         <section class="card">
           <h2>Local e irradiação solar</h2>
-          <p class="note" style="margin:0 0 8px">A cidade vem do cadastro do cliente no negócio. Se ela não estiver na base, aparece um erro e o orçamento usa a cidade mais próxima da lista.</p>
+          <p class="note" style="margin:0 0 8px">A cidade vem do cadastro do cliente no negócio. Se ela não estiver na base, aparece um erro e todos os municípios do Brasil são aceitos; se o cadastro tiver uma cidade fora da lista, aparece um erro.</p>
+          <p class="note" id="cid-info" style="margin:0 0 8px"></p>
           <div class="fields">
             <label>Cidade<select id="cidade" data-own></select></label>
             <label>Irradiação média anual (kWh/m²·dia)<input id="hsp" type="number" step="0.01" min="2" max="8" data-own></label>
@@ -708,6 +710,7 @@ table.ed td:first-child input{min-width:96px}
 
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
-<script src="js/orcasolar.js?v=3"></script>
+<script src="js/cidades.js?v=1"></script>
+<script src="js/orcasolar.js?v=4"></script>
 </body>
 </html>
