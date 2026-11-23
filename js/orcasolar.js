@@ -1343,8 +1343,8 @@ ${corpo.join("\n")}
 }
 
 function atualizarPrev(){ if(!R) return; try{ $("prev").srcdoc = propostaHTML(); }catch(e){ console.error(e); } }
-$("pr-abrir").onclick=async()=>{ if(!R) return; emitirVersao(); const w=window.open("","_blank"); if(!w){ flash($("toast"),"Libere pop-ups para abrir a proposta."); return; } await capaPronta(); w.document.open(); w.document.write(propostaHTML()); w.document.close(); };
-$("pr-baixar").onclick=async()=>{ if(!R) return; emitirVersao(); await capaPronta(); const b=new Blob([propostaHTML()],{type:"text/html"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="Proposta - "+(($("cliente").value||"cliente").replace(/[\\/:*?"<>|]/g,"").trim())+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); };
+$("pr-abrir").onclick=async()=>{ if(!R) return; emitirVersao(); const w=window.open("","_blank"); if(!w){ flash($("toast"),"Libere pop-ups para abrir a proposta."); return; } if(!(await garantirGC())){ try{ w.close(); }catch(e){} return; } await capaPronta(); w.document.open(); w.document.write(propostaHTML()); w.document.close(); };
+$("pr-baixar").onclick=async()=>{ if(!R) return; emitirVersao(); if(!(await garantirGC())) return; await capaPronta(); const b=new Blob([propostaHTML()],{type:"text/html"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="Proposta - "+(($("cliente").value||"cliente").replace(/[\\/:*?"<>|]/g,"").trim())+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); };
 
 /* capa: imagem configurável + seguro */
 function capaPrev(){ const im=(CONFIG.capa||{}).imagem||""; const e=$("capa-prev"), b=$("capa-rm"); e.style.display=im?"block":"none"; b.style.display=im?"inline-block":"none"; if(im) e.src=im; }
@@ -1689,7 +1689,7 @@ $("strip").style.display="none";
 
 window.GC_NUM="";
 function propVer(){ return +$("pr-ver").value||0; }
-function verTxt(){ $("pr-vertxt").textContent=propVer()?("Versão atual: v"+propVer()+" · "+$("pr-verdata").value):"Nenhuma versão emitida (a v1 é criada ao abrir ou baixar). Para uma nova proposta, use \"Criar outra proposta\""; }
+function verTxt(){ if(typeof gcSync==="function") gcSync(); $("pr-vertxt").textContent=propVer()?("Versão atual: v"+propVer()+" · "+$("pr-verdata").value):"Nenhuma versão emitida (a v1 é criada ao abrir ou baixar). Para uma nova proposta, use \"Criar outra proposta\""; }
 function emitirVersao(){ if(!R) return; if(!propVer()){ $("pr-ver").value=1; $("pr-verdata").value=new Date().toLocaleDateString("pt-BR"); $("pr-verkey").value=Math.round(R.invest)+"|"+R.modulos+"|"+R.kwp.toFixed(2); verTxt(); if(typeof agendar==="function") agendar(); if(typeof atualizarPrev==="function") atualizarPrev(); } }
 verTxt();
 
@@ -1719,8 +1719,8 @@ $("pr-capa").addEventListener("change",()=>{ capaPronta().then(()=>{ if(typeof a
 function histGet(){ try{ return JSON.parse($("pr-hist").value||"[]"); }catch(e){ return []; } }
 function histSel(){ const a=histGet(), s=$("pr-hsel"); s.innerHTML=a.length?a.map((x,i)=>`<option value="${i}">v${x.v} · ${esc(x.data||"")} · ${brl(x.invest)} · ${num(x.kwp,2)} kWp</option>`).join(""):'<option value="">(nenhuma anterior)</option>'; $("pr-hrest").disabled=!a.length; }
 function chaveVer(){ return Math.round(R.invest)+"|"+R.modulos+"|"+R.kwp.toFixed(2); }
-function resumoVer(){ const s=snapshot(); delete s.f["pr-hist"]; return {v:propVer(),data:$("pr-verdata").value,invest:Math.round(R.invest),kwp:+R.kwp.toFixed(2),modulos:R.modulos,snap:s}; }
-function novaVersao(nv){ $("pr-ver").value=nv; $("pr-verdata").value=new Date().toLocaleDateString("pt-BR"); }
+function resumoVer(){ const s=snapshot(); delete s.f["pr-hist"]; return {v:propVer(),data:$("pr-verdata").value,invest:Math.round(R.invest),kwp:+R.kwp.toFixed(2),modulos:R.modulos,gc:(typeof gcGet==="function"?gcGet():null),snap:s}; }
+function novaVersao(nv){ $("pr-gc").value=""; $("pr-ver").value=nv; $("pr-verdata").value=new Date().toLocaleDateString("pt-BR"); }
 function criarOutraProposta(){
   if(!R) return; if(NEG&&!CAN_EDIT) return;
   emitirVersao();
@@ -1950,5 +1950,71 @@ cidErro=function(){
   el.style.display=""; el.textContent="⚠ Cidade “"+t+"” não está na lista de municípios do Brasil"+(CID.parse(t).uf?"":" (ou falta a UF)")+". Corrija no cadastro do cliente, no formato Nome (UF). Enquanto isso o orçamento usa a irradiação da cidade mais próxima da lista.";
 };
 if(window.CID) CID.load().then(()=>{ cidErro(); }).catch(()=>{});
+
+/* ============ registro da proposta no Gestão Click ============ */
+function gcGet(){ try{ const g=JSON.parse($("pr-gc").value||"null"); return g&&typeof g==="object"?g:null; }catch(e){ return null; } }
+function gcMsg(t,erro){ const e=$("gc-st"); if(e){ e.textContent=t||""; e.style.color=erro?"#c62828":""; } }
+function gcSync(){
+  const g=gcGet(), ver=propVer(), ok=g&&g.ver===ver&&g.id!==undefined;
+  const info=$("gc-info"); if(!info) return;
+  const num_=window.GC_NUM||(g&&g.codigo)||"";
+  info.innerHTML=(num_?`Nº do negócio no Gestão Click: <b>${esc(num_)}</b>`:`Nº do Gestão Click: <b>ainda não gerado</b>`)+(ver?` · versão atual <b>v${ver}</b> `+(ok?`<span style="color:#2e7d32">✓ registrada em ${esc(new Date(g.em).toLocaleDateString("pt-BR"))}</span>`:`<span style="color:#c62828">não registrada</span>`):"");
+  const a=histGet().filter(x=>x.gc&&x.gc.em);
+  const cur=ok?[{v:ver,data:$("pr-verdata").value,invest:Math.round(R?R.invest:g.invest),kwp:R?+R.kwp.toFixed(2):0,gc:g}]:[];
+  const rows=a.concat(cur).sort((x,y)=>x.v-y.v);
+  $("gc-lista").innerHTML=rows.length?`<table class="data tight"><thead><tr><th>Versão</th><th>Nº Gestão Click</th><th>Registrada em</th><th>Valor</th><th>kWp</th></tr></thead><tbody>`+rows.map(x=>`<tr><td>v${x.v}</td><td>${esc(x.gc.codigo||"")}</td><td>${esc(new Date(x.gc.em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}))}</td><td>${brl(x.gc.invest||x.invest)}</td><td>${num(x.kwp,2)}</td></tr>`).join("")+`</tbody></table>`:"";
+  const b=$("gc-reg"); if(b){ b.disabled=!NEG||!R; b.textContent=ok?"Atualizar valor no Gestão Click":"Registrar esta versão no Gestão Click"; }
+}
+let _gcBusy=false, _autor=null;
+async function gcAutor(){ if(_autor!==null) return _autor; _autor=""; try{ const p=await SB.from("perfis").select("nome").eq("id",UID).single(); _autor=(p.data||{}).nome||""; }catch(e){} return _autor; }
+async function garantirGC(){
+  if(!NEG||!SB){ return true; }                       // modo avulso: sem Gestão Click
+  if(!CAN_EDIT){ gcMsg("Seu nível é só de visualização: não dá para registrar a proposta no Gestão Click.",true); flash($("toast"),"Sem permissão para registrar a proposta."); return false; }
+  emitirVersao();
+  const g=gcGet(), chave=chaveVer();
+  if(g&&g.ver===propVer()&&g.id!==undefined&&g.chave===chave) return true;
+  return await gcRegistrar();
+}
+async function gcRegistrar(){
+  if(_gcBusy) return false; _gcBusy=true; const b=$("gc-reg"); if(b) b.disabled=true;
+  try{
+    gcMsg("Registrando no Gestão Click…");
+    const rn=await SB.from("negocios").select("id,titulo,cliente,cidade,fone,quadro,cadastro").eq("id",NEG).maybeSingle();
+    const neg=rn.data; if(!neg) throw new Error("negócio não encontrado");
+    const cd=Object.assign({},neg.cadastro||{});
+    if(!String(neg.cliente||"").trim()) throw new Error("preencha o nome do cliente no negócio");
+    const cidSemUF=String(neg.cidade||"").replace(/\s*\([A-Za-z]{2}\)\s*$/,"");
+    let cid=cd.gc_id;
+    if(!cid){
+      const r=await SB.functions.invoke("gestaoclick",{body:{empresa:"solar",acao:"cliente_enviar",cliente:Object.assign({nome:neg.cliente,fone:neg.fone,cidade:cidSemUF},cd)}});
+      const d=r.data; if(!d||!d.ok) throw new Error("o Gestão Click não aceitou o cliente: "+((d&&(d.erro||JSON.stringify(d.resposta)))||(r.error&&r.error.message)||"erro"));
+      cid=String(d.id); cd.gc_id=cid;
+    }
+    const go=cd.gc_orc||{}, ver=propVer(), invest=Math.round(R.invest*100)/100, chave=chaveVer();
+    let id=go.id, codigo=go.codigo||"", acao="";
+    if(go.id){ acao="atualizada"; } else if(go.codigo){ acao="registrada"; } else { acao="criada"; }
+    if(go.id||!go.codigo){
+      const r=await SB.functions.invoke("gestaoclick",{body:{empresa:"solar",acao:go.id?"orcamento_atualizar":"orcamento_criar",orc:{cliente_gc_id:cid,gc_id:go.id,total:invest,tipo:"Energia solar",titulo:neg.titulo||neg.cliente,ref:"Proposta solar · versão "+ver+" · "+num(R.kwp,2)+" kWp",itens:[]}}});
+      const d=r.data; if(!d||!d.ok) throw new Error("o Gestão Click não aceitou o orçamento: "+((d&&(d.erro||JSON.stringify(d.resposta)))||(r.error&&r.error.message)||"erro"));
+      id=d.id; codigo=d.codigo||codigo;
+    }
+    const em=new Date().toISOString();
+    cd.gc_orc={id:id||"",codigo,em};
+    const up=await SB.from("negocios").update({cadastro:cd}).eq("id",NEG); if(up.error) throw up.error;
+    window.GC_NUM=String(codigo||"");
+    $("pr-gc").value=JSON.stringify({ver,id:id||"",codigo,em,chave,invest});
+    const modo=($("pr-modo")?$("pr-modo").value:"completa")==="resumida"?"resumida":"completa";
+    SB.from("neg_historico").insert({negocio_id:NEG,texto:"📄 Proposta nº "+(codigo||"—")+" · v"+ver+" · "+brl(invest)+" · "+num(R.kwp,2)+" kWp ("+R.modulos+" módulos) · "+modo+" · "+acao+" no Gestão Click",autor_nome:await gcAutor()}).then(()=>{});
+    if(typeof agendar==="function") agendar();
+    if(typeof atualizarPrev==="function") atualizarPrev();
+    gcMsg("✓ v"+ver+" registrada · nº "+(codigo||"—")+" no Gestão Click"); gcSync();
+    try{ parent.postMessage({orcsolar:"aplicado",neg:NEG},location.origin); }catch(e){}
+    return true;
+  }catch(e){
+    console.error(e); gcMsg("Não registrou no Gestão Click: "+(e.message||e),true); flash($("toast"),"Proposta não registrada: "+(e.message||e)); return false;
+  }finally{ _gcBusy=false; gcSync(); }
+}
+$("gc-reg").onclick=async()=>{ if(!R) return; if(!NEG){ gcMsg("Disponível só dentro do negócio.",true); return; } emitirVersao(); await gcRegistrar(); };
+gcSync();
 
 integrar();
