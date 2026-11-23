@@ -1021,6 +1021,9 @@ function chartRetorno(r,pp){
   return {svg:s+pl(poup,"#8aa0b3",true)+pl(cdb,"#1D3140",true)+pl(solar,"#64ABDE"), solar, cdb, poup, iC, iP};
 }
 function paginaAceite(r,I,hoje,validade,ref,pp,dataVer){
+  const sg=segDados(), comSg=sg.on&&sg.vig.some(x=>x>0), vigs=sg.vig.map((x,i)=>x>0?`<span><i class="bx"></i>${i+1} ${i?"anos":"ano"}</span>`:"").join("");
+  const segRow=comSg?`<p class="chk"><b>Seguro solar:</b> <span><i class="bx"></i>Contratar</span><span><i class="bx"></i>Não contratar</span> &nbsp;·&nbsp; <b>Vigência:</b> ${vigs}</p>`:"";
+  const finOpt=finAtivo()?`<span><i class="bx"></i>Financiamento</span>`:"";
   return `<h2>Aceite da proposta</h2>
     <p class="lead">Proposta <b>${ref}</b> · emitida em ${dataVer} · válida até ${validade}</p>
     <table class="kv"><tbody>
@@ -1030,10 +1033,11 @@ function paginaAceite(r,I,hoje,validade,ref,pp,dataVer){
       <tr><td>Contratada</td><td>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</td></tr>
       <tr><td>Objeto</td><td>Fornecimento, instalação e homologação de sistema fotovoltaico de ${num(r.kwp,2)} kWp (${r.modulos} módulos de ${r.mod.wp} Wp e ${r.qtdInv} inversor de ${num(r.inv.kw,1)} kW)</td></tr>
       <tr><td>Valor</td><td><b>${brl2(r.invest)}</b></td></tr>
-      <tr><td>Prazo de entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr>
+      <tr><td>Prazo de entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr>${comSg?`<tr><td>Seguro solar</td><td>Opcional · valor do projeto segurado ${brl2(sg.proj)}${sg.cond?" · "+pesc(sg.cond):""}</td></tr>`:""}
     </tbody></table>
     <p class="small" style="font-size:10.5px;color:#1D3140;margin:12px 0 4px">Declaro que li e estou de acordo com os produtos, quantidades, valores e condições descritos nesta proposta. Estou ciente de que as marcas e modelos finais são confirmados na cotação com o fornecedor antes da assinatura e de que o financiamento, quando escolhido, está sujeito à aprovação de crédito.</p>
-    <p class="chk"><b>Forma de pagamento:</b> <span><i class="bx"></i>À vista</span><span><i class="bx"></i>Financiamento</span><span><i class="bx"></i>Outra: ______________</span></p>
+    <p class="chk"><b>Forma de pagamento:</b> <span><i class="bx"></i>À vista</span>${finOpt}<span><i class="bx"></i>Outra: ______________</span></p>
+    ${segRow}
     <p class="small" style="font-size:10.5px">Local e data: ______________________________, ____ / ____ / ________</p>
     <div class="sign big"><div><i></i><span>${pesc(I.nome)}<br>Contratante</span></div>
       <div>${pp.assin?`<img src="${pp.assin}" class="assin" alt="">`:""}<i></i><span>${pesc(pp.resp||"Responsável técnico")}${pp.crea?" · "+pesc(pp.crea):""}<br>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</span></div></div>
@@ -1099,10 +1103,8 @@ function propostaHTML(){
       ${fins.length?msgFin+bancosHtml():""}
       <h3 class="sub">Retorno do investimento</h3>
       <div class="kpis3"><div><b>${pbTxt}</b><span>payback</span></div><div><b>${r.tir===null?"-":num(r.tir*100,1)+"%"}</b><span>TIR ao ano</span></div><div><b>${brl(r.totalEco)}</b><span>economia líquida em 25 anos</span></div></div>
-      <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Fluxo de caixa acumulado">${chart(r)}</svg>
-      <p class="small" style="margin:4px 0">Estando de acordo com produtos, valores e condições, as partes firmam o aceite. Marcas e modelos finais são confirmados na cotação antes da assinatura. Prazo de entrega: ${v("prazo")||45} dias.</p>
-      <div class="sign"><div><i></i><span>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</span></div><div><i></i><span>${pesc(nome)}</span></div></div>`;
-    paginas=[p2,p3];
+      <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Fluxo de caixa acumulado">${chart(r)}</svg>`;
+    paginas=[p2,p3,paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje)];
   } else {
     const quem=`<h2>Quem somos</h2>
       <p class="lead">A <b>ON Engenharia</b> desenvolve soluções elétricas sob medida para o agronegócio, a indústria, o comércio e a residência: projeto, execução, energia solar e eficiência energética.</p>
@@ -1307,7 +1309,7 @@ ul.li{margin:4px 0;padding-left:18px;font-size:12px}ul.li li{margin:3px 0}
 .bks{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .bk{height:9mm;min-width:24mm;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;padding:2px 8px;background:#fff}
 .bk img{max-height:7mm;max-width:28mm}.bk.t{font-size:10px;font-weight:700;color:var(--dark2)}
-.sign.big{margin-top:36mm}.sign .assin{position:absolute;max-height:16mm;margin-top:-17mm}.sign div{position:relative}
+.sign.big{margin-top:36mm}.data.prot td,.data.prot th{padding:3px 9px}.data.cob td,.data.cob th{padding:5px 9px}.tot2{margin-top:6px}.sign .assin{position:absolute;max-height:16mm;margin-top:-17mm}.sign div{position:relative}
 ${modo==="resumida"?`body{font-size:13px}.pb{padding:6mm 14mm 0}
 h2{font-size:20px;margin-bottom:10px}h3.sub{font-size:14px;margin:16px 0 6px}
 .lead{font-size:12.5px;margin:0 0 8px}.small{font-size:10px}
