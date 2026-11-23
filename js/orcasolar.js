@@ -2040,7 +2040,7 @@ async function importarDatasheets(files){
         Object.keys(EDITORS).forEach(renderEditorTable); refreshSelects(); $("modsel").value=novo.id; $("madd").value=0;
       } else {
         const nome=(d.marca+" "+d.modelo).trim();
-        let ex=CONFIG.inversores.find(x=>norm(x.marca+" "+x.modelo)===norm(nome)&&+x.kw===+d.kw), novoI=Object.assign({id:uid("i"),preco:0,rev:true,ds:{arquivo:f.name,em:new Date().toISOString().slice(0,10)}},d);
+        let ex=CONFIG.inversores.find(x=>norm(x.marca+" "+x.modelo)===norm(nome)&&+x.kw===+d.kw)||CONFIG.inversores.find(x=>x.ds&&x.ds.arquivo===f.name)||CONFIG.inversores.find(x=>norm(x.marca)===norm(d.marca)&&+x.kw===+d.kw&&+x.kw>0&&x.fases===d.fases), novoI=Object.assign({id:uid("i"),preco:0,rev:true,ds:{arquivo:f.name,em:new Date().toISOString().slice(0,10)}},d);
         delete novoI.tipo; if(ex){ Object.assign(ex,novoI,{id:ex.id,preco:ex.preco}); novoI=ex; } else CONFIG.inversores.push(novoI);
         mexp=true; fila.push(["inversores",novoI]); Object.keys(EDITORS).forEach(renderEditorTable); refreshSelects(); res.push("inversor "+nome+(ex?" (atualizado)":" (novo na base)"));
       }
@@ -2066,5 +2066,25 @@ garantirGC=async function(){
   if(MARGEM_BAIXA && !ISADM){ flash($("toast"),"Margem abaixo de "+(CONFIG.margemMin||MARGEM_MIN)+"%: peça autorização ao administrador."); try{ gcMsg("Margem abaixo de "+(CONFIG.margemMin||MARGEM_MIN)+"%: só o administrador pode liberar a proposta.",true); }catch(e){} return false; }
   return _garantirGC0();
 };
+
+/* ---- inversor: potência de SAÍDA (nominal CA) clara na lista; leitura do datasheet prioriza a nominal, não a máxima ---- */
+const _parseDS0=parseDS;
+parseDS=function(txt,fname){
+  const d=_parseDS0(txt,fname);
+  if(d.tipo!=="modulo"){
+    const t=txt.replace(/\s+/g," ");
+    const m=t.match(/(?:Rated|Nominal)\s*(?:AC\s*)?(?:output\s*)?(?:active\s*)?power(?:\s*\(?(?:W|kW|VA|kVA)\)?)?[^0-9]{0,30}(\d+(?:[.,]\d+)?)\s*(kW|W|kVA|VA)?/i);
+    if(m){ let v=brNum(m[1]); const u=(m[2]||"").toLowerCase(); if(isFinite(v)){ if(u==="w"||u==="va"||(!u&&v>=500)) v=v/1000; if(v>0&&v<200) d.kw=Math.round(v*100)/100; } }
+    const mf=fname.match(/(\d+(?:[.,]\d+)?)\s*k/i); if(!m&&mf){ const v=brNum(mf[1]); if(isFinite(v)&&v>0&&v<200&&Math.abs(v-d.kw)>0.01) d.kw=v; }
+  }
+  return d;
+};
+function invRotular(){
+  const sel=$("invsel"); if(!sel) return;
+  [...sel.options].forEach(o=>{ const i=CONFIG.inversores.find(x=>x.id===o.value); if(i) o.textContent=(i.marca+" "+i.modelo).trim()+" · saída "+num(i.kw,1)+" kW"; });
+}
+const _fillInvSel0=fillInvSel; fillInvSel=function(){ _fillInvSel0.apply(this,arguments); invRotular(); };
+const _refreshSelects0=refreshSelects; refreshSelects=function(){ const r=_refreshSelects0.apply(this,arguments); invRotular(); return r; };
+try{ invRotular(); }catch(e){}
 
 integrar();
