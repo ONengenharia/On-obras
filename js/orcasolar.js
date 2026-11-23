@@ -531,6 +531,7 @@ $("tbl-dre").addEventListener("input", e => {
 function renderPreco(){
   const r=R; if(!r) return; const P=r.P;
   { const kr=$("kit-ref"); if(kr) kr.innerHTML = v("kitcot")>0 ? "Kit cotado em uso no preço: <b>"+brl(v("kitcot"))+"</b> · catálogo (referência): "+brl(r.Kest) : "Sem cotação: usando o kit calculado do catálogo, <b>"+brl(r.Kest)+"</b>."; }
+  if(typeof kitMargemSync==="function") kitMargemSync(r);
   $("tbl-kit").innerHTML = `<thead><tr><th>Item</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>`+
     r.kitItems.map(i=>`<tr><td>${esc(i.nome)}</td><td>${num(i.qtd,i.unid==="kWp"?2:0)} ${i.unid}</td><td>${brl2(i.un)}</td><td>${brl(i.qtd*i.un)}</td></tr>`).join("")+
     `<tr><td><strong>Kit calculado do catálogo</strong></td><td></td><td></td><td><strong>${brl(r.Kest)}</strong></td></tr>`+
@@ -1851,5 +1852,19 @@ $("txm-sal").onclick=()=>{
 };
 $("txm-del").onclick=()=>{ const a=txmList(), i=a.findIndex(x=>x.id===$("txm-sel").value); if(i<0){ txmMsg("Escolha um modelo."); return; } const n=a[i].nome; a.splice(i,1); saveCfg(); txmFill(); if(NEG&&ISADM) $("cfg-save").click(); txmMsg("Modelo \""+n+"\" excluído."); };
 txmFill();
+
+/* ---- kit + margem (valor e %) ---- */
+function kitMargemSync(r){
+  const P=r.P, mr=P.lista-P.K, pc=P.lista>0?mr/P.lista*100:0, a=document.activeElement;
+  if(a!==$("km-pct")) $("km-pct").value=(Math.round(pc*10)/10);
+  if(a!==$("km-rs")) $("km-rs").value=Math.round(mr*100)/100;
+  $("kit-soma").innerHTML=`<span>Kit <b>${brl(P.K)}</b></span><span>+</span><span>Margem <b style="color:var(--accent)">${brl(mr)}</b> (${num(pc,1)}%)</span><span>=</span><span>Preço de lista <b>${brl(P.lista)}</b></span>${P.desc>0?`<span class="mini">· com desconto: ${brl(P.receita)}</span>`:""}`;
+}
+function kmAplicar(modo,val){
+  $("origem").value="preco"; $("metodo").value=modo; $("metodo").dispatchEvent(new Event("change",{bubbles:true}));
+  $("margem").value=val; $("margem").dispatchEvent(new Event("input",{bubbles:true}));
+}
+$("km-pct").addEventListener("input",()=>{ const x=parseFloat($("km-pct").value); if(isFinite(x)) kmAplicar("venda",Math.min(x,95)); });
+$("km-rs").addEventListener("input",()=>{ const x=parseFloat($("km-rs").value); if(isFinite(x)) kmAplicar("rs",x); });
 
 integrar();
