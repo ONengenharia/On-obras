@@ -387,7 +387,7 @@ async function carregarTudo(){
 }
 async function carregarAvisos(){const {data}=await sb.from("notificacoes").select("*").order("criado_em",{ascending:false}).limit(150);const T=data||[];
   INBOX=inboxTudo||ADM&&false?T:T.filter(n=>n.tipo==="mencao"||n.tipo==="msg"||n.tipo==="adicionado"||!n.negocio_id||ehMeu(CARDS.find(c=>c.id===n.negocio_id)))}
-window.addEventListener("message",e=>{if(e.origin===location.origin&&e.data&&e.data.orcsolar==="valor"){const c=CARDS.find(k=>k.id===e.data.neg);if(c){c.valor=e.data.valor;c.pot=e.data.pot;c.un="kWp"}return}if(e.origin!==location.origin||!e.data||e.data.orcsolar!=="aplicado")return;const c=CARDS.find(k=>k.id===e.data.neg);if(c)carregarTudo().then(()=>{render()}).catch(()=>{})});
+window.addEventListener("message",e=>{if(e.origin===location.origin&&e.data&&e.data.orcsolar==="valor"){const c=CARDS.find(k=>k.id===e.data.neg);if(c){c.valor=e.data.valor;c.pot=e.data.pot;c.un="kWp";try{if(document.querySelector('iframe[src*="neg='+encodeURIComponent(c.id)+'"]')){const vm=(c.cadastro||{}).valor_manual;const inp=document.querySelector('[data-f="valor"]');if(inp&&!(vm&&vm.ativo))inp.value=brlTxt(c.valor);const hn=document.querySelector(".gvh h2 + .note");if(hn)hn.textContent=hn.textContent.replace(/·\s*R\$[\s\d.,]*$/,"· "+brl(c.valor))}}catch(_){}}return}if(e.origin!==location.origin||!e.data||e.data.orcsolar!=="aplicado")return;const c=CARDS.find(k=>k.id===e.data.neg);if(c)carregarTudo().then(()=>{render()}).catch(()=>{})});
 async function recarregar(){await carregarTudo();await carregarAvisos();render();if(aberto&&CARDS.find(c=>c.id===aberto))abrir(aberto,true)}
 
 /* ---------- gravação ---------- */
@@ -492,7 +492,7 @@ function cardHtml(c,esp){
    ${esp?`<span class="onde">💰 Pago · espelho · em ${esc(onde)}</span>`:fant?`<span class="onde">🔒 Em ${esc(onde)}</span>`:""}
    ${c.etiquetas.length?`<div class="lbls">${c.etiquetas.map(i=>{const e=etqDe(c.quadro,i);return e?`<span class="lbl" style="background:${e.cor}">${esc(e.nome)}</span>`:""}).join("")}</div>`:""}
    <h3>${esc(c.titulo)}</h3><div class="c">${esc(c.cliente||"Sem cliente")}${c.cidade?" · "+esc(c.cidade):""}${c.tipo?` · ${esc(c.tipo)}`:""}${c.pot?` · ${esc(c.pot)} ${esc(c.un||"")}`:""}</div>
-   <div class="cf"><span class="val">${brl(c.valor)}</span><div class="meta">${lb.length?`<span class="lbadge ${lb.some(l=>new Date(l.quando)<new Date())?"atr2":""}" title="${esc(lb.map(l=>l.texto).join(" · "))}">⏰ ${lb.length}</span>`:""}${c.prazo?`<span class="${atr?"atr":""}">📅 ${fd(c.prazo)}</span>`:""}</div></div>
+   <div class="cf"><span class="val">${brl(c.valor)}${((c.cadastro||{}).gc_orc||{}).ver?` <span class="note" title="Versão da proposta vigente${((c.cadastro||{}).gc_orc||{}).codigo?" · nº "+esc(c.cadastro.gc_orc.codigo):""}" style="font-weight:600">· v${esc(String(c.cadastro.gc_orc.ver))}</span>`:""}</span><div class="meta">${lb.length?`<span class="lbadge ${lb.some(l=>new Date(l.quando)<new Date())?"atr2":""}" title="${esc(lb.map(l=>l.texto).join(" · "))}">⏰ ${lb.length}</span>`:""}${c.prazo?`<span class="${atr?"atr":""}">📅 ${fd(c.prazo)}</span>`:""}</div></div>
    <div class="cf"><div class="av">${c.membros.map(m=>{const u=uById(m);return `<span style="background:${u.cor}" title="${esc(u.nome)}">${u.sig}</span>`}).join("")}</div>${c.obra_id?'<span class="tipo eletrica">⚡ No Gerenciador</span>':c.no_mapa?'<span class="tipo solar">📍 No mapa</span>':""}</div></article>`;
 }
 

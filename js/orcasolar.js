@@ -2001,7 +2001,7 @@ async function gcRegistrar(){
       id=d.id; codigo=d.codigo||codigo;
     }
     const em=new Date().toISOString();
-    cd.gc_orc={id:id||"",codigo,em};
+    cd.gc_orc={id:id||"",codigo,em,ver};
     const up=await SB.from("negocios").update({cadastro:cd}).eq("id",NEG); if(up.error) throw up.error;
     window.GC_NUM=String(codigo||"");
     $("pr-gc").value=JSON.stringify({ver,id:id||"",codigo,em,chave,invest});
