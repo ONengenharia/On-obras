@@ -1179,7 +1179,11 @@ function propostaHTML(){
         <tr><td>Equivalência</td><td>${num(pp.arv,2)} tCO₂ absorvidas por árvore em 25 anos</td></tr></tbody></table>
       <p class="small">Fator de emissão configurável pela ON (média do SIN divulgada pelo MCTI). Os valores são estimativas para fins de comunicação.</p>${porque}${sobreEmp}`;
     const RM=x=>`<div class="roomy">${x}</div>`;
-    paginas=[RM(quem+det),ger,proj,prod,RM(pag),RM(ecoParc),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))];
+    const pagEco=`<h3 class="sub">Economia na conta de luz</h3>${eco3}
+      <svg class="chart" viewBox="0 0 560 215" role="img" aria-label="Economia anual">${chartParcela(r,[],FC)}</svg>
+      <div class="leg"><span><i class="b"></i>Economia anual estimada (anos)</span><span class="sm">Payback: ${pbTxt}</span></div>
+      <div class="kpis3"><div><b>${pbTxt}</b><span>payback</span></div><div><b>${r.tir===null?"-":num(r.tir*100,1)+"%"}</b><span>TIR ao ano</span></div><div class="hi"><b>${brl(r.totalEco)}</b><span>economia líquida em 25 anos</span></div></div>`;
+    paginas=fins.length?[RM(quem+det),ger,proj,prod,RM(pag),RM(ecoParc),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))]:[RM(quem+det),ger,proj,prod,RM(pag+pagEco),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))];
   }
   let seguroP=[]; if(comSeg){ seguroP=paginasSeguro(nome,seg,0,0,LOGO); }
   const todas=[...paginas,...seguroP];
