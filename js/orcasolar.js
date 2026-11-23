@@ -972,6 +972,16 @@ function iconProd(t){
   if(t==="prot") return W(`<rect x="8" y="5" width="32" height="38" rx="4" ${s}/><rect x="13" y="11" width="6" height="11" rx="1" ${a} ${s} stroke-width="1.6"/><rect x="21" y="11" width="6" height="11" rx="1" ${a} ${s} stroke-width="1.6"/><rect x="29" y="11" width="6" height="11" rx="1" ${a} ${s} stroke-width="1.6"/><path d="M13 30 H35 M13 36 H35" ${s} stroke-width="1.6"/>`);
   return W(`<path d="M6 22 L24 8 L42 22 V40 H6 Z" ${a} ${s}/><path d="M25 18 L19 28 H26 L22 37" ${s}/>`);
 }
+function ambIcon(t){
+  const a='fill="#64ABDE" fill-opacity=".35"', s='stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+  const W=x=>`<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true">${x}</svg>`;
+  if(t==="kwh") return W(`<path d="M27 5 L11 27 H23 L20 43 L37 20 H25 Z" ${a} ${s}/>`);
+  if(t==="co2") return W(`<path d="M14 28 a7 7 0 0 1 1-13.8 a9 9 0 0 1 17.5 1.5 a6.5 6.5 0 0 1 0.5 12.3 Z" ${a} ${s}/><path d="M24 31 V43 M18.5 38 L24 43.5 L29.5 38" ${s}/>`);
+  if(t==="arv") return W(`<path d="M24 5 C13 11 11 23 18 30 H30 C37 23 35 11 24 5 Z" ${a} ${s}/><path d="M24 30 V43 M24 36 L30 31 M24 33 L18 28" ${s}/>`);
+  if(t==="ano") return W(`<rect x="7" y="10" width="34" height="31" rx="4" ${a} ${s}/><path d="M7 19 H41 M16 6 V13 M32 6 V13" ${s}/><path d="M15 27 H20 M23 27 H28 M31 27 H34 M15 34 H20 M23 34 H28" ${s} stroke-width="2"/>`);
+  if(t==="fator") return W(`<path d="M7 33 A17 17 0 0 1 41 33" ${s}/><path d="M24 33 L33 20" ${s}/><circle cx="24" cy="33" r="3" ${a} ${s}/><path d="M12 33 H9 M39 33 H36 M24 14 V17" ${s} stroke-width="2"/>`);
+  return W(`<path d="M9 39 C9 21 21 9 39 9 C39 27 27 39 9 39 Z" ${a} ${s}/><path d="M9 39 L27 21" ${s}/>`);
+}
 function capaModelo(M,pill,nome,local){
   const k=210/M.W, mm=v=>(v*k).toFixed(2)+"mm", bx=M.bar[0], by=M.bar[1], bl=M.bar[2], left=bx+35*M.W/1055;
   const src=(typeof CAPA_B64!=="undefined"&&CAPA_B64[M.id])||capaUrl(M.id);
@@ -1173,10 +1183,10 @@ function propostaHTML(){
     const kwh25=r.rows.reduce((s,o)=>s+o.ger,0), co2=kwh25/1000*pp.fe, arv=co2/Math.max(pp.arv,0.0001);
     const amb=`<h2>Retorno ambiental</h2>
       <p class="lead">Energia limpa que deixa de ser gerada por fontes emissoras. Estimativa para os 25 anos de operação do sistema.</p>
-      <div class="kpis3"><div><b>${num(kwh25/1000,0)} MWh</b><span>energia limpa gerada</span></div><div><b>${num(co2,1)} tCO₂</b><span>emissões evitadas</span></div><div class="hi"><b>${num(arv,0)} árvores</b><span>equivalente em plantio</span></div></div>
-      <table class="kv"><tbody><tr><td>Por ano (1º ano)</td><td>${num(r.rows[0].ger/1000,1)} MWh · ${num(r.rows[0].ger/1000*pp.fe,2)} tCO₂ evitadas</td></tr>
-        <tr><td>Fator de emissão</td><td>${num(pp.fe,4)} tCO₂/MWh (média do Sistema Interligado Nacional)</td></tr>
-        <tr><td>Equivalência</td><td>${num(pp.arv,2)} tCO₂ absorvidas por árvore em 25 anos</td></tr></tbody></table>
+      <div class="kpis3"><div><i class="ki">${ambIcon("kwh")}</i><b>${num(kwh25/1000,0)} MWh</b><span>energia limpa gerada</span></div><div><i class="ki">${ambIcon("co2")}</i><b>${num(co2,1)} tCO₂</b><span>emissões evitadas</span></div><div class="hi"><i class="ki">${ambIcon("arv")}</i><b>${num(arv,0)} árvores</b><span>equivalente em plantio</span></div></div>
+      <table class="kv"><tbody><tr><td><i class="ri">${ambIcon("ano")}</i>Por ano (1º ano)</td><td>${num(r.rows[0].ger/1000,1)} MWh · ${num(r.rows[0].ger/1000*pp.fe,2)} tCO₂ evitadas</td></tr>
+        <tr><td><i class="ri">${ambIcon("fator")}</i>Fator de emissão</td><td>${num(pp.fe,4)} tCO₂/MWh (média do Sistema Interligado Nacional)</td></tr>
+        <tr><td><i class="ri">${ambIcon("eq")}</i>Equivalência</td><td>${num(pp.arv,2)} tCO₂ absorvidas por árvore em 25 anos</td></tr></tbody></table>
       <p class="small">Fator de emissão configurável pela ON (média do SIN divulgada pelo MCTI). Os valores são estimativas para fins de comunicação.</p>${porque}${sobreEmp}`;
     const RM=x=>`<div class="roomy">${x}</div>`;
     const pagEco=`<h3 class="sub">Economia na conta de luz</h3>${eco3}
@@ -1316,7 +1326,7 @@ ul.li{margin:4px 0;padding-left:18px;font-size:12px}ul.li li{margin:3px 0}
 .bks{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .bk{height:9mm;min-width:24mm;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;padding:2px 8px;background:#fff}
 .bk img{max-height:7mm;max-width:28mm}.bk.t{font-size:10px;font-weight:700;color:var(--dark2)}
-.sign.big{margin-top:36mm}.eqr li.d{font-size:9px;line-height:1.25;color:#4a6176}.data.prot td,.data.prot th{padding:3px 9px}.data.cob td,.data.cob th{padding:5px 9px}.tot2{margin-top:6px}.sign .assin{position:absolute;max-height:16mm;margin-top:-17mm}.sign div{position:relative}
+.sign.big{margin-top:36mm}.ki{display:block;width:38px;height:38px;margin-bottom:8px;color:#1D3140}.hi .ki{color:#fff}.ri{display:inline-block;width:18px;height:18px;vertical-align:-4px;margin-right:7px;color:#1D3140}.eqr li.d{font-size:9px;line-height:1.25;color:#4a6176}.data.prot td,.data.prot th{padding:3px 9px}.data.cob td,.data.cob th{padding:5px 9px}.tot2{margin-top:6px}.sign .assin{position:absolute;max-height:16mm;margin-top:-17mm}.sign div{position:relative}
 ${modo==="resumida"?`body{font-size:13px}.pb{padding:6mm 14mm 0}
 h2{font-size:20px;margin-bottom:10px}h3.sub{font-size:14px;margin:16px 0 6px}
 .lead{font-size:12.5px;margin:0 0 8px}.small{font-size:10px}
