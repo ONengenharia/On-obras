@@ -206,8 +206,9 @@ table.ed td:first-child input{min-width:96px}
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-ent" aria-selected="true"><b>1</b>Entradas</button>
       <button role="tab" id="tab-sis" aria-selected="false"><b>2</b>Sistema</button>
-      <button role="tab" id="tab-preco" aria-selected="false"><b>3</b>Valor e DRE</button>
-      <button role="tab" id="tab-prop" aria-selected="false"><b>4</b>Proposta</button>
+      <button role="tab" id="tab-preco" aria-selected="false"><b>3</b>Valor</button>
+      <button role="tab" id="tab-dre" class="adm-only" aria-selected="false"><b>4</b>DRE</button>
+      <button role="tab" id="tab-prop" aria-selected="false"><b>5</b>Proposta</button>
       <span class="gap" aria-hidden="true"></span>
       <button role="tab" id="tab-conf" aria-selected="false">Configurações</button>
     </div>
@@ -399,12 +400,30 @@ table.ed td:first-child input{min-width:96px}
           <div class="fields">
             <label class="full"><b style="font-size:15px;color:var(--accent)">Valor do kit cotado no distribuidor (R$)</b><input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo" style="font-size:26px;font-weight:700;padding:14px 12px;border:2px solid var(--accent)"></label>
             <p class="note full" id="kit-ref" style="margin:2px 0 0"></p>
-            <label>Margem de contribuição (%)<input data-own id="km-pct" type="number" min="0" step="0.5" style="font-size:18px;font-weight:600"></label>
-            <label>Margem de contribuição (R$)<input data-own id="km-rs" type="number" min="0" step="50" style="font-size:18px;font-weight:600"></label>
-            <div class="full" id="kit-soma" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:15px"></div>
           </div>
           <details class="mt"><summary>Kit calculado do catálogo (referência)</summary><div class="scroll mt"><table id="tbl-kit"></table></div></details>
         </section>
+        <section class="card">
+          <h2>Desconto</h2>
+          <div class="fields">
+            <label>Desconto aplicado (%)<input id="desc" type="number" min="0" max="50" step="0.5" value="0"></label>
+          </div>
+          <p class="note" id="desc-warn"></p>
+        </section>
+      </div>
+      <div class="sticky">
+        <section class="card" aria-live="polite">
+          <h2>Preço de venda</h2>
+          <div class="kpis" id="preco-kpis"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== DRE (somente administrador) ===== -->
+  <main id="view-dre" class="hidden adm-only" role="tabpanel" aria-labelledby="tab-dre">
+    <div class="grid">
+      <div>
         <section class="card adm-only">
           <h2>Modelos de precificação</h2>
           <div class="fields">
@@ -420,8 +439,11 @@ table.ed td:first-child input{min-width:96px}
           <p class="note">O modelo guarda a lista de custos e deduções (com unidade ou %), o método e o valor da margem e o desconto máximo liberado. Não guarda o valor do kit nem o desconto aplicado. Salvar também grava como padrão para todos.</p>
         </section>
         <section class="card">
-          <h2>2. Margem e desconto</h2>
+          <h2>Margem e preço de venda</h2>
           <div class="fields">
+            <label>Margem de contribuição (%)<input data-own id="km-pct" type="number" min="0" step="0.5" style="font-size:18px;font-weight:600"></label>
+            <label>Margem de contribuição (R$)<input data-own id="km-rs" type="number" min="0" step="50" style="font-size:18px;font-weight:600"></label>
+            <div class="full" id="kit-soma" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:15px"></div>
             <label>Como informar a margem
               <select id="metodo" data-own>
                 <option value="venda" selected>% sobre o preço de venda</option>
@@ -437,11 +459,9 @@ table.ed td:first-child input{min-width:96px}
               </select>
             </label>
             <label>Valor direto (R$/Wp)<input id="preco" type="number" min="1" step="0.05" value="2.80"></label>
-            <label>Desconto aplicado (%)<input id="desc" type="number" min="0" max="50" step="0.5" value="0"></label>
             <label>Desconto máximo liberado (%) <span class="mini">só o administrador altera</span><input id="desclib" type="number" min="0" max="50" step="0.5" value="5"></label>
             <label>Meta de resultado líquido (%)<input id="meta-liq" type="number" min="0" max="60" step="1" value="10"></label>
           </div>
-          <p class="note" id="desc-warn"></p>
         </section>
         <section class="card adm-only">
           <h2>3. Custos (você inclui e ajusta)</h2>
@@ -451,8 +471,8 @@ table.ed td:first-child input{min-width:96px}
       </div>
       <div class="sticky">
         <section class="card" aria-live="polite">
-          <h2>Preço e margem</h2>
-          <div class="kpis" id="preco-kpis"></div>
+          <h2>Margem e resultado</h2>
+          <div class="kpis" id="dre-kpis"></div>
         </section>
         <section class="card adm-only">
           <h2>DRE da obra</h2>

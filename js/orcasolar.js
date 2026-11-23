@@ -576,14 +576,14 @@ function renderPreco(){
   const liqPct = recE? liqE/recE*100 : 0;
   const mcPct = recP? mcP/recP*100 : 0;
   const diffAlvo = P.alvo ? recP-P.alvo : null;
-  $("preco-kpis").innerHTML = `
+  $("dre-kpis").innerHTML = `
     <div class="kpi main"><div class="l">Preço de venda ${P.desc>0?"(após desconto)":""}</div><div class="v">${brl(recP)}</div><div class="s">${brl2(wpPrice)} por Wp · kit ${brl(P.K)} · lucro bruto sobre o kit ${brl(P.lista-P.K)}</div></div>
     <div class="kpi"><div class="l">Margem de contribuição</div><div class="v">${num(mcPct,1)}%</div><div class="s">${brl(mcP)} após impostos e comissão</div></div>
     <div class="kpi"><div class="l">Resultado líquido ${Object.keys(REAL).length?"(com realizado)":"(previsto)"}</div><div class="v ${liqE<0?"neg":"pos"}">${brl(liqE)}</div><div class="s">${num(liqPct,1)}% da receita</div></div>
     <div class="kpi"><div class="l">Preço para ${num(P.meta*100)}% líquido</div><div class="v">${P.alvo?brl(P.alvo):"-"}</div><div class="s">${diffAlvo===null?"meta inviável com esses percentuais":(diffAlvo>=0?"você está "+brl(diffAlvo)+" acima":"faltam "+brl(-diffAlvo))}</div></div>
     <div class="kpi"><div class="l">Preço mínimo (resultado zero)</div><div class="v">${P.minimo?brl(P.minimo):"-"}</div><div class="s">${P.minimo?num(P.minimo/(r.kwp*1000),2)+" R$/Wp":""}</div></div>
     <div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl(P.lista*(1-v("desclib")/100))}</div><div class="s">${num(P.lista*(1-v("desclib")/100)/(r.kwp*1000),2)} R$/Wp · tabela ${brl(P.lista)}</div></div>`;
-  if(typeof isAdm==="function" && !isAdm()) $("preco-kpis").innerHTML = `<div class="kpi main"><div class="l">Preço de venda ${P.desc>0?"(após desconto)":""}</div><div class="v">${brl(recP)}</div><div class="s">${brl2(wpPrice)} por Wp</div></div><div class="kpi"><div class="l">Preço de tabela</div><div class="v">${brl(P.lista)}</div><div class="s">${num(P.lista/(r.kwp*1000),2)} R$/Wp</div></div><div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl(P.lista*(1-v("desclib")/100))}</div><div class="s">abaixo disso, só com aprovação</div></div>`;
+  $("preco-kpis").innerHTML = `<div class="kpi main"><div class="l">Preço de venda ${P.desc>0?"(após desconto)":""}</div><div class="v">${brl(recP)}</div><div class="s">${brl2(wpPrice)} por Wp</div></div><div class="kpi"><div class="l">Preço de tabela</div><div class="v">${brl(P.lista)}</div><div class="s">${num(P.lista/(r.kwp*1000),2)} R$/Wp</div></div><div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl(P.lista*(1-v("desclib")/100))}</div><div class="s">abaixo disso, só com aprovação</div></div>`;
 
   const segs=[{l:"Kit",v:P.K,c:"--s1"},{l:"Impostos e comissão",v:dedP,c:"--s2"},{l:"Custos da obra",v:obP,c:"--s3"},{l:"Rateio",v:raP,c:"--s4"},{l:"Resultado",v:Math.max(liqP,0),c:"--s5"}];
   const tot=segs.reduce((s,x)=>s+x.v,0)||1;
@@ -812,7 +812,7 @@ $("metodo").addEventListener("change",()=>{
   updateMargemLabel(); calc();
 });
 
-document.querySelectorAll("#view-ent input:not([data-own]), #view-ent select:not([data-own]), #view-ent textarea, #view-preco .fields input:not([data-own]), #view-preco .fields select:not([data-own])").forEach(e=>e.addEventListener("input",calc));
+document.querySelectorAll("#view-ent input:not([data-own]), #view-ent select:not([data-own]), #view-ent textarea, #view-preco .fields input:not([data-own]), #view-preco .fields select:not([data-own]), #view-dre .fields input:not([data-own]), #view-dre .fields select:not([data-own])").forEach(e=>e.addEventListener("input",calc));
 $("opts").addEventListener("click",e=>{ const b=e.target.closest("[data-opt]"); if(!b) return; OPT=b.dataset.opt; $("madd").value=0; calc(); });
 document.addEventListener("click",e=>{
   const m=e.target.closest("[data-metabtn]"); if(m){ const x=Math.min(150,Math.max(10,(v("meta")||100)+(+m.dataset.metabtn))); $("meta").value=x; calc(); return; }
@@ -821,7 +821,7 @@ document.addEventListener("click",e=>{
 $("madd").addEventListener("input",()=>calc()); $("invsel").addEventListener("change",()=>calc());
 $("irr-tog").onclick=()=>{ const s=$("irr-chart"), on=s.style.display==="none"; s.style.display=on?"block":"none"; $("irr-tog").textContent=on?"Ocultar gráfico de irradiação":"Mostrar gráfico de irradiação"; $("irr-tog").setAttribute("aria-expanded",on); };
 
-const VIEWS = ["ent","sis","preco","prop","conf"];
+const VIEWS = ["ent","sis","preco","dre","prop","conf"];
 function show(which){
   VIEWS.forEach(n=>{
     $("view-"+n).classList.toggle("hidden",n!==which);
@@ -829,7 +829,7 @@ function show(which){
   });
   $("strip").style.display = "none";
   if(which==="prop") renderDoc();
-  if(which==="preco") renderPreco();
+  if(which==="preco"||which==="dre") renderPreco();
 }
 VIEWS.forEach(n=>$("tab-"+n).onclick=()=>show(n));
 document.querySelectorAll("#subtabs button").forEach(b=>b.onclick=()=>{
@@ -1434,7 +1434,7 @@ async function integrar(){
   }
   if(neg&&neg.cidade&&!$("pcid").value) aplicarCidade(neg.cidade);
   try{ cadPuxar(neg); }catch(e){}
-  if(!CAN_EDIT){ setSv("Somente leitura (seu nível é “ver”)","er"); document.querySelectorAll("#view-ent input,#view-ent select,#view-ent textarea,#view-preco input,#view-preco select,#view-sis input,#view-sis select").forEach(e=>e.disabled=true); }
+  if(!CAN_EDIT){ setSv("Somente leitura (seu nível é “ver”)","er"); document.querySelectorAll("#view-ent input,#view-ent select,#view-ent textarea,#view-preco input,#view-preco select,#view-dre input,#view-dre select,#view-sis input,#view-sis select").forEach(e=>e.disabled=true); }
   $("btn-aplicar").hidden=true;
   if(ISADM) $("cfg-save").hidden=false; else if(!ISADM){ document.querySelector('[data-sub="com"]'); }
   READY=true; verTxt(); carregarBaseTextos(); calc(); renderPreco(); { const ab=({proposta:'prop'})[QS.get('aba')]||QS.get('aba'); if(ab&&VIEWS.includes(ab)) show(ab); }
