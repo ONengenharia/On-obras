@@ -2019,4 +2019,37 @@ async function gcRegistrar(){
 $("gc-reg").onclick=async()=>{ if(!R) return; if(!NEG){ gcMsg("Disponível só dentro do negócio.",true); return; } emitirVersao(); await gcRegistrar(); };
 gcSync();
 
+/* ---- datasheets: consultor (editar) também grava no catálogo, sem sobrescrever o resto da config ---- */
+async function dsGravarBase(lista){
+  if(!lista.length||!NEG||ISADM) return "";
+  let ok=0, err="";
+  for(const [tipo,it] of lista){
+    try{ const r=await SB.schema("orcarede").rpc("solar_cat_add",{p_tipo:tipo,p_item:it}); if(r.error) err=r.error.message; else ok++; }catch(e){ err=String(e.message||e); }
+  }
+  return err?" Não gravou na base: "+err:" Gravado na base para todos ("+ok+").";
+}
+async function importarDatasheets(files){
+  const msg=$("ds-msg"); const res=[], fila=[]; let mexp=false;
+  for(const f of files){
+    msg.textContent="Lendo "+f.name+"…";
+    try{
+      const pdf=await pdfDoc(f), txt=(await pdfLinhas(pdf,2)).join(" "), d=parseDS(txt,f.name);
+      if(d.tipo==="modulo"){
+        const foto=await fotoPDF(pdf), novo=Object.assign({id:uid("m"),foto,ds:{arquivo:f.name,em:new Date().toISOString().slice(0,10)}},d); delete novo.tipo;
+        CONFIG.modulos.push(novo); mexp=true; fila.push(["modulos",novo]); res.push("módulo "+(novo.marca+" "+novo.modelo).trim()+" (usado nos dados do dimensionamento)");
+        Object.keys(EDITORS).forEach(renderEditorTable); refreshSelects(); $("modsel").value=novo.id; $("madd").value=0;
+      } else {
+        const nome=(d.marca+" "+d.modelo).trim();
+        let ex=CONFIG.inversores.find(x=>norm(x.marca+" "+x.modelo)===norm(nome)&&+x.kw===+d.kw), novoI=Object.assign({id:uid("i"),preco:0,rev:true,ds:{arquivo:f.name,em:new Date().toISOString().slice(0,10)}},d);
+        delete novoI.tipo; if(ex){ Object.assign(ex,novoI,{id:ex.id,preco:ex.preco}); novoI=ex; } else CONFIG.inversores.push(novoI);
+        mexp=true; fila.push(["inversores",novoI]); Object.keys(EDITORS).forEach(renderEditorTable); refreshSelects(); res.push("inversor "+nome+(ex?" (atualizado)":" (novo na base)"));
+      }
+    }catch(e){ console.error(e); res.push(f.name+" (falhou)"); }
+  }
+  saveCfg(); calc();
+  let extra="";
+  if(NEG && ISADM && mexp) $("cfg-save").click(); else extra=await dsGravarBase(fila);
+  msg.textContent="Importado: "+res.join("; ")+"."+extra+(mexp?" Revise os valores em Configurações → Equipamentos.":"");
+}
+
 integrar();
