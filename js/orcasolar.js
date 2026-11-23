@@ -643,7 +643,7 @@ function chartIrr(){
 }
 function chartGen(r){
   const W=560,H=240,L=48,Rr=14,T=14,B=28;
-  const max=Math.max(...r.gerM,...r.consM)*1.12;
+  const max=Math.max(...r.gerM,...r.consM)*1.2;
   const bw=(W-L-Rr)/12;
   const Y=y=>T+(1-y/max)*(H-T-B);
   let s="";
@@ -651,6 +651,7 @@ function chartGen(r){
   r.gerM.forEach((g,i)=>{
     const x=L+i*bw+bw*0.15;
     s+=`<rect x="${x}" y="${Y(g)}" width="${bw*0.7}" height="${H-B-Y(g)}" rx="3" fill="var(--accent)" opacity=".85"/>`;
+    s+=`<text x="${L+i*bw+bw/2}" y="${Y(g)-4}" text-anchor="middle" font-size="9.5" font-weight="600" fill="currentColor">${num(g,0)}</text>`;
     s+=`<text x="${L+i*bw+bw/2}" y="${H-10}" text-anchor="middle">${MESES[i]}</text>`;
   });
   s+=`<path d="${r.consM.map((c,i)=>`${i?"L":"M"}${L+i*bw+bw/2} ${Y(c)}`).join(" ")}" fill="none" stroke="var(--sun)" stroke-width="2.5" stroke-dasharray="6 4"/>`;
