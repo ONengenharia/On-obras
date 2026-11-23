@@ -490,6 +490,20 @@ table.ed td:first-child input{min-width:96px}
   <!-- ===== 4. PROPOSTA (rascunho) ===== -->
   <main id="view-prop" class="hidden" role="tabpanel" aria-labelledby="tab-prop">
     <section class="card" style="margin-bottom:14px">
+      <h2>Montar a proposta</h2>
+      <div class="fields three">
+        <label>Modelo <select id="pr-modo"><option value="completa">Completa (10 folhas)</option><option value="resumida">Resumida (3 folhas)</option></select></label>
+      </div>
+      <h3 style="font-size:14px;margin:14px 0 6px">Financiamento</h3>
+      <label style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin" checked style="width:auto"> Incluir simulação de financiamento na proposta</label>
+      <div id="pr-finbox" style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 0 24px">
+        <label id="pr-finl0" style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin0" checked style="width:auto"><span></span></label>
+        <label id="pr-finl1" style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin1" checked style="width:auto"><span></span></label>
+        <label id="pr-finl2" style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin2" checked style="width:auto"><span></span></label>
+      </div>
+      <p class="note">As linhas de financiamento (banco, prazo, juros, entrada) são cadastradas em Configurações → Comercial. A capa também é escolhida lá.</p>
+    </section>
+    <section class="card" style="margin-bottom:14px">
       <h2>Seguro solar (opcional)</h2>
       <div class="fields three">
         <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="seg-on" style="width:auto"> Incluir seguro (2 folhas a mais)</label>
@@ -507,14 +521,13 @@ table.ed td:first-child input{min-width:96px}
     </section>
     <div class="row" style="margin:0 auto 14px;gap:10px;flex-wrap:wrap">
       <input type="hidden" id="pr-ver" value="0"><input type="hidden" id="pr-verdata" value=""><input type="hidden" id="pr-verkey" value=""><span class="mini" id="pr-vertxt"></span>
-      <input type="hidden" id="pr-hist" value="[]"><label class="tg">Capa <select id="pr-capa"></select></label>
-      <label class="tg">Modelo <select id="pr-modo"><option value="completa">Completa (10 folhas)</option><option value="resumida">Resumida (3 folhas)</option></select></label>
+      <input type="hidden" id="pr-hist" value="[]"><select id="pr-capa" hidden></select>
       <button class="btn alt small" id="pr-nova" type="button" title="Cria a próxima versão partindo da fatura de energia: consumo, tarifa e concessionária são mantidos; dimensionamento, desconto e kit voltam ao automático. A versão anterior fica guardada.">➕ Criar outra proposta (nova versão)</button>
       <label class="tg">Versões anteriores <select id="pr-hsel"></select></label><button class="btn alt small" id="pr-hrest" type="button" title="Cria uma nova versão com os dados da versão escolhida">Duplicar como nova</button>
       <button class="btn" id="pr-abrir">Abrir proposta ON (imprimir / salvar em PDF)</button>
       <button class="btn alt small" id="pr-baixar">Baixar HTML</button>
       <span class="toast" id="toast" role="status"></span>
-      <span class="note" style="margin:0">Proposta completa (10 folhas A4) ou resumida (3 folhas), com a capa que você escolher. Preliminar até a cotação real dos equipamentos.</span>
+      <span class="note" style="margin:0">Proposta completa (10 folhas A4) ou resumida (3 folhas), com a capa definida em Configurações. Preliminar até a cotação real dos equipamentos.</span>
     </div>
     <iframe id="prev" title="Prévia da proposta"></iframe>
     <article class="doc" id="doc" hidden></article>

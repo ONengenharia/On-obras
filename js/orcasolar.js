@@ -996,9 +996,10 @@ function tabelaPrice(P,i,n){
     if(k%12===0||k===n){ anos.push({ano:Math.ceil(k/12),parc:k-ini+1,pagto:pm*(k-ini+1),juros:jA,amort:aA,saldo:Math.max(0,saldo)}); jA=0;aA=0;ini=k+1; } }
   return {pm,anos,total:pm*n,juros:pm*n-P};
 }
-function finOpcoes(r){ return (CONFIG.financeiras||[]).slice(0,3).map(f=>{ const n=Math.max(1,+f.prazo||60), i=(+f.taxa||0)/100, ent=(+f.entrada||0)/100, entV=r.invest*ent, P=r.invest-entV, t=tabelaPrice(P,i,n); return {nome:f.nome,n,i,ent,entV,P,t}; }); }
+function finAtivo(){ const e=$("pr-fin"); return !e||e.checked; }
+function finOpcoes(r){ if(!finAtivo()) return []; return (CONFIG.financeiras||[]).slice(0,3).map((f,ix)=>{ const ck=$("pr-fin"+ix); if(ck&&!ck.checked) return null; return (f=>f)(f); }).filter(Boolean).map(f=>{ const n=Math.max(1,+f.prazo||60), i=(+f.taxa||0)/100, ent=(+f.entrada||0)/100, entV=r.invest*ent, P=r.invest-entV, t=tabelaPrice(P,i,n); return {nome:f.nome,n,i,ent,entV,P,t}; }); }
 function basesTxt(r){ return `<b>Importante:</b> os valores da tabela são estimados. * Inflação anual (reajuste da tarifa): ${num(r.reaj*100,2)}%. ** Simultaneidade de ${num(r.sim*100,2)}%. *** Conforme especificação dos fabricantes, os módulos podem perder até 20% de eficiência em 25 anos (considerado ${num(r.degr*100,2)}% ao ano). **** Após ${CONFIG.fioB.length?Math.max(...CONFIG.fioB.map(x=>+x.ano)):2028}, considera-se a continuidade do pagamento de ${num(CONFIG.fioBDemais,0)}% do Fio B.${r.aum>0?` Considerado aumento de consumo de ${num(r.aum*100,1)}%.`:""}`; }
-function bancosHtml(){ const b=PP().bancos||[]; return `<div class="bks">${b.map(x=>x.logo?`<span class="bk"><img src="${x.logo}" alt="${pesc(x.nome)}"></span>`:`<span class="bk t">${pesc(x.nome)}</span>`).join("")}</div>`; }
+function bancosHtml(){ if(!finAtivo()) return ""; const b=PP().bancos||[]; return `<div class="bks">${b.map(x=>x.logo?`<span class="bk"><img src="${x.logo}" alt="${pesc(x.nome)}"></span>`:`<span class="bk t">${pesc(x.nome)}</span>`).join("")}</div>`; }
 function chartParcela(r,fins,FC){
   fins=Array.isArray(fins)?fins:(fins?[fins]:[]); FC=FC||["#1D3140","#8aa0b3","#2a8f9d"];
   const maxA=Math.min(25,Math.max(5,Math.ceil(r.payback||5)+1,...fins.map(f=>Math.ceil(f.n/12)))), W=560,H=215,L=48,B=24,T=10,iw=W-L-8,ih=H-B-T;
@@ -1095,7 +1096,7 @@ function propostaHTML(){
       <table class="data"><thead><tr><th>Condição de pagamento</th><th>Detalhes</th><th>Valor</th></tr></thead><tbody>
         <tr><td>À vista</td><td>Pagamento único na contratação</td><td>${brl2(r.invest)}</td></tr>
         ${fins.map(f=>`<tr><td>Financiado</td><td>${f.n} parcelas · ${num(f.i*100,2)}% a.m.${f.ent>0?` · entrada ${brl2(f.entV)}`:" · sem entrada"}</td><td>${brl2(f.t.pm)}</td></tr>`).join("")}</tbody></table>
-      ${msgFin}${bancosHtml()}
+      ${fins.length?msgFin+bancosHtml():""}
       <h3 class="sub">Retorno do investimento</h3>
       <div class="kpis3"><div><b>${pbTxt}</b><span>payback</span></div><div><b>${r.tir===null?"-":num(r.tir*100,1)+"%"}</b><span>TIR ao ano</span></div><div><b>${brl(r.totalEco)}</b><span>economia líquida em 25 anos</span></div></div>
       <svg class="chart cx" viewBox="0 0 560 215" role="img" aria-label="Fluxo de caixa acumulado">${chart(r)}</svg>
@@ -1140,7 +1141,7 @@ function propostaHTML(){
       <table class="data l"><thead><tr><th>Condição</th><th>Detalhes</th></tr></thead><tbody>
         <tr><td>Entrega</td><td>${v("prazo")||45} dias após a contratação, com instalação e homologação inclusas</td></tr>
         <tr><td>Validade</td><td>${validade}</td></tr></tbody></table>
-      <h3 class="sub">Simulação de financiamento</h3>${simulHead}${msgFin}${bancosHtml()}`;
+      ${fins.length?`<h3 class="sub">Simulação de financiamento</h3>${simulHead}${msgFin}${bancosHtml()}`:""}`;
     const FC=["#1D3140","#8aa0b3","#2a8f9d"];
     const anosEco=Math.min(10,Math.max(5,...fins.map(f=>Math.ceil(f.n/12))));
     const cardsFin=fins.map((f,k)=>{ const s=r.ecoMes1-f.t.pm; return `<div class="fcard"><i style="background:${FC[k]}"></i><b>${pesc(f.nome)}</b><span>${f.n}x de <strong>${brl2(f.t.pm)}</strong>${f.ent>0?` · entrada ${brl2(f.entV)}`:" · sem entrada"}</span><span>Economia média 1º ano: ${brl2(r.ecoMes1)}/mês</span><em class="${s>=0?"ok":"neg"}">${s>=0?"Sobra":"Diferença"} de ${brl2(Math.abs(s))} por mês${s>=0?"":", coberta pelo reajuste da tarifa"}</em></div>`; }).join("");
@@ -1866,5 +1867,15 @@ function kmAplicar(modo,val){
 }
 $("km-pct").addEventListener("input",()=>{ const x=parseFloat($("km-pct").value); if(isFinite(x)) kmAplicar("venda",Math.min(x,95)); });
 $("km-rs").addEventListener("input",()=>{ const x=parseFloat($("km-rs").value); if(isFinite(x)) kmAplicar("rs",x); });
+
+/* ---- proposta: linhas de financiamento ---- */
+function finUI(){
+  const f=(CONFIG.financeiras||[]).slice(0,3), on=$("pr-fin").checked;
+  for(let i=0;i<3;i++){ const l=$("pr-finl"+i), x=f[i]; l.style.display=x?"flex":"none";  if(x) l.querySelector("span").textContent=`${x.nome||"Financeira"} · ${x.prazo||60}x · ${x.taxa||0}% a.m.`+((+x.entrada)>0?` · entrada ${x.entrada}%`:""); $("pr-fin"+i).disabled=!on; }
+  $("pr-finbox").style.opacity=on?"1":".5";
+}
+["pr-fin","pr-fin0","pr-fin1","pr-fin2"].forEach(id=>$(id).addEventListener("change",()=>{ finUI(); if(typeof atualizarPrev==="function") atualizarPrev(); if(typeof agendar==="function") agendar(); }));
+document.getElementById("tab-prop").addEventListener("click",finUI);
+finUI();
 
 integrar();
