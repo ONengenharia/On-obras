@@ -206,8 +206,9 @@ table.ed td:first-child input{min-width:96px}
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-ent" aria-selected="true"><b>1</b>Entradas</button>
       <button role="tab" id="tab-sis" aria-selected="false"><b>2</b>Sistema</button>
-      <button role="tab" id="tab-preco" aria-selected="false"><b>3</b>Valor e DRE</button>
-      <button role="tab" id="tab-prop" aria-selected="false"><b>4</b>Proposta</button>
+      <button role="tab" id="tab-preco" aria-selected="false"><b>3</b>Valor</button>
+      <button role="tab" id="tab-dre" class="adm-only" aria-selected="false"><b>4</b>DRE</button>
+      <button role="tab" id="tab-prop" aria-selected="false"><b>5</b>Proposta</button>
       <span class="gap" aria-hidden="true"></span>
       <button role="tab" id="tab-conf" aria-selected="false">Configurações</button>
     </div>
@@ -245,9 +246,9 @@ table.ed td:first-child input{min-width:96px}
             </label>
             <label>Tarifa com impostos (R$/kWh)<input id="tarifa" type="number" min="0" step="0.0001" data-own></label>
             <label>Consumo médio mensal (kWh)<input id="consumo" type="number" min="1" step="1" value="500"></label>
-            <label>Meta de compensação (%)<span class="tg"><button class="btn alt small" type="button" data-metabtn="-5">−</button><input id="meta" type="number" min="10" max="150" step="5" value="100"><button class="btn alt small" type="button" data-metabtn="5">+</button></span></label>
+            <label hidden style="display:none">Meta de compensação (%)<span class="tg"><button class="btn alt small" type="button" data-metabtn="-5">−</button><input id="meta" type="number" min="10" max="150" step="5" value="100"><button class="btn alt small" type="button" data-metabtn="5">+</button></span></label>
             <label>Aumento de consumo previsto (%)<input id="aumcons" type="number" min="0" max="300" step="1" value="0"></label>
-            <label>Rateio de energia recebido (kWh/mês)<input id="rateio" type="number" min="0" step="1" value="0"></label>
+            <label hidden style="display:none">Rateio de energia recebido (kWh/mês)<input id="rateio" type="number" min="0" step="1" value="0"></label>
           </div>
           <p class="note" style="margin:8px 0 0">A tarifa vem da concessionária escolhida (Configurações → Tarifas). Se a fatura mostrar outro valor, corrija o campo acima: o orçamento usa o que estiver ali.</p>
           <details>
@@ -260,8 +261,8 @@ table.ed td:first-child input{min-width:96px}
             <div class="months" id="cm-grid"></div>
             <p class="note">Ao preencher, o consumo médio passa a ser a média dos meses informados e o gráfico de geração compara mês a mês.</p>
           </details>
-          <p class="note" id="rateio-note" style="margin-top:8px">Rateio soma na geração. Na viabilidade, a parte do rateio paga Fio B de 100% e não entra como retorno do investimento (só a geração própria entra).</p>
-          <details>
+          <p hidden style="display:none" class="note" id="rateio-note" style="margin-top:8px">Rateio soma na geração. Na viabilidade, a parte do rateio paga Fio B de 100% e não entra como retorno do investimento (só a geração própria entra).</p>
+          <details hidden style="display:none">
             <summary>Dados da fatura (uso interno, não vão para a proposta)</summary>
             <div class="fields mt">
               <label>Mês da fatura<input id="pref" type="text" placeholder="ex.: jul/2026"></label>
@@ -273,6 +274,8 @@ table.ed td:first-child input{min-width:96px}
 
         <section class="card" id="card-prop">
           <h2>Dados para a proposta</h2>
+          <p class="note" id="cid-err" style="display:none;color:#ff8a80;font-weight:600;margin:0 0 8px"></p>
+          <p class="note" id="cad-note" style="margin:0 0 8px">Endereço, cidade e CEP vêm do cadastro do cliente no negócio; se faltar algo, preencha aqui.</p>
           <div class="fields">
             <label class="full">Endereço da instalação<input id="pend" type="text" placeholder="Rua, número, bairro"></label>
             <label>Cidade / UF<input id="pcid" type="text" placeholder="Ibirubá / RS"></label>
@@ -280,9 +283,9 @@ table.ed td:first-child input{min-width:96px}
           </div>
         </section>
         <section class="card">
-          <h2>Área disponível e orientação</h2>
-          <div class="facetbl"><label>Face 1 · orientação<select id="fo1"><option value="N" selected>Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa1" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 2 · orientação<select id="fo2"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa2" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 3 · orientação<select id="fo3"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa3" type="number" min="0" step="1" placeholder="opcional"></label></div>
-          <p class="note">Informe a área livre de cada água do telhado/solo. Cada face precisa comportar no mínimo 4 módulos (limite do inversor/string). Sem área informada, o sistema não é limitado pelo espaço.</p>
+          <h2 hidden style="display:none">Área disponível e orientação</h2>
+          <div class="facetbl" hidden style="display:none"><label>Face 1 · orientação<select id="fo1"><option value="N" selected>Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa1" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 2 · orientação<select id="fo2"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa2" type="number" min="0" step="1" placeholder="opcional"></label><label>Face 3 · orientação<select id="fo3"><option value="N">Norte</option><option value="NE">Nordeste</option><option value="NO">Noroeste</option><option value="L">Leste</option><option value="O">Oeste</option><option value="SE">Sudeste</option><option value="SO">Sudoeste</option><option value="S">Sul</option></select></label><label>Área disponível (m²)<input id="fa3" type="number" min="0" step="1" placeholder="opcional"></label></div>
+          <p class="note" hidden style="display:none">Informe a área livre de cada água do telhado/solo. Cada face precisa comportar no mínimo 4 módulos (limite do inversor/string). Sem área informada, o sistema não é limitado pelo espaço.</p>
         </section>
         <section class="card">
           <h2>Premissas do dimensionamento</h2>
@@ -311,19 +314,19 @@ table.ed td:first-child input{min-width:96px}
       </div>
 
       <div class="sticky">
-        <section class="card">
-          <h2>Local e irradiação solar</h2>
-          <div class="fields">
-            <label>Cidade<select id="cidade" data-own></select></label>
-            <label>Irradiação média anual (kWh/m²·dia)<input id="hsp" type="number" step="0.01" min="2" max="8" data-own></label>
+        <section class="card" id="card-ucs">
+          <h2>Geração compartilhada · outras UCs</h2>
+          <p class="note" style="margin:0 0 8px">Adicione as unidades consumidoras que vão receber créditos desta usina (autoconsumo remoto / geração compartilhada). O sistema é dimensionado para a soma dos consumos; cada UC entra com a própria tarifa, o próprio mínimo (custo de disponibilidade) e o Fio B escalonado (Lei 14.300) sobre os créditos recebidos.</p>
+          <div id="ucs-list"></div>
+          <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+            <button class="btn alt small" id="uc-add" type="button">➕ Nova UC</button>
+            <button class="btn alt small" id="uc-pdf" type="button">📄 Importar fatura da UC (PDF)</button>
+            <input type="file" id="uc-file" accept="application/pdf" hidden>
+            <label class="tg" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ucs-auto" checked> Distribuir créditos proporcional ao consumo</label>
           </div>
-          <button class="btn alt small mt" type="button" id="irr-tog" aria-expanded="false">Mostrar gráfico de irradiação</button>
-          <svg id="irr-chart" class="chart mt" viewBox="0 0 560 200" role="img" aria-label="Irradiação solar diária média mensal" style="display:none"></svg>
-          <details>
-            <summary>Editar valores mensais</summary>
-            <div class="months" id="hm-grid"></div>
-          </details>
-          <p class="note" id="irr-note"></p>
+          <p class="note" id="uc-msg"></p>
+          <div id="ucs-sum"></div>
+          <input type="hidden" id="ucs-json" value="[]">
         </section>
       </div>
     </div>
@@ -365,10 +368,12 @@ table.ed td:first-child input{min-width:96px}
       </div>
     </div>
     <section class="card mt">
-      <h2>Produtos e texto do distribuidor</h2>
-      <p class="note" style="margin-top:0">Cole o texto da proposta do distribuidor (ou leia de um print). O texto vai para a base de equipamentos e aparece na página de produtos da proposta, junto com os datasheets.</p>
-      <label class="full">Observações adicionais na página de produtos (opcional)<textarea id="disttxt" rows="4" placeholder="Módulos, inversor e estrutura vêm da seleção feita no Sistema. Use este campo só para observações extras."></textarea></label>
-      <div class="row2 mt"><button class="btn alt small" type="button" id="btn-ocr">Ler de um print (OCR)</button><input type="file" id="ocr-file" accept="image/*" hidden><button class="btn alt small" type="button" id="btn-txtsave">Guardar na base de textos</button><select id="txtbase" style="max-width:260px"><option value="">Base de textos salvos…</option></select><span class="mini" id="txt-msg"></span></div>
+      <h2>Observações da proposta</h2>
+      <p class="note" style="margin-top:0">Texto livre que aparece na página de produtos da proposta. Escolha um modelo padrão, ajuste para este cliente e, se quiser, salve como novo modelo. Módulos, inversor e estrutura vêm da seleção feita no Sistema.</p>
+      <div class="row2"><select id="txm-sel" style="max-width:280px"><option value="">Modelos de texto…</option></select><button class="btn alt small" type="button" id="txm-apl">Aplicar modelo</button><button class="btn alt small" type="button" id="txm-del">Excluir modelo</button></div>
+      <label class="full mt">Observações<textarea id="disttxt" rows="6" placeholder="Ex.: prazo de entrega, condições de instalação, garantias, itens não inclusos…"></textarea></label>
+      <div class="row2 mt"><input id="txm-nome" placeholder="Nome do modelo (ex.: Padrão residencial)" style="max-width:260px"><button class="btn alt small" type="button" id="txm-sal">Salvar como modelo</button><button id="btn-ocr" type="button" hidden></button><input type="file" id="ocr-file" accept="image/*" hidden><span class="mini" id="txt-msg"></span></div>
+      <select id="txtbase" hidden></select><button id="btn-txtsave" type="button" hidden></button>
     </section>
     <section class="card mt">
       <h2>Retorno para o cliente</h2>
@@ -390,13 +395,35 @@ table.ed td:first-child input{min-width:96px}
   <main id="view-preco" class="hidden" role="tabpanel" aria-labelledby="tab-preco">
     <div class="grid">
       <div>
-        <section class="card">
+        <section class="card" id="card-kit" style="border:2px solid var(--accent);background:linear-gradient(180deg,rgba(100,171,222,.12),transparent 70%)">
           <h2>Kit do projeto</h2>
           <div class="fields">
-            <label class="full"><b>1. Valor do kit cotado no distribuidor (R$)</b><input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo"></label>
+            <label class="full"><b style="font-size:15px;color:var(--accent)">Valor do kit cotado no distribuidor (R$)</b><input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo" style="font-size:26px;font-weight:700;padding:14px 12px;border:2px solid var(--accent)"></label>
+            <p class="note full" id="kit-ref" style="margin:2px 0 0"></p>
           </div>
           <details class="mt"><summary>Kit calculado do catálogo (referência)</summary><div class="scroll mt"><table id="tbl-kit"></table></div></details>
         </section>
+        <section class="card">
+          <h2>Desconto</h2>
+          <div class="fields">
+            <label>Desconto aplicado (%)<input id="desc" type="number" min="0" max="50" step="0.5" value="0"></label>
+          </div>
+          <p class="note" id="desc-warn"></p>
+        </section>
+      </div>
+      <div class="sticky">
+        <section class="card" aria-live="polite">
+          <h2>Preço de venda</h2>
+          <div class="kpis" id="preco-kpis"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== DRE (somente administrador) ===== -->
+  <main id="view-dre" class="hidden adm-only" role="tabpanel" aria-labelledby="tab-dre">
+    <div class="grid">
+      <div>
         <section class="card adm-only">
           <h2>Modelos de precificação</h2>
           <div class="fields">
@@ -412,8 +439,11 @@ table.ed td:first-child input{min-width:96px}
           <p class="note">O modelo guarda a lista de custos e deduções (com unidade ou %), o método e o valor da margem e o desconto máximo liberado. Não guarda o valor do kit nem o desconto aplicado. Salvar também grava como padrão para todos.</p>
         </section>
         <section class="card">
-          <h2>2. Margem e desconto</h2>
+          <h2>Margem e preço de venda</h2>
           <div class="fields">
+            <label>Margem de contribuição (%)<input data-own id="km-pct" type="number" min="0" step="0.5" style="font-size:18px;font-weight:600"></label>
+            <label>Margem de contribuição (R$)<input data-own id="km-rs" type="number" min="0" step="50" style="font-size:18px;font-weight:600"></label>
+            <div class="full" id="kit-soma" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:15px"></div>
             <label>Como informar a margem
               <select id="metodo" data-own>
                 <option value="venda" selected>% sobre o preço de venda</option>
@@ -429,11 +459,9 @@ table.ed td:first-child input{min-width:96px}
               </select>
             </label>
             <label>Valor direto (R$/Wp)<input id="preco" type="number" min="1" step="0.05" value="2.80"></label>
-            <label>Desconto aplicado (%)<input id="desc" type="number" min="0" max="50" step="0.5" value="0"></label>
             <label>Desconto máximo liberado (%) <span class="mini">só o administrador altera</span><input id="desclib" type="number" min="0" max="50" step="0.5" value="5"></label>
             <label>Meta de resultado líquido (%)<input id="meta-liq" type="number" min="0" max="60" step="1" value="10"></label>
           </div>
-          <p class="note" id="desc-warn"></p>
         </section>
         <section class="card adm-only">
           <h2>3. Custos (você inclui e ajusta)</h2>
@@ -443,8 +471,8 @@ table.ed td:first-child input{min-width:96px}
       </div>
       <div class="sticky">
         <section class="card" aria-live="polite">
-          <h2>Preço e margem</h2>
-          <div class="kpis" id="preco-kpis"></div>
+          <h2>Margem e resultado</h2>
+          <div class="kpis" id="dre-kpis"></div>
         </section>
         <section class="card adm-only">
           <h2>DRE da obra</h2>
@@ -461,6 +489,20 @@ table.ed td:first-child input{min-width:96px}
 
   <!-- ===== 4. PROPOSTA (rascunho) ===== -->
   <main id="view-prop" class="hidden" role="tabpanel" aria-labelledby="tab-prop">
+    <section class="card" style="margin-bottom:14px">
+      <h2>Montar a proposta</h2>
+      <div class="fields three">
+        <label>Modelo <select id="pr-modo"><option value="completa">Completa (10 folhas)</option><option value="resumida">Resumida (4 folhas)</option></select></label>
+      </div>
+      <h3 style="font-size:14px;margin:14px 0 6px">Financiamento</h3>
+      <label style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin" checked style="width:auto"> Incluir simulação de financiamento na proposta</label>
+      <div id="pr-finbox" style="display:flex;gap:16px;flex-wrap:wrap;margin:8px 0 0 24px">
+        <label id="pr-finl0" style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin0" checked style="width:auto"><span></span></label>
+        <label id="pr-finl1" style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin1" checked style="width:auto"><span></span></label>
+        <label id="pr-finl2" style="flex-direction:row;align-items:center;gap:8px;justify-content:flex-start;text-align:left"><input type="checkbox" id="pr-fin2" checked style="width:auto"><span></span></label>
+      </div>
+      <p class="note">As linhas de financiamento (banco, prazo, juros, entrada) são cadastradas em Configurações → Comercial. A capa também é escolhida lá.</p>
+    </section>
     <section class="card" style="margin-bottom:14px">
       <h2>Seguro solar (opcional)</h2>
       <div class="fields three">
@@ -479,14 +521,13 @@ table.ed td:first-child input{min-width:96px}
     </section>
     <div class="row" style="margin:0 auto 14px;gap:10px;flex-wrap:wrap">
       <input type="hidden" id="pr-ver" value="0"><input type="hidden" id="pr-verdata" value=""><input type="hidden" id="pr-verkey" value=""><span class="mini" id="pr-vertxt"></span>
-      <input type="hidden" id="pr-hist" value="[]"><label class="tg">Capa <select id="pr-capa"></select></label>
-      <label class="tg">Modelo <select id="pr-modo"><option value="completa">Completa (10 folhas)</option><option value="resumida">Resumida (3 folhas)</option></select></label>
+      <input type="hidden" id="pr-hist" value="[]"><select id="pr-capa" hidden></select>
       <button class="btn alt small" id="pr-nova" type="button" title="Cria a próxima versão partindo da fatura de energia: consumo, tarifa e concessionária são mantidos; dimensionamento, desconto e kit voltam ao automático. A versão anterior fica guardada.">➕ Criar outra proposta (nova versão)</button>
       <label class="tg">Versões anteriores <select id="pr-hsel"></select></label><button class="btn alt small" id="pr-hrest" type="button" title="Cria uma nova versão com os dados da versão escolhida">Duplicar como nova</button>
       <button class="btn" id="pr-abrir">Abrir proposta ON (imprimir / salvar em PDF)</button>
       <button class="btn alt small" id="pr-baixar">Baixar HTML</button>
       <span class="toast" id="toast" role="status"></span>
-      <span class="note" style="margin:0">Proposta completa (10 folhas A4) ou resumida (3 folhas), com a capa que você escolher. Preliminar até a cotação real dos equipamentos.</span>
+      <span class="note" style="margin:0">Proposta completa (10 folhas A4) ou resumida (4 folhas), com a capa definida em Configurações. Preliminar até a cotação real dos equipamentos.</span>
     </div>
     <iframe id="prev" title="Prévia da proposta"></iframe>
     <article class="doc" id="doc" hidden></article>
@@ -576,6 +617,21 @@ table.ed td:first-child input{min-width:96px}
 
     <div id="sub-tec" class="hidden">
       <div class="grid">
+        <section class="card">
+          <h2>Local e irradiação solar</h2>
+          <p class="note" style="margin:0 0 8px">A cidade vem do cadastro do cliente no negócio. Se ela não estiver na base, aparece um erro e o orçamento usa a cidade mais próxima da lista.</p>
+          <div class="fields">
+            <label>Cidade<select id="cidade" data-own></select></label>
+            <label>Irradiação média anual (kWh/m²·dia)<input id="hsp" type="number" step="0.01" min="2" max="8" data-own></label>
+          </div>
+          <button class="btn alt small mt" type="button" id="irr-tog" aria-expanded="false">Mostrar gráfico de irradiação</button>
+          <svg id="irr-chart" class="chart mt" viewBox="0 0 560 200" role="img" aria-label="Irradiação solar diária média mensal" style="display:none"></svg>
+          <details>
+            <summary>Editar valores mensais</summary>
+            <div class="months" id="hm-grid"></div>
+          </details>
+          <p class="note" id="irr-note"></p>
+        </section>
         <section class="card">
           <h2>Perdas do sistema</h2>
           <div class="fields three">
