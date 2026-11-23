@@ -394,10 +394,11 @@ table.ed td:first-child input{min-width:96px}
   <main id="view-preco" class="hidden" role="tabpanel" aria-labelledby="tab-preco">
     <div class="grid">
       <div>
-        <section class="card">
+        <section class="card" id="card-kit" style="border:2px solid var(--accent);background:linear-gradient(180deg,rgba(100,171,222,.12),transparent 70%)">
           <h2>Kit do projeto</h2>
           <div class="fields">
-            <label class="full"><b>1. Valor do kit cotado no distribuidor (R$)</b><input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo"></label>
+            <label class="full"><b style="font-size:15px;color:var(--accent)">Valor do kit cotado no distribuidor (R$)</b><input id="kitcot" type="number" min="0" step="50" placeholder="vazio = usa o kit calculado do catálogo" style="font-size:26px;font-weight:700;padding:14px 12px;border:2px solid var(--accent)"></label>
+            <p class="note full" id="kit-ref" style="margin:2px 0 0"></p>
           </div>
           <details class="mt"><summary>Kit calculado do catálogo (referência)</summary><div class="scroll mt"><table id="tbl-kit"></table></div></details>
         </section>

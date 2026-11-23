@@ -530,6 +530,7 @@ $("tbl-dre").addEventListener("input", e => {
 
 function renderPreco(){
   const r=R; if(!r) return; const P=r.P;
+  { const kr=$("kit-ref"); if(kr) kr.innerHTML = v("kitcot")>0 ? "Kit cotado em uso no preço: <b>"+brl(v("kitcot"))+"</b> · catálogo (referência): "+brl(r.Kest) : "Sem cotação: usando o kit calculado do catálogo, <b>"+brl(r.Kest)+"</b>."; }
   $("tbl-kit").innerHTML = `<thead><tr><th>Item</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>`+
     r.kitItems.map(i=>`<tr><td>${esc(i.nome)}</td><td>${num(i.qtd,i.unid==="kWp"?2:0)} ${i.unid}</td><td>${brl2(i.un)}</td><td>${brl(i.qtd*i.un)}</td></tr>`).join("")+
     `<tr><td><strong>Kit calculado do catálogo</strong></td><td></td><td></td><td><strong>${brl(r.Kest)}</strong></td></tr>`+
