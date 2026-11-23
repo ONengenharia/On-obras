@@ -367,10 +367,12 @@ table.ed td:first-child input{min-width:96px}
       </div>
     </div>
     <section class="card mt">
-      <h2>Produtos e texto do distribuidor</h2>
-      <p class="note" style="margin-top:0">Cole o texto da proposta do distribuidor (ou leia de um print). O texto vai para a base de equipamentos e aparece na página de produtos da proposta, junto com os datasheets.</p>
-      <label class="full">Observações adicionais na página de produtos (opcional)<textarea id="disttxt" rows="4" placeholder="Módulos, inversor e estrutura vêm da seleção feita no Sistema. Use este campo só para observações extras."></textarea></label>
-      <div class="row2 mt"><button class="btn alt small" type="button" id="btn-ocr">Ler de um print (OCR)</button><input type="file" id="ocr-file" accept="image/*" hidden><button class="btn alt small" type="button" id="btn-txtsave">Guardar na base de textos</button><select id="txtbase" style="max-width:260px"><option value="">Base de textos salvos…</option></select><span class="mini" id="txt-msg"></span></div>
+      <h2>Observações da proposta</h2>
+      <p class="note" style="margin-top:0">Texto livre que aparece na página de produtos da proposta. Escolha um modelo padrão, ajuste para este cliente e, se quiser, salve como novo modelo. Módulos, inversor e estrutura vêm da seleção feita no Sistema.</p>
+      <div class="row2"><select id="txm-sel" style="max-width:280px"><option value="">Modelos de texto…</option></select><button class="btn alt small" type="button" id="txm-apl">Aplicar modelo</button><button class="btn alt small" type="button" id="txm-del">Excluir modelo</button></div>
+      <label class="full mt">Observações<textarea id="disttxt" rows="6" placeholder="Ex.: prazo de entrega, condições de instalação, garantias, itens não inclusos…"></textarea></label>
+      <div class="row2 mt"><input id="txm-nome" placeholder="Nome do modelo (ex.: Padrão residencial)" style="max-width:260px"><button class="btn alt small" type="button" id="txm-sal">Salvar como modelo</button><button class="btn alt small" type="button" id="btn-ocr">Ler de um print (OCR)</button><input type="file" id="ocr-file" accept="image/*" hidden><span class="mini" id="txt-msg"></span></div>
+      <select id="txtbase" hidden></select><button id="btn-txtsave" type="button" hidden></button>
     </section>
     <section class="card mt">
       <h2>Retorno para o cliente</h2>

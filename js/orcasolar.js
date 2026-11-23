@@ -1834,4 +1834,21 @@ $("pcid").addEventListener("input",()=>{ cidErro(); });
 
 ucsRender();
 
+/* ---- modelos de texto das observações ---- */
+function txmList(){ if(!Array.isArray(CONFIG.modelosTexto)) CONFIG.modelosTexto=[]; return CONFIG.modelosTexto; }
+function txmFill(sel){ const a=txmList(), s=$("txm-sel"); s.innerHTML='<option value="">'+(a.length?"Modelos de texto…":"(nenhum modelo salvo)")+'</option>'+a.map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join(""); if(sel) s.value=sel; }
+function txmMsg(t){ $("txt-msg").textContent=t; setTimeout(()=>{ $("txt-msg").textContent=""; },4000); }
+$("txm-sel").addEventListener("change",()=>{ const m=txmList().find(x=>x.id===$("txm-sel").value); if(m){ $("disttxt").value=m.texto; calc(); if(typeof agendar==="function") agendar(); } });
+$("txm-apl").onclick=()=>{ const m=txmList().find(x=>x.id===$("txm-sel").value); if(!m){ txmMsg("Escolha um modelo."); return; } $("disttxt").value=m.texto; calc(); txmMsg("Modelo aplicado."); };
+$("txm-sal").onclick=()=>{
+  const tx=$("disttxt").value.trim(); if(!tx){ txmMsg("Escreva o texto antes de salvar."); return; }
+  const nome=($("txm-nome").value||"").trim()||(txmList().find(m=>m.id===$("txm-sel").value)||{}).nome; if(!nome){ txmMsg("Digite um nome para o modelo."); return; }
+  const a=txmList(), ex=a.find(m=>m.nome.toLowerCase()===nome.toLowerCase()), m={id:ex?ex.id:"tx"+Date.now().toString(36),nome,texto:tx};
+  if(ex) a[a.indexOf(ex)]=m; else a.push(m);
+  saveCfg(); txmFill(m.id); $("txm-nome").value=""; if(typeof cfgMark==="function"){ CFG_DIRTY=true; cfgMark(); } if(NEG&&ISADM) $("cfg-save").click();
+  txmMsg(ex?"Modelo atualizado.":"Modelo salvo.");
+};
+$("txm-del").onclick=()=>{ const a=txmList(), i=a.findIndex(x=>x.id===$("txm-sel").value); if(i<0){ txmMsg("Escolha um modelo."); return; } const n=a[i].nome; a.splice(i,1); saveCfg(); txmFill(); if(NEG&&ISADM) $("cfg-save").click(); txmMsg("Modelo \""+n+"\" excluído."); };
+txmFill();
+
 integrar();
