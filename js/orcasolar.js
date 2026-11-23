@@ -2148,4 +2148,16 @@ $("pr-baixar").onclick=async function(){
 };
 try{ pselFill(); }catch(e){}
 
+/* ---- fatura: UC é o código da unidade consumidora (até 15 dígitos, com zeros), não o número do medidor ---- */
+const _parseFatura0=parseFatura;
+parseFatura=function(linhas){
+  const o=_parseFatura0.apply(this,arguments), T=(linhas||[]).join("\n");
+  const med=[]; let m, re=/(\d{5,12})\s+(?:Energia Ativa|CONSUMO\s+kWh)/gi; while((m=re.exec(T))) med.push(m[1]);
+  const mm=T.match(/Medidor\D{0,20}(\d{5,12})/i); if(mm) med.push(mm[1]);
+  const lab=T.match(/(?:Unidade\s+Consumidora|N[uú]mero\s+da\s+UC|C[oó]digo\s+da\s+(?:UC|Instala[cç][aã]o)|N[ºo°.]*\s*da\s+Instala[cç][aã]o|Instala[cç][aã]o|\bUC\b)[^\d\n]{0,25}(\d{6,15})/i);
+  const longo=T.match(/(?<!\d)(\d{13,15})(?!\d)/);
+  if(lab) o.uc=lab[1]; else if(longo) o.uc=longo[1]; else if(o.uc&&med.includes(o.uc)) delete o.uc;
+  return o;
+};
+
 integrar();
