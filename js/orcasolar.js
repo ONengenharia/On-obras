@@ -1397,9 +1397,11 @@ function aplicarConfig(d){
   const base=clone(DEF), s=d.config||{};
   for(const k of Object.keys(base)){ if(s[k]===undefined) continue;
     if(k==="tec"){ base.tec=Object.assign(base.tec,s.tec); base.tec.perdas=Object.assign(clone(DEF.tec.perdas),(s.tec||{}).perdas); } else base[k]=s[k]; }
+  for(const k of Object.keys(s)){ if(base[k]===undefined) base[k]=s[k]; }
   CONFIG=base; mergeDefaults();
   if(d.custos){ Object.keys(COSTS).forEach(k=>{ if(d.custos[k]) COSTS[k]=d.custos[k]; }); nextId=Math.max(nextId,...Object.values(COSTS).flat().map(l=>+l.id||0))+1; }
   initUI(); if(typeof capaPrev==="function") capaPrev(); if(typeof initV3==="function") initV3();
+  try{ pmFill(); txmFill(); }catch(e){}
 }
 async function salvar(){
   if(!NEG||!CAN_EDIT||!READY||!DIRTY) return;
