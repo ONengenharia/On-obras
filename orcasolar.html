@@ -347,10 +347,10 @@ table.ed td:first-child input{min-width:96px}
     </section>
     <section class="card mt">
       <h2>Tipo de sistema</h2>
-      <div class="fields"><label>Tipo<select id="hib-tipo"><option value="on">On-grid (somente rede)</option><option value="hib">Híbrido com backup</option><option value="" disabled>Híbrido com economia (em breve)</option><option value="" disabled>Off-grid (em breve)</option></select></label></div>
+      <div class="fields"><label>Tipo<select id="hib-tipo"><option value="on">On-grid (somente rede)</option><option value="hib">Com Opção B: híbrido com backup</option><option value="" disabled>Híbrido com economia (em breve)</option><option value="" disabled>Off-grid (em breve)</option></select></label></div>
     </section>
     <section class="card mt" id="card-hib" hidden>
-      <h2>Híbrido com backup: cargas e bateria</h2>
+      <h2>Opção B · híbrido com backup: cargas e bateria</h2>
       <p class="note" style="margin-top:0">Liste o que precisa continuar ligado quando a rede cair. Marque como <b>crítica</b> o que entra no backup. A <b>partida (×)</b> é quantas vezes a potência o motor puxa ao ligar (bomba 4×, geladeira 3×, resistivo 1×).</p>
       <div class="row2"><select id="hib-lib" style="max-width:340px"></select><button class="btn alt small" type="button" id="hib-add">Adicionar carga</button></div>
       <div class="scroll mt"><table class="data l" id="hib-tbl"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência (W)</th><th>Partida (×)</th><th>Horas/dia</th><th>Crítica</th><th>kWh/dia</th><th></th></tr></thead><tbody id="hib-rows"></tbody></table></div>
@@ -363,6 +363,7 @@ table.ed td:first-child input{min-width:96px}
         <label>Surto do inversor (× nominal)<input id="hib-surto" data-hf type="number" min="1" step="0.1" value="2"></label>
         <label>Tensão do banco (V)<input id="hib-tensao" data-hf type="number" step="1" value="48"></label>
       </div>
+      <div class="fields mt"><label class="full"><b>Valor do kit híbrido cotado, com baterias (R$)</b><input id="hib-kit" data-hf type="number" min="0" step="50" placeholder="kit do inversor Deye + baterias + módulos"></label></div>
       <h3 class="sub">Bateria (por módulo)</h3>
       <div class="fields">
         <label>Modelo / química<input id="hib-bat-nome" data-hf placeholder="Ex.: Bateria LiFePO4 48 V 5 kWh"></label>
@@ -747,6 +748,6 @@ table.ed td:first-child input{min-width:96px}
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
 <script src="js/cidades.js?v=1"></script>
-<script src="js/orcasolar.js?v=12"></script>
+<script src="js/orcasolar.js?v=13"></script>
 </body>
 </html>

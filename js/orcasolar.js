@@ -2176,6 +2176,17 @@ const HIB_LIB=[
 ];
 const HIB_TIPOS={on:"On-grid (somente rede)",hib:"Híbrido com backup"};
 function hibAtivo(){ return ($("hib-tipo")||{}).value==="hib"; }
+function hibDeye(){
+  const r=R; let lig=""; try{ lig=propInfo().lig||""; }catch(e){}
+  const kwOn=r&&r.inv?r.inv.kw*(r.qtdInv||1):0, mono=!/tri/i.test(lig);
+  if(!mono) return {nome:"Inversor híbrido trifásico (modelo a definir)",kw:0,tri:true,kwOn};
+  return kwOn<=5.0001?{nome:"Deye híbrido monofásico 5 kW",kw:5,kwOn}:{nome:"Deye híbrido monofásico 7,5 kW",kw:7.5,kwOn};
+}
+function hibOpcaoB(){
+  const kit=v("hib-kit"); if(!(kit>0)||!R) return null;
+  const old=$("kitcot").value; $("kitcot").value=String(kit);
+  try{ return compute(); }catch(e){ return null; } finally{ $("kitcot").value=old; }
+}
 function hibCalc(){
   const A=HIB.cargas.filter(x=>x.q>0&&x.w>0), crit=A.filter(x=>x.c);
   const H=Math.max(v("hib-horas"),0), dod=Math.min(Math.max(v("hib-dod"),10),100)/100, ef=Math.min(Math.max(v("hib-ef"),50),100)/100;
@@ -2187,17 +2198,20 @@ function hibCalc(){
   const pMed=crit.reduce((s,x)=>s+x.q*x.w*Math.min(x.h,24)/24,0)/1000; // kW médio
   const eBack=pMed*H;
   const capReq=eBack/(dod*ef);
-  const pInv=Math.max(pico*folga,surto/sx);
-  const nCap=kwhM>0?Math.ceil(capReq/kwhM-1e-9):0, nPot=kwM>0?Math.ceil(pInv/kwM-1e-9):0;
+  const dy=hibDeye(), pNec=Math.max(pico*folga,surto/sx), pInv=dy.kw>0?dy.kw:pNec;
+  const nCap=kwhM>0?Math.ceil(capReq/kwhM-1e-9):0, nPot=kwM>0?Math.ceil(pNec/kwM-1e-9):0;
   const nBat=Math.max(nCap,nPot,crit.length?1:0);
   const capInst=nBat*kwhM, autH=pMed>0?capInst*dod*ef/pMed:0;
   const av=[];
   if(!crit.length) av.push("Marque ao menos uma carga como crítica (as que o backup precisa manter ligadas).");
   if(crit.some(x=>x.w*x.q>3000)) av.push("Há carga crítica acima de 3 kW (ex.: chuveiro elétrico). Cargas resistivas grandes encarecem muito o backup; confirme se precisam mesmo ficar no backup.");
+  if(dy.kw>0&&pNec>dy.kw+1e-9) av.push("A potência necessária ("+pNec.toFixed(1).replace(".",",")+" kW) excede o inversor híbrido selecionado ("+dy.kw+" kW). Reduza as cargas críticas ou avalie outro modelo.");
+  if(dy.tri) av.push("Ligação trifásica: o modelo Deye monofásico não se aplica. Defina o inversor híbrido trifásico.");
+  if(!(v("hib-kit")>0)) av.push("Informe o valor do kit híbrido cotado (com baterias) para calcular o preço e o payback da Opção B.");
   if(nPot>nCap&&nBat>0) av.push("A potência do inversor/bateria é quem define o banco (não a energia). Confira a potência contínua informada por módulo.");
   if(surto>pInv*sx+1e-9) av.push("A partida do maior motor excede a capacidade de surto do inversor.");
   if(dod>0.95) av.push("DoD acima de 95% reduz a vida útil da bateria; confirme o limite do fabricante.");
-  return {A,crit,H,dod,ef,fs,folga,sx,tens,whDia,whCrit,runW,pico,surto,pMed,eBack,capReq,pInv,nBat,nCap,nPot,capInst,autH,kwhM,kwM,av,iDC:pico*1000/tens};
+  return {dy,pNec,A,crit,H,dod,ef,fs,folga,sx,tens,whDia,whCrit,runW,pico,surto,pMed,eBack,capReq,pInv,nBat,nCap,nPot,capInst,autH,kwhM,kwM,av,iDC:pico*1000/tens};
 }
 function hibRender(){
   const on=hibAtivo(), card=$("card-hib"); if(!card) return;
@@ -2225,7 +2239,8 @@ function hibRes(){
     <tr><td>Consumo total das cargas</td><td>${num(c.whDia/1000,1)} kWh/dia (críticas: ${num(c.whCrit/1000,1)} kWh/dia)</td></tr>
     <tr><td>Potência média das críticas</td><td>${num(c.pMed,2)} kW</td></tr>
     <tr><td>Capacidade nominal necessária</td><td>${num(c.capReq,1)} kWh (energia ÷ (DoD ${num(c.dod*100,0)}% × eficiência ${num(c.ef*100,0)}%))</td></tr>
-    <tr><td>Inversor híbrido recomendado</td><td><b>≥ ${num(c.pInv,1)} kW</b> contínuo (folga ${num(c.folga,2)}×; surto ${num(c.sx,1)}× por alguns segundos)</td></tr>
+    <tr><td>Inversor híbrido (pela regra ON)</td><td><b>${esc(c.dy.nome)}</b> · on-grid de ${num(c.dy.kwOn,1)} kW (até 5 kW → 5 kW; acima → 7,5 kW)</td></tr>
+    <tr><td>Potência exigida pelas cargas</td><td>${num(c.pNec,2)} kW (folga ${num(c.folga,2)}×; surto ${num(c.sx,1)}× por alguns segundos)</td></tr>
     <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,1)} kWh = ${num(c.capInst,1)} kWh</b> (${c.nCap} pela energia, ${c.nPot} pela potência)</td></tr>
     <tr><td>Autonomia real do banco</td><td>${num(c.autH,1)} h com as cargas críticas</td></tr>
     <tr><td>Corrente CC no pico</td><td>${num(c.iDC,0)} A em ${num(c.tens,0)} V</td></tr></tbody></table>
@@ -2234,13 +2249,19 @@ function hibRes(){
 function hibPagina(r){
   if(!hibAtivo()) return [];
   const c=hibCalc(); if(!c.crit.length) return [];
-  const fora=c.A.filter(x=>!x.c);
+  const rb=hibOpcaoB(), fora=c.A.filter(x=>!x.c);
+  const pb=x=>{ if(!x||x.payback===null) return "acima de 25 anos"; const m=Math.round(x.payback*12),a=Math.floor(m/12),mm=m%12; return (a===0?mm+" meses":a+(a===1?" ano":" anos")+(mm?" e "+mm+(mm===1?" mês":" meses"):"")); };
   const rows=c.crit.map(x=>`<tr><td>${pesc(x.n)}</td><td>${x.q}</td><td>${num(x.w,0)} W</td><td>${num(x.h,1)} h/dia</td></tr>`).join("");
   const nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim();
-  return [`<h2>Energia de reserva (backup)</h2>
-   <p class="lead">Além de gerar energia, o seu sistema híbrido mantém as cargas essenciais funcionando quando a rede da concessionária falta.</p>
-   <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${num(c.pInv,1)} kW</b><span>potência de backup</span></div></div>
-   <h3 class="sub">Cargas atendidas no backup</h3>
+  const comp=rb?`<table class="data"><thead><tr><th></th><th>Opção A · On-grid</th><th>Opção B · Híbrido com backup</th></tr></thead><tbody>
+    <tr><td>Investimento</td><td>${brl2(r.invest)}</td><td><b>${brl2(rb.invest)}</b></td></tr>
+    <tr><td>Payback estimado</td><td>${pb(r)}</td><td>${pb(rb)}</td></tr>
+    <tr><td>Funciona sem a rede</td><td>Não</td><td><b>Sim, cargas essenciais</b></td></tr></tbody></table>`:"";
+  return [`<h2>Opção B: sistema híbrido com backup</h2>
+   <p class="lead">Mesma geração solar, com inversor híbrido e baterias: o sistema segue alimentando as cargas essenciais quando a rede da concessionária falta.</p>
+   ${comp}
+   <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${c.dy.kw>0?num(c.dy.kw,1)+" kW":"-"}</b><span>${pesc(c.dy.nome)}</span></div></div>
+   <h3 class="sub">Cargas prioritárias atendidas no backup</h3>
    <table class="data l"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência</th><th>Uso previsto</th></tr></thead><tbody>${rows}</tbody></table>
    ${fora.length?`<p class="small"><b>Não atendidas pelo backup:</b> ${fora.map(x=>pesc(x.n)).join(", ")}. Seguem funcionando normalmente com a rede.</p>`:""}
    <h3 class="sub">Como foi dimensionado</h3>
