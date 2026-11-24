@@ -702,6 +702,7 @@ async function abrir(id,manter){
   aberto=id;const c=CARDS.find(x=>x.id===id);if(!c){fechar();return}
   if(!manter&&!(history.state&&history.state.card===id)){try{history.pushState({card:id},"")}catch(e){}}
   if(!manter)await carregarExtras(id);
+  if(c.quadro==="solar"&&String(c.cliente||"").trim()&&/^novo neg[oó]cio/i.test(String(c.titulo||"").trim())&&podeEditar(c)){c.titulo=c.cliente.trim();sb.from("negocios").update({titulo:c.titulo}).eq("id",c.id).then(()=>{})}
   const cols=colsDe(c.quadro);const i=cols.findIndex(x=>x.id===c.coluna);const ed=podeEditar(c);
   const rascunho=$("#tx")?$("#tx").value:"";
   document.querySelectorAll(".gv,body>.etqdd").forEach(x=>x.remove());
@@ -830,7 +831,9 @@ async function abrir(id,manter){
       if(f==="maps"){campos.lat=null;campos.lng=null;const p=coordsDe(v)||(/^https:/i.test(v)?await resolverLink(v):null);if(p){campos.lat=p.lat;campos.lng=p.lng}}
       if(f==="cliente"&&v&&!(c.cadastro||{}).gc_id){const ex=cliEx(v,c.id);if(ex&&(ex.fone||ex.cidade||Object.keys(ex.cad).length)&&confirm(`Já existe o cliente “${ex.nome}”. Puxar telefone, cidade e cadastro dele para este negócio?\n(só preenche o que estiver vazio aqui)`)){
         if(!c.fone&&ex.fone)campos.fone=ex.fone;if(!c.cidade&&ex.cidade)campos.cidade=ex.cidade;const cd={...ex.cad};Object.entries(c.cadastro||{}).forEach(([k,x])=>{if(x)cd[k]=x});if(Object.keys(cd).length)campos.cadastro=cd;campos.cliente=ex.nome}}
+      if(f==="cliente"&&c.quadro==="solar"&&String(campos.cliente||"").trim()&&(/^novo neg[oó]cio/i.test(String(c.titulo||"").trim())||!String(c.titulo||"").trim()||String(c.titulo).trim()===String(c.cliente||"").trim()))campos.titulo=String(campos.cliente).trim();
       if(await salvarCampos(c,campos)){render();
+        if(f==="cliente"&&c.quadro==="solar"){const ti=document.querySelector('.gv [data-f="titulo"]');if(ti)ti.value=c.titulo;const h=document.querySelector(".gv .gvh h2");if(h)h.textContent=c.titulo}
         if(f==="titulo"){const h=document.querySelector(".gv .gvh h2");if(h)h.textContent=c.titulo}
         if(["maps","comissao_pct","comissao_valor"].includes(f)){
         const box=el.closest(".gv")||document;const keep={};box.querySelectorAll("[data-f]").forEach(x=>{if(x!==el&&x.dataset.f!==f)keep[x.dataset.f]=x.value});
