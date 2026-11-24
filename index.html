@@ -425,7 +425,7 @@ async function renderPainel(){
     return grupos.map(g=>{const tot=g.cols.reduce((t,c)=>t+N.filter(n=>n.coluna===c.id).length,0);const cor=g.ar?g.ar.cor:"var(--mut)";
       return `<div class="fg" style="--a:${cor}"><span>${esc(g.ar?g.ar.nome:"Sem setor")}</span><b>${tot}</b></div>`+g.cols.map(c=>{const L=N.filter(n=>n.coluna===c.id),v=L.reduce((t,n)=>t+(+n.valor||0),0);
         return `<a class="fl" href="negocios.html?q=${q}" data-fcol="${c.id}" title="Ver a lista de ${esc(c.nome)}"><span class="fn">${esc(c.nome)}</span><span class="fb"><b style="width:${L.length/mx*100}%;background:${c.cor}"></b></span><span class="fq">${L.length}</span><span class="fv">${v?brl(v):""}</span></a>`}).join("")}).join("")};
-  const card=(href,ic,t,sub,big,extra,cor,fq)=>`<a class="mod" href="${href}" ${fq?`data-fun="${fq}"`:""} style="--m:${cor}"><span class="mi">${ic}</span><span class="mt">${t}</span><span class="mb">${big}</span><span class="ms">${sub}</span>${extra||""}</a>`;
+  const card=(href,ic,t,sub,big,extra,cor,fq,att)=>`<a class="mod" href="${href}" ${fq?`data-fun="${fq}"`:""} ${att||""} style="--m:${cor}"><span class="mi">${ic}</span><span class="mt">${t}</span><span class="mb">${big}</span><span class="ms">${sub}</span>${extra||""}</a>`;
   const miniF=q=>{const cs=C.filter(c=>c.quadro===q);if(!cs.length)return"";const cn=cs.map(c=>({c,n:N.filter(n=>n.coluna===c.id).length}));const mx=Math.max(1,...cn.map(x=>x.n));return `<span class="mf">${cn.slice(0,6).map((x,ix)=>`<i title="${esc(x.c.nome)}: ${x.n}" style="width:${Math.max(6,x.n/mx*100)}%;background:${["#1e4a73","#2f6f9f","#3f86bd","#62a8dc","#8fc1e8","#b6d6f0"][ix%6]}"></i>`).join("")}<small>Abrir funil →</small></span>`};
   const el=ativos("eletrica"),so=ativos("solar");const temQ=q=>C.some(c=>c.quadro===q);
   const andamento=obras.filter(o=>(+o.avanco||0)<100).sort((a,b)=>(b.atualizado_em||"").localeCompare(a.atualizado_em||"")).slice(0,6);
@@ -438,7 +438,7 @@ async function renderPainel(){
     ${temQ("solar")?card("negocios.html?q=solar","☀️","Negócios · Solar","em andamento · "+brl(so.reduce((a,n)=>a+(+n.valor||0),0)),so.length,miniF("solar"),"#d18b16","solar"):""}
     ${ADM()?card("licitacoes.html","📑","Licitações","editais abertos no RS · radar PNCP","→","","#8a5a2b"):""}
     ${card("#kanban","🏗️","Obras","avanço médio "+media+"%",obras.length,`<span class="mbar"><b style="width:${media}%"></b></span>`,"#1f8a4c")}
-    ${card("#inicio","📍","Mapa","obras e usinas solares no mapa",obras.filter(o=>posObra(o)).length+solares.length,"","#6a4fb3")}
+    ${card("#inicio","📍","Mapa · Elétricas","obras elétricas no mapa",obras.filter(o=>posObra(o)).length,"","#6a4fb3","",'data-mqg="eletrica"')}${card("#inicio","☀️","Mapa · Solar","usinas solares no mapa",solares.length,"","#e0a100","",'data-mqg="solar"')}${card("#inicio","🗺️","Mapa · Todos","visão geral (elétricas + solar)",obras.filter(o=>posObra(o)).length+solares.length,"","#4a6fa5","",'data-mqg="todos"')}
    </div>
    ${ADM()?metasHtml():""}
    <h3 style="margin:4px 0 -4px;font-size:18px">🔄 Últimas atualizações</h3>
@@ -777,7 +777,8 @@ async function renderEquipe(){
 }
 /* ---------- início: mapa ---------- */
 let mapaQ="",soArea=false,mapSel=null,marcando=null;
-function mqSwitch(){return `<div class="seg2 mqsw" style="margin:0 0 8px"><button class="${mapaQuadro==="eletrica"?"on":""}" data-mq="eletrica">⚡ Obras elétricas</button><button class="${mapaQuadro==="solar"?"on":""}" data-mq="solar">☀ Solar (${solaresAll.length})</button></div>`}
+function mqSwitch(){return `<div class="seg2 mqsw" style="margin:0 0 8px"><button class="${mapaQuadro==="eletrica"?"on":""}" data-mq="eletrica">⚡ Obras elétricas</button><button class="${mapaQuadro==="solar"?"on":""}" data-mq="solar">☀ Solar (${solaresAll.length})</button><button class="${mapaQuadro==="todos"?"on":""}" data-mq="todos">🗺 Todos</button></div>`}
+document.addEventListener("click",e=>{const a=e.target.closest&&e.target.closest("[data-mqg]");if(a){mapaQuadro=a.dataset.mqg;try{localStorage.setItem("on.mapaQ",mapaQuadro)}catch(x){}}});
 function mqBind(){document.querySelectorAll("[data-mq]").forEach(b=>b.onclick=()=>{mapaQuadro=b.dataset.mq;try{localStorage.setItem("on.mapaQ",mapaQuadro)}catch(e){}renderInicio()})}
 async function renderMapaSolar(){
   let COLS={};try{const r=await sb.from("neg_colunas").select("id,nome,cor").eq("quadro","solar");(r.data||[]).forEach(c=>COLS[c.id]=c)}catch(e){}
@@ -788,7 +789,7 @@ async function renderMapaSolar(){
   $("#corpo").innerHTML=`${mqSwitch()}<section class="resumo fino"><span class="kp main"><span>Usinas solares</span><b>${todos.length}</b><small>${comP.length} no mapa</small></span><span class="kp"><span>Potência</span><b>${n0(kwp)} kWp</b></span><span class="kp"><span>Valor</span><b>R$ ${n0(val)}</b></span></section>
    <section class="mlay" style="--mw:${W}px"><div class="mapabox"><div id="mapa"></div></div><div class="mdiv"></div>
     <aside class="mpan"><input class="inp" id="mQ" placeholder="Buscar usina, cliente ou cidade"><div class="mlist" id="mList"></div>
-     ${semP.length?`<div class="sem"><h2>Sem localização (${semP.length})</h2><div class="semlist">${semP.map(n=>`<div class="semi2"><a class="semi" href="negocios.html?n=${n.id}"><i style="background:#e0a100"></i><span><b>${esc(n.titulo)}</b><small>${esc([n.cliente,n.cidade].filter(Boolean).join(" · "))}</small></span></a></div>`).join("")}</div></div>`:""}
+     ${semP.length?`<div class="sem"><h2>Sem localização (${semP.length})</h2><div class="semlist">${semP.map(n=>`<div class="semi2"><a class="semi" href="negocios.html?n=${n.id}"><i style="background:#e0a100"></i><span><b>${esc(n.titulo)}</b><small>${esc([n.cliente,n.cidade].filter(Boolean).join(" · "))}</small></span></a><button class="btn sm" data-mks="${n.id}" title="Clique no mapa no lugar da usina">📍 Marcar</button></div>`).join("")}</div></div>`:""}
     </aside></section>`;
   mqBind();
   mapa=L.map("mapa",{zoomControl:true,attributionControl:true});
@@ -798,7 +799,12 @@ async function renderMapaSolar(){
   const grupo=L.markerClusterGroup?L.markerClusterGroup({maxClusterRadius:40}):L.layerGroup();grupo.addTo(mapa);
   const MK={},pts=[];
   comP.forEach(n=>{pts.push([n.lat,n.lng]);const ic=L.divIcon({className:"pinsol",html:SOL_SVG,iconSize:[38,48],iconAnchor:[19,48],popupAnchor:[0,-42]});
-    const mk=L.marker([n.lat,n.lng],{icon:ic,title:n.titulo}).bindPopup(`<div class="pop"><b>☀ ${esc(n.titulo)}</b><small>${et(n)?esc(et(n))+" · ":""}${n.pot?esc(n.pot)+" "+esc(n.un||""):"Instalação solar"}</small><small>${esc(n.cliente||"")}${n.cidade?" · "+esc(n.cidade):""}</small><div class="row"><a class="lnk" href="negocios.html?n=${n.id}">Ver negócio →</a></div></div>`);MK[n.id]=mk;grupo.addLayer(mk)});
+    const mk=L.marker([n.lat,n.lng],{icon:ic,title:n.titulo}).bindPopup(`<div class="pop"><b>☀ ${esc(n.titulo)}</b><small>${et(n)?esc(et(n))+" · ":""}${n.pot?esc(n.pot)+" "+esc(n.un||""):"Instalação solar"}</small><small>${esc(n.cliente||"")}${n.cidade?" · "+esc(n.cidade):""}</small><div class="row"><a class="lnk" href="negocios.html?n=${n.id}">Ver negócio →</a><button class="lnk" data-mvs="${n.id}">📍 Mover</button></div></div>`);MK[n.id]=mk;grupo.addLayer(mk)});
+  let marcS=null;const armar=id=>{marcS=id;toast("Clique no mapa no lugar da usina.");$("#mapa").style.cursor="crosshair"};
+  document.querySelectorAll("[data-mks]").forEach(b=>b.onclick=()=>armar(b.dataset.mks));
+  mapa.on("popupopen",e=>{const b=e.popup.getElement().querySelector("[data-mvs]");if(b)b.onclick=()=>{mapa.closePopup();armar(b.dataset.mvs)}});
+  mapa.on("click",async e=>{if(!marcS)return;const n=todos.find(x=>x.id===marcS);marcS=null;$("#mapa").style.cursor="";
+    const {error}=await sb.from("negocios").update({lat:e.latlng.lat,lng:e.latlng.lng,no_mapa:true}).eq("id",n.id);if(error){toast("Não gravou: "+error.message);return}n.lat=e.latlng.lat;n.lng=e.latlng.lng;solares=solaresAll.filter(x=>x.lat!=null);toast("Localização gravada.");renderInicio()});
   function lista(){const t=($("#mQ").value||"").trim().toLowerCase();
     const L2=todos.filter(n=>!t||((n.titulo||"")+" "+(n.cliente||"")+" "+(n.cidade||"")).toLowerCase().includes(t));
     $("#mList").innerHTML=`<div class="note">${L2.length} usina(s)</div>`+L2.map(n=>`<button class="mli" data-ms="${n.id}"><i style="background:#e0a100"></i><span><b>${esc(n.titulo)}</b><small>${esc([n.cliente,n.cidade].filter(Boolean).join(" · "))}</small><small>${esc(et(n))}${n.lat==null?" · sem localização":""}</small></span><span class="pc">${n.pot?esc(n.pot)+" "+esc(n.un||""):""}</span></button>`).join("");
@@ -809,6 +815,7 @@ async function renderMapaSolar(){
 }
 function renderInicio(){
   if(mapaQuadro==="solar")return renderMapaSolar();
+  verSolar=mapaQuadro==="todos";
   const tipos=[...new Set(obras.map(o=>o.tipo).filter(Boolean))].sort();
   const vis=obras.filter(o=>espelho(o)&&(!fTipo||(fTipo==="_"?!o.tipo:o.tipo===fTipo))&&(!fCol||espelho(o)===fCol));
   const comPos=vis.filter(o=>posObra(o)),semPos=vis.filter(o=>!posObra(o));
@@ -826,7 +833,7 @@ function renderInicio(){
      <div class="filt"><span class="note">Tipo:</span><button class="chip ${!fTipo?"on":""}" data-t="">Todos</button>${tipos.map(t=>`<button class="chip ${fTipo===t?"on":""}" data-t="${esc(t)}"><i style="background:${corTipo(t)}"></i>${esc(t)}</button>`).join("")}${obras.some(o=>!o.tipo)?`<button class="chip ${fTipo==="_"?"on":""}" data-t="_"><i style="background:#8a96a3"></i>Sem tipo</button>`:""}</div>
      <div class="filt"><span class="note">Cor dos pinos:</span><span class="seg2"><button class="${corPor==="coluna"?"on":""}" data-cp="coluna">Situação</button><button class="${corPor==="tipo"?"on":""}" data-cp="tipo">Tipo</button></span><label class="note" style="margin-left:auto;display:flex;gap:4px;align-items:center"><input type="checkbox" id="mArea" ${soArea?"checked":""}> só as da área visível</label></div>
      <div id="mSelBox"></div>
-     <div class="mlist" id="mList"></div>
+     <div class="mlist" id="mList"></div>${verSolar&&solares.length?`<div class="mlist" id="mListS"><div class="note">Usinas solares (${solares.length})</div>${solares.map(n=>`<button class="mli" data-mss="${n.id}"><i style="background:#e0a100"></i><span><b>☀ ${esc(n.titulo)}</b><small>${esc([n.cliente,n.cidade].filter(Boolean).join(" · "))}</small></span><span class="pc">${n.pot?esc(n.pot)+" "+esc(n.un||""):""}</span></button>`).join("")}</div>`:""}
      ${semPos.length?`<div class="sem"><h2>Sem localização (${semPos.length})</h2><div class="semlist">${semPos.map(o=>`<div class="semi2"><button class="semi" data-o="${o.id}"><i style="background:${corTipo(o.tipo)}"></i><span><b>${esc(o.titulo)}</b><small>${esc(o.local||o.cliente||"")}</small></span></button>${ADM()?`<button class="btn sm" data-mk="${o.id}" title="Clique no mapa no lugar da obra">📍 Marcar</button>`:""}</div>`).join("")}</div></div>`:""}
     </aside></section>`;
   mqBind();
@@ -845,14 +852,15 @@ function renderInicio(){
   const sat=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Imagens &copy; Esri"});
   ruas.addTo(mapa);L.control.layers({"Mapa":ruas,"Satélite":sat},null,{position:"topright"}).addTo(mapa);
   const grupo=L.markerClusterGroup?L.markerClusterGroup({maxClusterRadius:40}):L.layerGroup();grupo.addTo(mapa);
-  const pts=[],MK={};
+  const pts=[],MK={},MKS={};
   comPos.forEach(o=>{const p=posObra(o);pts.push([p.lat,p.lng]);
     const ic=L.divIcon({className:"pino",html:`<span style="background:${corPino(o)}"><b>${Math.round(+o.avanco||0)}</b></span>`,iconSize:[34,34],iconAnchor:[17,34],popupAnchor:[0,-30]});
     const mk=L.marker([p.lat,p.lng],{icon:ic,title:o.titulo}).bindPopup(`<div class="pop"><b>${esc(o.titulo)}</b><small>${esc(o.tipo||"Sem tipo")} · ${esc(nomeCol(o.coluna))}</small><small>${esc(o.cliente||"")}${o.local?" · "+esc(o.local):""}</small><div class="r"><div class="bar ${+o.avanco>=100?"full":""}"><b style="width:${Math.round(+o.avanco||0)}%"></b></div><span class="pc">${Math.round(+o.avanco||0)}%</span></div><div class="row"><button class="lnk" data-pm="${o.id}">Mural</button><a class="lnk" href="obra.html?id=${o.id}">Abrir painel →</a></div></div>`);
     mk.on("click",()=>{mapSel=o.id;lista();const el=document.querySelector(`[data-ml="${o.id}"]`);el&&el.scrollIntoView({block:"nearest",behavior:"smooth"})});MK[o.id]=mk;grupo.addLayer(mk)});
   if(verSolar)solares.forEach(n=>{pts.push([n.lat,n.lng]);
     const ic=L.divIcon({className:"pinsol",html:SOL_SVG,iconSize:[38,48],iconAnchor:[19,48],popupAnchor:[0,-42]});
-    grupo.addLayer(L.marker([n.lat,n.lng],{icon:ic,title:n.titulo}).bindPopup(`<div class="pop"><b>☀ ${esc(n.titulo)}</b><small>Instalação solar${n.pot?" · "+esc(n.pot)+" "+esc(n.un||""):""}</small><small>${esc(n.cliente||"")}${n.cidade?" · "+esc(n.cidade):""}</small><div class="row"><a class="lnk" href="negocios.html?n=${n.id}">Ver negócio →</a></div></div>`))});
+    const mks=L.marker([n.lat,n.lng],{icon:ic,title:n.titulo}).bindPopup(`<div class="pop"><b>☀ ${esc(n.titulo)}</b><small>Instalação solar${n.pot?" · "+esc(n.pot)+" "+esc(n.un||""):""}</small><small>${esc(n.cliente||"")}${n.cidade?" · "+esc(n.cidade):""}</small><div class="row"><a class="lnk" href="negocios.html?n=${n.id}">Ver negócio →</a></div></div>`);MKS[n.id]=mks;grupo.addLayer(mks)});
+  document.querySelectorAll("[data-mss]").forEach(b=>b.onclick=()=>{const n=solares.find(x=>x.id===b.dataset.mss),mk=MKS[n.id];mapa.setView([n.lat,n.lng],Math.max(mapa.getZoom(),14));if(mk){if(grupo.zoomToShowLayer)grupo.zoomToShowLayer(mk,()=>mk.openPopup());else mk.openPopup()}});
   mapa.on("popupopen",e=>{const b=e.popup.getElement().querySelector("[data-pm]");if(b)b.onclick=()=>mural(obras.find(x=>x.id===b.dataset.pm))});
   function lista(){const t=mapaQ.trim().toLowerCase();const bd=mapa.getBounds();
     const L2=vis.filter(o=>(!t||(o.titulo+" "+(o.cliente||"")+" "+(o.local||"")).toLowerCase().includes(t))&&(!soArea||(posObra(o)&&bd.contains([posObra(o).lat,posObra(o).lng]))));
