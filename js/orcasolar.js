@@ -1142,6 +1142,7 @@ function propostaHTML(){
     const rows=[
       row("mod",`Módulos fotovoltaicos · ${r.modulos} un.`,(mod.marca+" "+mod.modelo).trim()||`${mod.wp} Wp`,[`Potência ${mod.wp} Wp · ${num(r.kwp,2)} kWp no total`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Coeficiente de temperatura da potência ${num(mod.coefP,2)} %/°C`,`Garantia de desempenho de ${mod.garantia||25} anos, conforme o fabricante`].concat((mod.det||[]).slice(0,5).map(x=>"§"+x)),porCat.mod),
       row("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`].concat((inv.det||[]).slice(0,5).map(x=>"§"+x)),porCat.inv),
+      ...(typeof hibBatRow==="function"&&hibAtivo()?[hibBatRow(row)]:[]),
       row("estr","Estrutura de fixação",`Para ${r.tel.nome.toLowerCase()}`,[`Estrutura selecionada: ${r.tel.nome.toLowerCase()}`,`${r.modulos} módulos fixados em perfis e fixadores`,`Área útil estimada de ${num(r.areaTotal,1)} m²`],porCat.estr),
       row("cabo","Cabos e conectores","",[`Cabos CC solares e conectores MC4 para ${num(r.kwp,2)} kWp`,`Cabeamento CA até o quadro de entrada`],porCat.cabo),
       row("prot","String box e proteções","",[`Proteções CC e CA: DPS e disjuntores`,`Aterramento conforme projeto e normas da concessionária`],porCat.prot),
@@ -2184,7 +2185,8 @@ const HIB_INV=[
  {id:"h_deye75",nome:"Deye SUN-7.5K-SG05LP1-EU-SM2 (híbrido 7,5 kW)",kw:7.5,kwAC:8,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (2+2 strings), 150–425 V, até 12,8 kWp de entrada FV",strM:2,isc:26}
 ];
 const HIB_BAT=[
- {id:"b_sef5f",nome:"Foco Energia SE-F5-F · LiFePO₄ 51,2 V · 100 Ah · 5,12 kWh",kwh:5.12,kw:2.56,tensao:51.2,dod:80,ciclos:6000,garantia:5,thr:8,iMax:120}
+ {id:"b_sef5f",nome:"Foco Energia SE-F5-F · LiFePO₄ 51,2 V · 100 Ah · 5,12 kWh",kwh:5.12,kw:2.56,tensao:51.2,dod:80,ciclos:6000,garantia:5,thr:8,iMax:120,
+  det:["Descarga recomendada de 50 A, máxima contínua de 120 A (pico de 150 A por 10 s)","DoD recomendado de 80% · vida útil ≥ 6.000 ciclos (70% de capacidade ao final)","370 × 548 × 140 mm · 41 kg · IP21 · montagem em parede, piso ou empilhada","Comunicação CAN 2.0, RS485 e Bluetooth · expansão de até 32 unidades em paralelo","Garantia de 5 anos · energia processada de 8 MWh"]}
 ];
 try{ DEF.modulos.push({id:"m_dah590",marca:"DAH Solar",modelo:"DHN-72X16/DG 590 Wp bifacial",wp:590,comp:2278,larg:1134,voc:51.8,isc:14.26,vmp:44.0,imp:13.41,coefVoc:-0.25,coefP:-0.29,garantia:30,preco:0,
  det:["Tecnologia TOPCon (N-type) bifacial · 144 meias-células (6×24) · vidro duplo de 2,0 mm","Eficiência do módulo 22,84% · tolerância de potência 0 a +5 W · fator de bifacialidade 80±5%","Peso 30,8 kg · moldura composta · caixa de junção IP68 com 3 diodos de bypass · conector compatível MC4","Tensão máxima do sistema 1500 V · fusível máx. 30 A · NOCT 45±2 °C","Garantia de produto de 15 anos · garantia linear de potência de 30 anos (87,4% ao final)","Certificações IEC 61215, IEC 61730, CE e INMETRO"],
@@ -2288,6 +2290,7 @@ function offPaginas(r,I,hoje,validade,ref,pp,dataVer){
    <p class="small" style="font-size:10.5px">Local e data: ______________________________, ____ / ____ / ________</p>
    <div class="sign big"><div><i></i><span>${pesc(I.nome)}<br>Contratante</span></div>
     <div>${pp.assin?`<img src="${pp.assin}" class="assin" alt="">`:""}<i></i><span>${pesc(pp.resp||"Responsável técnico")}${pp.crea?" · "+pesc(pp.crea):""}<br>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</span></div></div>`;
+  if(c.A.length>5){ const k=p1.indexOf('<h3 class="sub">Equipamentos</h3>'); return [p1.slice(0,k), '<h2>Seu sistema solar off-grid: equipamentos</h2>'+p1.slice(k).replace('<h3 class="sub">Equipamentos</h3>',''), p2, p3]; }
   return [p1,p2,p3];
 }
 function hibDeye(){
@@ -2390,7 +2393,7 @@ function hibPagina(r){
   const pb=x=>{ if(!x||x.payback===null) return "acima de 25 anos"; const m=Math.round(x.payback*12),a=Math.floor(m/12),mm=m%12; return (a===0?mm+" meses":a+(a===1?" ano":" anos")+(mm?" e "+mm+(mm===1?" mês":" meses"):"")); };
   const rows=c.crit.map(x=>`<tr><td>${pesc(x.n)}</td><td>${x.q}</td><td>${num(x.w,0)} W</td><td>${num(x.h,1)} h/dia</td></tr>`).join("");
   const nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim(), bs=hibBatSel();
-  return [`<h2>Sistema híbrido: energia de reserva (backup)</h2>
+  const full=`<h2>Sistema híbrido: energia de reserva (backup)</h2>
    <p class="lead">Mesma geração solar, com inversor híbrido e baterias: o sistema segue alimentando as cargas essenciais quando a rede da concessionária falta.</p>
    <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${c.dy.kwNom?num(c.dy.kwNom,1)+" kW":"-"}</b><span>${pesc(c.dy.nome)}</span></div></div>
    ${hibSvgSOC(c,150)}
@@ -2404,7 +2407,10 @@ function hibPagina(r){
     <tr><td>Vida útil da bateria</td><td>≥ ${num(bs.ciclos,0)} ciclos · garantia de ${bs.garantia} anos (condições do fabricante)</td></tr>`:""}
     <tr><td>Duração prevista do backup</td><td>${num(c.H,1)} horas sem rede, com as cargas acima ligadas</td></tr>
     <tr><td>Partida de motores</td><td>Pico de ${num(c.pico,2)} kW e surto de ${num(c.surto,2)} kW considerados</td></tr></tbody></table>
-   <p class="small">A autonomia depende das cargas efetivamente ligadas e do estado de carga da bateria no momento da falta. Equipamentos fora desta lista, ou com potência maior que a informada, exigem novo dimensionamento. A confirmação das cargas pelo cliente integra o aceite desta proposta.</p>`];
+   <p class="small">A autonomia depende das cargas efetivamente ligadas e do estado de carga da bateria no momento da falta. Equipamentos fora desta lista, ou com potência maior que a informada, exigem novo dimensionamento. A confirmação das cargas pelo cliente integra o aceite desta proposta.</p>`;
+  if(c.crit.length<=3) return [full];
+  const i=full.indexOf(`<h3 class="sub">Como foi dimensionado</h3>`);
+  return [full.slice(0,i), `<h2>Sistema híbrido: como foi dimensionado</h2>`+full.slice(i).replace(`<h3 class="sub">Como foi dimensionado</h3>`,"")];
 }
 function hibPerm(){ estUi(); }
 const _calcH=calc; calc=function(){ try{ hibPerm(); }catch(e){} return _calcH.apply(this,arguments); };
@@ -2501,7 +2507,7 @@ const _ph0=propostaHTML;
 function propBase(){
   if(EST.cur==="hib"&&R&&R.inv){
     const R0=R; R=Object.assign({},R0,{inv:pseudoInv(hibDeye(),R0),qtdInv:1});
-    try{ return _ph0().replace("Sistema conectado à rede, sem baterias, com manutenção simples.","Sistema híbrido: conectado à rede e com baterias para manter as cargas essenciais nas quedas de energia."); } finally{ R=R0; }
+    try{ return _ph0().replace("</style></head>",".eqr{padding:7px 4px}.eqr li{margin:1px 0}</style></head>").replace("Sistema conectado à rede, sem baterias, com manutenção simples.","Sistema híbrido: conectado à rede e com baterias para manter as cargas essenciais nas quedas de energia."); } finally{ R=R0; }
   }
   return _ph0();
 }
@@ -2517,13 +2523,14 @@ function propostaComb(){
   const rs=keys.map(k=>runAs(k,()=>({k,html:propBase(),r:R,hib:k==="hib"?hibCalc():null,off:k==="off"?offCalc():null})));
   const docs=rs.map(x=>new DOMParser().parseFromString(x.html,"text/html"));
   const NM={on:"OPÇÃO A · ON-GRID",hib:"OPÇÃO B · HÍBRIDO COM BACKUP",off:"OPÇÃO C · OFF-GRID"};
-  const badge=k=>`<div style="display:inline-block;background:#1D3140;color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:4px;margin-bottom:6px">${NM[k]}</div>`;
+  const COR={on:"#1D3140",hib:"#2f6f9f",off:"#1f8a4c"}, SUB={on:"Conectado à rede, com créditos de energia",hib:"Gera e mantém as cargas essenciais nas quedas de energia",off:"Sistema autônomo, sem rede da concessionária"};
+  const badge=k=>`<span style="display:inline-flex;align-items:center;background:${COR[k]};color:#fff;padding:8px 18px;border-radius:8px;font-size:14px;font-weight:800;letter-spacing:.07em;line-height:1">${NM[k]}</span>`;
   const h2=sec=>{ const h=sec.querySelector(".pb h2"); return h?h.textContent:""; };
   const parts=docs.map((d,i)=>{
     const L=[...d.querySelectorAll("section.pg")], pages=L.slice(1), ia=pages.findIndex(p=>/Aceite/i.test(h2(p))), keep=ia>=0?pages.slice(0,ia):pages;
     const k=rs[i].k; let sel=keep;
     if(k==="hib") sel=keep.filter(p=>/Produtos e equipamentos|Investimento|Economia|Retorno do investimento|backup/i.test(h2(p))&&!/ambiental/i.test(h2(p)));
-    sel.forEach(p=>{ const pb=p.querySelector(".pb"); if(pb) pb.insertAdjacentHTML("afterbegin",badge(k)); });
+    sel.forEach(p=>{ const ph=p.querySelector(".ph span"); if(ph) ph.outerHTML=badge(k); });
     return {k,cover:L[0],pages:sel,all:L};
   });
   const I=propInfo(), pp=PP(), ref=(window.GC_NUM?("nº "+window.GC_NUM):propRef())+" · versão "+(propVer()||1), dataVer=($("pr-verdata").value||new Date().toLocaleDateString("pt-BR"));
@@ -2570,5 +2577,18 @@ const _ap0=atualizarPrev; atualizarPrev=function(){ if(VERBLK) return; return _a
 const _pmApl0=$("pm-apl").onclick;
 $("pm-apl").onclick=function(){ _pmApl0.apply(this,arguments); const m=pmList().find(x=>x.id===$("pm-sel").value); if(m){ $("pm-atual").value=m.nome; try{ renderPreco(); }catch(e){} } };
 function pmPadrao(){ const a=pmList(), m=a.find(x=>/v1/i.test(x.nome))||a[0]; if(!m) return; pmFill(m.id); $("pm-sel").value=m.id; $("pm-apl").onclick(); }
+
+const _ip0=iconProd;
+iconProd=function(t){
+  if(t==="bat"){ const a='fill="#64ABDE" fill-opacity=".28"', st='stroke="#1D3140" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"';
+    return `<svg viewBox="0 0 48 48" width="100%" height="100%" aria-hidden="true"><rect x="9" y="12" width="30" height="27" rx="4" ${a} ${st}/><path d="M17 12 V8 H22 V12 M26 12 V8 H31 V12" ${st}/><path d="M26 19 L20 27 H25 L22 34" ${st}/></svg>`; }
+  return _ip0(t);
+};
+function hibBatRow(row){
+  const c=hibCalc(), bs=hibBatSel(), nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim();
+  const base=[`${c.nBat} × ${num(c.kwhM,2)} kWh = ${num(c.capInst,1)} kWh de capacidade instalada`,`Tensão nominal ${num(c.tens,1)} V · DoD de ${num(c.dod*100,0)}% · potência contínua de ${num(c.kwM,2)} kW por módulo`];
+  const extra=bs&&bs.det?bs.det.map(x=>"§"+x):[];
+  return row("bat","Baterias · "+c.nBat+" un.",nome,base,extra);
+}
 
 integrar();
