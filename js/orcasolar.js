@@ -565,7 +565,7 @@ function renderPreco(){
   out("liq","Resultado líquido",liqP,liqE,false,"total");
 
   const act = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.real : null;
-  $("tbl-dre").innerHTML = `<thead><tr><th>Item</th><th>Previsto</th><th>% da receita</th><th>Realizado</th><th>Desvio</th></tr></thead><tbody>` +
+  $("tbl-dre").innerHTML = `<thead><tr><th>Item</th><th>${$("pm-atual").value?esc($("pm-atual").value):"Modelo"} (previsto)</th><th>% da receita</th><th>Realizado (preencher)</th><th>Desvio</th></tr></thead><tbody>` +
     rows.map(x=>{
       const dev = x.eff-x.prev;
       const bad = x.cost ? dev>0.005 : dev<-0.005;
@@ -1196,7 +1196,7 @@ function propostaHTML(){
     paginas=fins.length?[RM(quem+det),ger,proj,prod,RM(pag),RM(ecoParc),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))]:[RM(quem+det),ger,proj,prod,RM(pag+pagEco),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))];
   }
   let seguroP=[]; if(comSeg){ seguroP=paginasSeguro(nome,seg,0,0,LOGO); }
-  const todas=(typeof offAtivo==="function"&&offAtivo())?[...offPaginas(r,I,hoje,validade,ref,pp,dataVer||hoje),...seguroP]:[...paginas,...(typeof hibPagina==="function"?hibPagina(r):[]),...seguroP];
+  const todas=(typeof offAtivo==="function"&&offAtivo())?[...offPaginas(r,I,hoje,validade,ref,pp,dataVer||hoje),...seguroP]:[...paginas.slice(0,-1),...(typeof hibPagina==="function"?hibPagina(r):[]),paginas[paginas.length-1],...seguroP];
   const total=1+todas.length;
   const head=()=>`<header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${pesc(nome)}</span></header>`;
   const foot=n=>`<footer class="pf"><div class="pf1"><b>Proposta ${pesc(ref)}</b><span>Folha ${n} de ${total}</span></div><div class="pf2">${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")} · <a href="https://onengenhariaeletrica.com.br/">onengenhariaeletrica.com.br</a> · <a href="https://www.instagram.com/on_engenharia_/">@on_engenharia_</a></div></footer>`;
@@ -1408,7 +1408,7 @@ async function salvar(){
   DIRTY=false; setSv("Salvando…");
   const resumo=R?{kwp:R.kwp,modulos:R.modulos,gerMes:R.gerMes,invest:R.invest,payback:R.payback,tir:R.tir,cliente:$("cliente").value,itens:R.kitItems.map(i=>({nome:i.nome,qtd:+(+i.qtd).toFixed(2),un:+(+i.un).toFixed(2),unid:i.unid})),proposta:{versao:+$("pr-ver").value||0,data:$("pr-verdata").value,numero:window.GC_NUM||""}}:null;
   const {error}=await SB.from("neg_orc_solar").upsert({negocio_id:NEG,dados:snapshot(),resumo,atualizado_por:UID,atualizado_em:new Date().toISOString()});
-  if(error){ DIRTY=true; setSv("Não salvou: "+error.message,"er"); } else { setSv("Salvo ✓ "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),"ok"); if(R){ const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100; { const emit=propVer()>0; SB.from("negocios").update(emit?{valor,pot,un:"kWp"}:{pot,un:"kWp"}).eq("id",NEG).then(()=>{ try{ parent.postMessage({orcsolar:"valor",neg:NEG,valor:emit?valor:undefined,pot},location.origin); }catch(e){} }); } } }
+  if(error){ DIRTY=true; setSv("Não salvou: "+error.message,"er"); } else { setSv("Salvo ✓ "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),"ok"); if(R&&(typeof EST==="undefined"||EST.cur==="on")){ const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100; SB.from("negocios").update(propVer()>0?{valor,pot,un:"kWp"}:{pot,un:"kWp"}).eq("id",NEG).then(()=>{ try{ parent.postMessage({orcsolar:"valor",neg:NEG,valor:(propVer()>0?valor:undefined),pot},location.origin); }catch(e){} }); } }
 }
 function agendar(){ if(!READY||!NEG||!CAN_EDIT) return; DIRTY=true; setSv("Alterações não salvas…"); clearTimeout(SAVE_T); SAVE_T=setTimeout(salvar,1500); }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden){ clearTimeout(SAVE_T); salvar(); } });
@@ -1423,7 +1423,7 @@ $("cfg-save").onclick=async()=>{
 $("btn-aplicar").onclick=async()=>{
   if(!R||!NEG) return;
   const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100;
-  const {error}=await SB.from("negocios").update({valor,pot,un:"kWp"}).eq("id",NEG);
+  const {error}=await SB.from("negocios").update(propVer()>0?{valor,pot,un:"kWp"}:{pot,un:"kWp"}).eq("id",NEG);
   if(error){ setSv("Não aplicou: "+error.message,"er"); return; }
   let nome=""; try{ const p=await SB.from("perfis").select("nome").eq("id",UID).single(); nome=(p.data||{}).nome||""; }catch(e){}
   SB.from("neg_historico").insert({negocio_id:NEG,texto:"☀️ Orçamento solar aplicado: "+brl(valor)+" · "+num(pot,2)+" kWp ("+R.modulos+" módulos)",autor_nome:nome}).then(()=>{});
@@ -2107,7 +2107,7 @@ salvar=async function(){
   if(error){ DIRTY=true; setSv("Não salvou: "+error.message,"er"); return; }
   window.ORC_EM=em;
   setSv("Salvo ✓ "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),"ok");
-  if(R){ const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100; { const emit=propVer()>0; SB.from("negocios").update(emit?{valor,pot,un:"kWp"}:{pot,un:"kWp"}).eq("id",NEG).then(()=>{ try{ parent.postMessage({orcsolar:"valor",neg:NEG,valor:emit?valor:undefined,pot},location.origin); }catch(e){} }); } }
+  if(R&&(typeof EST==="undefined"||EST.cur==="on")){ const valor=Math.round(R.invest), pot=Math.round(R.kwp*100)/100; SB.from("negocios").update({valor,pot,un:"kWp"}).eq("id",NEG).then(()=>{ try{ parent.postMessage({orcsolar:"valor",neg:NEG,valor:(propVer()>0?valor:undefined),pot},location.origin); }catch(e){} }); }
 };
 
 /* ---- imprimir/baixar qualquer versão (sem alterar a versão atual) ---- */
@@ -2163,6 +2163,7 @@ parseFatura=function(linhas){
 
 /* ================= SISTEMA HÍBRIDO / OFF-GRID (fase 1: híbrido com backup) ================= */
 const HIB={cargas:[]};
+const EST={cur:"on",data:{}};
 const HIB_LIB=[
  {n:"Geladeira / freezer",w:200,f:3,h:24,c:1},{n:"Iluminação LED (conjunto)",w:150,f:1,h:5,c:1},
  {n:"Roteador / modem",w:15,f:1,h:24,c:1},{n:"Câmeras CFTV + DVR",w:60,f:1,h:24,c:1},
@@ -2178,9 +2179,9 @@ const HIB_LIB=[
 
 /* ---- catálogo embutido (dados técnicos dos datasheets; sem preço) ---- */
 const HIB_INV=[
- {id:"h_deye5",nome:"Deye SUN-5K-SG04LP1-EU-SM2 (híbrido 5 kW)",kw:5,kwAC:5,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 8 kWp de entrada FV"},
- {id:"h_deye6",nome:"Deye SUN-6K-SG04LP1-EU-SM2 (híbrido 6 kW)",kw:6,kwAC:6,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 9,6 kWp de entrada FV"},
- {id:"h_deye75",nome:"Deye SUN-7.5K-SG05LP1-EU-SM2 (híbrido 7,5 kW)",kw:7.5,kwAC:8,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (2+2 strings), 150–425 V, até 12,8 kWp de entrada FV"}
+ {id:"h_deye5",nome:"Deye SUN-5K-SG04LP1-EU-SM2 (híbrido 5 kW)",kw:5,kwAC:5,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 8 kWp de entrada FV",strM:1,isc:18},
+ {id:"h_deye6",nome:"Deye SUN-6K-SG04LP1-EU-SM2 (híbrido 6 kW)",kw:6,kwAC:6,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 9,6 kWp de entrada FV",strM:1,isc:18},
+ {id:"h_deye75",nome:"Deye SUN-7.5K-SG05LP1-EU-SM2 (híbrido 7,5 kW)",kw:7.5,kwAC:8,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (2+2 strings), 150–425 V, até 12,8 kWp de entrada FV",strM:2,isc:26}
 ];
 const HIB_BAT=[
  {id:"b_sef5f",nome:"Foco Energia SE-F5-F · LiFePO₄ 51,2 V · 100 Ah · 5,12 kWh",kwh:5.12,kw:2.56,tensao:51.2,dod:80,ciclos:6000,garantia:5,thr:8,iMax:120}
@@ -2190,8 +2191,8 @@ try{ DEF.modulos.push({id:"m_dah590",marca:"DAH Solar",modelo:"DHN-72X16/DG 590 
  ds:{arquivo:"590w.pdf"}}); }catch(e){}
 function hibBatSel(){ return HIB_BAT.find(b=>b.id===($("hib-bat-sel")||{}).value); }
 const HIB_TIPOS={on:"On-grid (somente rede)",hib:"Híbrido com backup"};
-function hibAtivo(){ return ($("hib-tipo")||{}).value==="hib"; }
-function offAtivo(){ return ($("hib-tipo")||{}).value==="off"; }
+function hibAtivo(){ return EST.cur==="hib"; }
+function offAtivo(){ return EST.cur==="off"; }
 const OFF_INV=[
  {nome:"Deye SUN-3K-OG02LP1-EU-AM1 (off-grid 3 kW)",kw:3,pv:6000,pvIn:4800,iBat:70},
  {nome:"Deye SUN-3.6K-OG02LP1-EU-AM1 (off-grid 3,6 kW)",kw:3.6,pv:7200,pvIn:5760,iBat:90},
@@ -2224,7 +2225,7 @@ function offCalc(){
   if(def.some(x=>x)) av.push("Em "+def.filter(x=>x).length+" mês(es) a geração diária fica abaixo do consumo: nesses meses depende da autonomia da bateria ou de gerador de apoio.");
   if(A.some(x=>x.w*x.q>3000)) av.push("Há carga acima de 3 kW (ex.: chuveiro elétrico). Cargas resistivas grandes encarecem muito o off-grid; considere aquecimento solar ou a gás.");
   if(dod>0.95) av.push("DoD acima de 95% reduz a vida útil da bateria; confirme o limite do fabricante.");
-  if(!(v("hib-kit")>0)) av.push("Informe o valor do kit off-grid cotado (com baterias) para calcular o preço da proposta.");
+  if(!(v("kitcot")>0)) av.push("Informe o valor do kit off-grid cotado (com baterias) na aba Valor para calcular o preço da proposta.");
   if(!mod) av.push("Selecione o módulo na aba Sistema.");
   return {A,dias,pr,dod,ef,fs,folga,sx,tens,E,pico,surto,pNec,hs,hsc,mc,wp,kwp,nMod,kwpR,capReq,inv,exc,nCap,nPot,nBat,capInst,autD,kwhM,kwM,mes,def,av};
 }
@@ -2236,6 +2237,7 @@ function offRes(){
    <div class="hi"><b>${num(c.capInst,1)} kWh</b><span>${c.nBat} bateria(s) · ${num(c.autD,1)} dias</span></div></div>
   <table class="tec"><tbody>
    <tr><td>Mês crítico</td><td>${M[c.mc]} · ${num(c.hsc,2)} kWh/m²·dia (a menor irradiação do ano)</td></tr>
+   <tr><td>Quantidade de placas</td><td><b>${c.nMod} placas de ${num(c.wp,0)} Wp = ${num(c.kwpR,2)} kWp</b> · conta: ${num(c.E,1)} kWh/dia ÷ (${num(c.hsc,2)} × ${num(c.pr,2)}) = ${num(c.kwp,2)} kWp necessários ÷ ${num(c.wp,0)} Wp, arredondado para cima</td></tr>
    <tr><td>Geração no mês crítico</td><td>${num(c.kwpR*c.hsc*c.pr,1)} kWh/dia contra ${num(c.E,1)} kWh/dia de consumo (eficiência ${num(c.pr*100,0)}%)</td></tr>
    <tr><td>Pico simultâneo / surto</td><td>${num(c.pico,2)} kW / ${num(c.surto,2)} kW</td></tr>
    <tr><td>Inversor off-grid</td><td><b>${esc(c.inv.nome)}</b> · arranjo FV até ${num(c.inv.pv/1000,1)} kWp</td></tr>
@@ -2246,7 +2248,7 @@ function offRes(){
   ${c.av.length?`<ul class="checks">${c.av.map(a=>`<li class="warn">${esc(a)}</li>`).join("")}</ul>`:""}`;
 }
 function offPaginas(r,I,hoje,validade,ref,pp,dataVer){
-  const c=offCalc(), rb=hibOpcaoB(), nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim(), bs=hibBatSel(), M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  const c=offCalc(), rb=(v("kitcot")>0?r:null), nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim(), bs=hibBatSel(), M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
   const cargas=c.A.map(x=>`<tr><td>${pesc(x.n)}</td><td>${x.q}</td><td>${num(x.w,0)} W</td><td>${num(x.h,1)} h/dia</td><td>${num(x.q*x.w*x.h/1000,2)} kWh</td></tr>`).join("");
   const tot=rb?rb.invest:0, mod=r.mod;
   const p1=`<h2>Seu sistema solar off-grid</h2>
@@ -2256,13 +2258,14 @@ function offPaginas(r,I,hoje,validade,ref,pp,dataVer){
    <table class="data l"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência</th><th>Uso</th><th>Energia/dia</th></tr></thead><tbody>${cargas}<tr><td colspan="4"><b>Total</b></td><td><b>${num(c.E,1)} kWh</b></td></tr></tbody></table>
    <h3 class="sub">Equipamentos</h3>
    <table class="kv"><tbody>
-    <tr><td>Módulos</td><td>${c.nMod} × ${pesc((mod.marca+" "+mod.modelo).trim())}</td></tr>
+    <tr><td>Placas (módulos)</td><td><b>${c.nMod} × ${pesc((mod.marca+" "+mod.modelo).trim())}</b> = ${num(c.kwpR,2)} kWp</td></tr>
     <tr><td>Inversor off-grid</td><td>${pesc(c.inv.nome)}, pico de partida de 2× a potência por 10 s</td></tr>
     <tr><td>Baterias</td><td>${c.nBat} × ${pesc(nome)}${bs?` · ≥ ${num(bs.ciclos,0)} ciclos · garantia de ${bs.garantia} anos`:""}</td></tr>
     <tr><td>Instalação</td><td>Estrutura, string box, proteções CC/CA, cabos, projeto com ART e comissionamento</td></tr></tbody></table>`;
   const p2=`<h2>Como foi dimensionado</h2>
    <table class="kv"><tbody>
     <tr><td>Consumo diário</td><td>${num(c.E,1)} kWh/dia (pico simultâneo ${num(c.pico,2)} kW, surto ${num(c.surto,2)} kW)</td></tr>
+    <tr><td>Quantidade de placas</td><td>${num(c.E,1)} kWh/dia ÷ (${num(c.hsc,2)} kWh/m²·dia × ${num(c.pr,2)}) = ${num(c.kwp,2)} kWp; ÷ ${num(c.wp,0)} Wp = <b>${c.nMod} placas</b> (${num(c.kwpR,2)} kWp)</td></tr>
     <tr><td>Mês de projeto</td><td>${M[c.mc]}, o de menor irradiação (${num(c.hsc,2)} kWh/m²·dia), com eficiência global de ${num(c.pr*100,0)}%</td></tr>
     <tr><td>Armazenamento</td><td>${num(c.dias,1)} dia(s) de autonomia, DoD de ${num(c.dod*100,0)}%</td></tr></tbody></table>
    <table class="data tight"><thead><tr><th>Mês</th>${M.map(m=>`<th>${m}</th>`).join("")}</tr></thead><tbody>
@@ -2288,15 +2291,10 @@ function offPaginas(r,I,hoje,validade,ref,pp,dataVer){
 }
 function hibDeye(){
   const r=R; let lig=""; try{ lig=propInfo().lig||""; }catch(e){}
-  const kwOn=r&&r.inv?r.inv.kw*(r.qtdInv||1):0, mono=!/tri/i.test(lig);
+  const kwOn=r&&r.inv?(r.inv.kwOrig!==undefined?r.inv.kwOrig:r.inv.kw*(r.qtdInv||1)):0, mono=!/tri/i.test(lig);
   if(!mono) return {nome:"Inversor híbrido trifásico (modelo a definir)",kw:0,tri:true,kwOn};
   const h=kwOn<=5.0001?HIB_INV[0]:kwOn<=6.0001?HIB_INV[1]:HIB_INV[2];
   return Object.assign({},h,{kw:h.kwAC,kwNom:h.kw,kwOn,mono});
-}
-function hibOpcaoB(){
-  const kit=v("hib-kit"); if(!(kit>0)||!R) return null;
-  const old=$("kitcot").value; $("kitcot").value=String(kit);
-  try{ return compute(); }catch(e){ return null; } finally{ $("kitcot").value=old; }
 }
 function hibCalc(){
   const A=HIB.cargas.filter(x=>x.q>0&&x.w>0), crit=A.filter(x=>x.c);
@@ -2318,7 +2316,7 @@ function hibCalc(){
   if(crit.some(x=>x.w*x.q>3000)) av.push("Há carga crítica acima de 3 kW (ex.: chuveiro elétrico). Cargas resistivas grandes encarecem muito o backup; confirme se precisam mesmo ficar no backup.");
   if(dy.kw>0&&pNec>dy.kw+1e-9) av.push("A potência necessária ("+pNec.toFixed(1).replace(".",",")+" kW) excede o inversor híbrido selecionado ("+dy.kw+" kW). Reduza as cargas críticas ou avalie outro modelo.");
   if(dy.tri) av.push("Ligação trifásica: o modelo Deye monofásico não se aplica. Defina o inversor híbrido trifásico.");
-  if(!(v("hib-kit")>0)) av.push("Informe o valor do kit híbrido cotado (com baterias) para calcular o preço e o payback da Opção B.");
+  if(!(v("kitcot")>0)) av.push("Informe o valor do kit híbrido cotado (com baterias) na aba Valor para calcular o preço e o payback.");
   if(nPot>nCap&&nBat>0) av.push("A potência do inversor/bateria é quem define o banco (não a energia). Confira a potência contínua informada por módulo.");
   if(surto>pInv*sx+1e-9) av.push("A partida do maior motor excede a capacidade de surto do inversor.");
   if(dod>0.95) av.push("DoD acima de 95% reduz a vida útil da bateria; confirme o limite do fabricante.");
@@ -2327,7 +2325,7 @@ function hibCalc(){
 function hibRender(){
   const on=hibAtivo()||offAtivo(), card=$("card-hib"); if(!card) return;
   card.hidden=!on; if(!on) return;
-  const off=offAtivo(); $("hib-tbl").classList.toggle("off",off); $("off-only").hidden=!off; $("lb-horas").style.display=off?"none":"";
+  const off=offAtivo(); $("hib-h2").textContent=off?"Off-grid: cargas, placas e baterias":"Híbrido com backup: cargas e bateria"; $("hib-tbl").classList.toggle("off",off); $("off-only").hidden=!off; $("lb-horas").style.display=off?"none":"";
   hibRows(); hibRes();
 }
 function hibRows(){
@@ -2362,17 +2360,12 @@ function hibRes(){
 function hibPagina(r){
   if(!hibAtivo()) return [];
   const c=hibCalc(); if(!c.crit.length) return [];
-  const rb=hibOpcaoB(), fora=c.A.filter(x=>!x.c);
+  const fora=c.A.filter(x=>!x.c);
   const pb=x=>{ if(!x||x.payback===null) return "acima de 25 anos"; const m=Math.round(x.payback*12),a=Math.floor(m/12),mm=m%12; return (a===0?mm+" meses":a+(a===1?" ano":" anos")+(mm?" e "+mm+(mm===1?" mês":" meses"):"")); };
   const rows=c.crit.map(x=>`<tr><td>${pesc(x.n)}</td><td>${x.q}</td><td>${num(x.w,0)} W</td><td>${num(x.h,1)} h/dia</td></tr>`).join("");
   const nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim(), bs=hibBatSel();
-  const comp=rb?`<table class="data"><thead><tr><th></th><th>Opção A · On-grid</th><th>Opção B · Híbrido com backup</th></tr></thead><tbody>
-    <tr><td>Investimento</td><td>${brl2(r.invest)}</td><td><b>${brl2(rb.invest)}</b></td></tr>
-    <tr><td>Payback estimado</td><td>${pb(r)}</td><td>${pb(rb)}</td></tr>
-    <tr><td>Funciona sem a rede</td><td>Não</td><td><b>Sim, cargas essenciais</b></td></tr></tbody></table>`:"";
-  return [`<h2>Opção B: sistema híbrido com backup</h2>
+  return [`<h2>Sistema híbrido: energia de reserva (backup)</h2>
    <p class="lead">Mesma geração solar, com inversor híbrido e baterias: o sistema segue alimentando as cargas essenciais quando a rede da concessionária falta.</p>
-   ${comp}
    <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${c.dy.kwNom?num(c.dy.kwNom,1)+" kW":"-"}</b><span>${pesc(c.dy.nome)}</span></div></div>
    <h3 class="sub">Cargas prioritárias atendidas no backup</h3>
    <table class="data l"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência</th><th>Uso previsto</th></tr></thead><tbody>${rows}</tbody></table>
@@ -2386,12 +2379,7 @@ function hibPagina(r){
     <tr><td>Partida de motores</td><td>Pico de ${num(c.pico,2)} kW e surto de ${num(c.surto,2)} kW considerados</td></tr></tbody></table>
    <p class="small">A autonomia depende das cargas efetivamente ligadas e do estado de carga da bateria no momento da falta. Equipamentos fora desta lista, ou com potência maior que a informada, exigem novo dimensionamento. A confirmação das cargas pelo cliente integra o aceite desta proposta.</p>`];
 }
-function hibPerm(){
-  const sel=$("hib-tipo"); if(!sel) return; const o=[...sel.options].find(x=>x.value==="hib"); if(!o) return;
-  o.disabled=!ISADM; o.textContent=ISADM?"Com Opção B: híbrido com backup":"Híbrido com backup (em breve)";
-  const f=[...sel.options].find(x=>x.value==="off"); if(f){ f.disabled=!ISADM; f.textContent=ISADM?"Off-grid (sistema autônomo)":"Off-grid (em breve)"; }
-  if(!ISADM&&(sel.value==="hib"||sel.value==="off")){ sel.value="on"; hibRender(); }
-}
+function hibPerm(){ estUi(); }
 const _calcH=calc; calc=function(){ try{ hibPerm(); }catch(e){} return _calcH.apply(this,arguments); };
 function hibBind(){
   const bsel=$("hib-bat-sel"); bsel.innerHTML='<option value="">Outra (preencher abaixo)</option>'+HIB_BAT.map(b=>`<option value="${b.id}">${esc(b.nome)}</option>`).join("");
@@ -2403,10 +2391,12 @@ function hibBind(){
     x[k]=k==="n"?e.target.value:k==="c"?(e.target.checked?1:0):(parseFloat(e.target.value)||0);
     const t=tr.querySelector("td:nth-last-child(2)"); if(t) t.textContent=num(x.q*x.w*x.h/1000,2); hibRes(); calc(); });
   $("hib-rows").addEventListener("click",e=>{ const d=e.target.closest("[data-del]"); if(!d) return; HIB.cargas.splice(+d.dataset.del,1); hibRender(); calc(); });
-  document.querySelectorAll("#card-hib [data-hf],#hib-tipo").forEach(el=>el.addEventListener("input",()=>{ hibRender(); calc(); }));
+  document.querySelectorAll("#card-hib [data-hf]").forEach(el=>el.addEventListener("input",()=>{ hibRender(); calc(); }));
 }
-const _snapH=snapshot; snapshot=function(){ const s=_snapH.apply(this,arguments); s.hib=clone(HIB.cargas); return s; };
-const _restH=restore; restore=function(s){ _restH.apply(this,arguments); HIB.cargas=(s&&s.hib)?clone(s.hib):[]; try{ hibRender(); }catch(e){} };
+const _snapH=snapshot; snapshot=function(){ const s=_snapH.apply(this,arguments); s.hib=clone(HIB.cargas); s.est={cur:EST.cur,data:clone(EST.data)}; return s; };
+const _restH=restore; restore=function(s){ _restH.apply(this,arguments); HIB.cargas=(s&&s.hib)?clone(s.hib):[]; EST.cur=(s&&s.est&&s.est.cur)||"on"; EST.data=(s&&s.est&&s.est.data)?clone(s.est.data):{};
+  if(!ISADM&&EST.cur!=="on"){ try{ estForcaOn(); }catch(e){} }
+  try{ hibRender(); estUi(); }catch(e){} };
 hibBind(); if(!$("hib-bat-nome").value){ const b=hibBatSel(); if(b) $("hib-bat-nome").value=b.nome; } hibRender();
 
 /* ---- negócio novo: campos de entrada vêm em branco (sem valores herdados) ---- */
@@ -2426,6 +2416,132 @@ function zerarNovo(){
   NOVO_ZERO=true;
   ["modsel","telsel","concsel","pclasse","padrao","tensao"].forEach(id=>{ const el=$(id); if(!el.querySelector('option[value=""]')) el.insertAdjacentHTML("afterbegin",'<option value="">Selecione…</option>'); el.value=""; });
   $("tarifa").value=""; $("consumo").value=""; $("consumo").placeholder="kWh";
+  try{ pmPadrao(); }catch(e){ console.error(e); }
 }
+
+/* ================= TRÊS ESTUDOS: on-grid, híbrido, off-grid ================= */
+const EST_SEL=["#view-sis","#view-preco","#view-dre"].map(v=>v+" input[id],"+v+" select[id],"+v+" textarea[id]").join(",");
+function slotGet(){
+  const f={}; document.querySelectorAll(EST_SEL).forEach(el=>{ if(el.type==="file"||el.hasAttribute("data-cfg")||el.id==="txtbase") return; f[el.id]=el.type==="checkbox"?el.checked:el.value; });
+  return {f,costs:clone(COSTS),real:clone(REAL),opt:OPT,hib:clone(HIB.cargas)};
+}
+function slotSet(s){
+  Object.entries(s.f).forEach(([id,val])=>{ const el=$(id); if(!el) return; if(el.tagName==="SELECT"&&![...el.options].some(o=>o.value===String(val))) return; if(el.type==="checkbox") el.checked=!!val; else el.value=val; });
+  Object.keys(COSTS).forEach(k=>{ if(s.costs&&s.costs[k]) COSTS[k]=clone(s.costs[k]); });
+  Object.keys(REAL).forEach(k=>delete REAL[k]); Object.assign(REAL,clone(s.real||{}));
+  if(s.opt) OPT=s.opt;
+  HIB.cargas=clone(s.hib||[]);
+  try{ renderEditor(); }catch(e){} try{ updateMargemLabel(); }catch(e){}
+}
+function slotNovo(base){ const s=clone(base); s.f.kitcot=""; if("invsel" in s.f) s.f.invsel="auto"; s.real={}; s.hib=[]; return s; }
+function estForcaOn(){
+  const cur=EST.cur; EST.data[cur]=slotGet(); EST.cur="on"; let s=EST.data.on; delete EST.data.on; if(!s) s=slotNovo(EST.data[cur]); slotSet(s);
+}
+function estGo(to){
+  if(to===EST.cur||!ISADM&&to!=="on") return;
+  const prev=EST.cur; EST.data[prev]=slotGet(); EST.cur=to;
+  let s=EST.data[to]; delete EST.data[to]; if(!s) s=slotNovo(EST.data[prev]);
+  slotSet(s); hibRender(); estUi();
+  try{ renderPreco(); }catch(e){} calc();
+}
+function estUi(){
+  const bar=$("est-bar"); if(!bar) return;
+  bar.querySelectorAll("[data-est]").forEach(b=>{ const k=b.dataset.est, on=EST.cur===k; b.classList.toggle("alt",!on); b.setAttribute("aria-pressed",on);
+    const bloq=!ISADM&&k!=="on"; b.disabled=bloq;
+    b.textContent=({on:"On-grid",hib:"Híbrido",off:"Off-grid"})[k]+(bloq?" (em breve)":""); });
+  const n=$("est-note"); if(n) n.textContent=EST.cur==="on"?"":EST.cur==="hib"?"Estudo híbrido: tem o seu próprio valor, margem e DRE.":"Estudo off-grid: tem o seu próprio valor, margem e DRE (sem payback).";
+}
+document.addEventListener("click",e=>{ const b=e.target.closest&&e.target.closest("#est-bar [data-est]"); if(b) estGo(b.dataset.est); });
+function runAs(key,fn){
+  if(key===EST.cur) return fn();
+  const blk=VERBLK, back=EST.cur; VERBLK=true;
+  EST.data[back]=slotGet(); EST.cur=key;
+  let s=EST.data[key]; delete EST.data[key]; if(!s) s=slotNovo(EST.data[back]);
+  try{ slotSet(s); hibRender(); calc(); return fn(); }
+  finally{ EST.data[key]=slotGet(); EST.cur=back; const b=EST.data[back]; delete EST.data[back]; slotSet(b); hibRender(); calc(); VERBLK=blk; }
+}
+function estConfigurados(){
+  const ks=["on"];
+  ["hib","off"].forEach(k=>{ const sl=k===EST.cur?slotGet():EST.data[k]; if(sl&&+sl.f.kitcot>0) ks.push(k); });
+  return ks;
+}
+function pseudoInv(dy,r0){
+  if(dy.tri) return r0.inv;
+  return {marca:"Deye",modelo:dy.nome.replace(/^Deye\s*/,""),kw:dy.kwNom||dy.kw,fases:1,mppt:2,strMppt:dy.strM||1,vmax:500,vmin:150,iscMax:dy.isc||18,kwOrig:r0.inv.kw*(r0.qtdInv||1),
+    det:["Híbrido monofásico 220 V com bateria de "+(dy.vbat||"40–60 V"),"Saída CA de "+dy.kwAC+" kW · surto de "+(dy.surto||"2× por 10 s"),dy.mppt||"2 MPPT","IP65 · monitoramento Wi-Fi/Bluetooth · anti-ilhamento"]};
+}
+const _ph0=propostaHTML;
+function propBase(){
+  if(EST.cur==="hib"&&R&&R.inv){
+    const R0=R; R=Object.assign({},R0,{inv:pseudoInv(hibDeye(),R0),qtdInv:1});
+    try{ return _ph0().replace("Sistema conectado à rede, sem baterias, com manutenção simples.","Sistema híbrido: conectado à rede e com baterias para manter as cargas essenciais nas quedas de energia."); } finally{ R=R0; }
+  }
+  return _ph0();
+}
+propostaHTML=function(){
+  const sel=($("pr-est")||{}).value||"cur";
+  if(sel==="cur"||sel===EST.cur) return propBase();
+  if(sel==="comb") return propostaComb();
+  return runAs(sel,propBase);
+};
+function pbTxt(x){ if(!x||x.payback===null) return "acima de 25 anos"; const m=Math.round(x.payback*12),a=Math.floor(m/12),mm=m%12; return a===0?mm+" meses":a+(a===1?" ano":" anos")+(mm?" e "+mm+(mm===1?" mês":" meses"):""); }
+function propostaComb(){
+  const keys=estConfigurados(); if(keys.length<2) return keys[0]===EST.cur?propBase():runAs(keys[0],propBase);
+  const rs=keys.map(k=>runAs(k,()=>({k,html:propBase(),r:R,hib:k==="hib"?hibCalc():null,off:k==="off"?offCalc():null})));
+  const docs=rs.map(x=>new DOMParser().parseFromString(x.html,"text/html"));
+  const NM={on:"OPÇÃO A · ON-GRID",hib:"OPÇÃO B · HÍBRIDO COM BACKUP",off:"OPÇÃO C · OFF-GRID"};
+  const badge=k=>`<div style="display:inline-block;background:#1D3140;color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:4px;margin-bottom:6px">${NM[k]}</div>`;
+  const h2=sec=>{ const h=sec.querySelector(".pb h2"); return h?h.textContent:""; };
+  const parts=docs.map((d,i)=>{
+    const L=[...d.querySelectorAll("section.pg")], pages=L.slice(1), ia=pages.findIndex(p=>/Aceite/i.test(h2(p))), keep=ia>=0?pages.slice(0,ia):pages;
+    const k=rs[i].k; let sel=keep;
+    if(k==="hib") sel=keep.filter(p=>/Produtos e equipamentos|Investimento|Economia|Retorno do investimento|backup/i.test(h2(p))&&!/ambiental/i.test(h2(p)));
+    sel.forEach(p=>{ const pb=p.querySelector(".pb"); if(pb) pb.insertAdjacentHTML("afterbegin",badge(k)); });
+    return {k,cover:L[0],pages:sel,all:L};
+  });
+  const I=propInfo(), pp=PP(), ref=(window.GC_NUM?("nº "+window.GC_NUM):propRef())+" · versão "+(propVer()||1), dataVer=($("pr-verdata").value||new Date().toLocaleDateString("pt-BR"));
+  const validade=new Date(Date.now()+(+CONFIG.validade||10)*864e5).toLocaleDateString("pt-BR");
+  const cols=rs.map(x=>x.k), th=cols.map(k=>`<th style="text-align:left">${NM[k]}</th>`).join("");
+  const cel=f=>rs.map(x=>`<td style="text-align:left">${f(x)}</td>`).join("");
+  const comp=`<h2>Comparativo das opções</h2><p class="lead">As opções abaixo atendem o mesmo cliente. Escolha a que melhor combina com a sua necessidade.</p>
+   <table class="data l"><thead><tr><th></th>${th}</tr></thead><tbody>
+   <tr><td>Investimento</td>${cel(x=>`<b>${brl2(x.r.invest)}</b>`)}</tr>
+   <tr><td>Potência e placas</td>${cel(x=>x.k==="off"?`${num(x.off.kwpR,2)} kWp · ${x.off.nMod} placas`:`${num(x.r.kwp,2)} kWp · ${x.r.modulos} placas`)}</tr>
+   <tr><td>Payback estimado</td>${cel(x=>x.k==="off"?"não se aplica":pbTxt(x.r))}</tr>
+   <tr><td>Economia líquida em 25 anos</td>${cel(x=>x.k==="off"?"não se aplica":brl(x.r.totalEco))}</tr>
+   <tr><td>Funciona sem a rede</td>${cel(x=>x.k==="on"?"Não":x.k==="hib"?"Sim, cargas essenciais por "+num(x.hib.autH,1)+" h":"Sim, é autônomo ("+num(x.off.autD,1)+" dias de autonomia)")}</tr>
+   <tr><td>Armazenamento</td>${cel(x=>x.k==="on"?"Sem baterias":x.k==="hib"?x.hib.nBat+" × "+num(x.hib.kwhM,2)+" kWh = "+num(x.hib.capInst,1)+" kWh":x.off.nBat+" × "+num(x.off.kwhM,2)+" kWh = "+num(x.off.capInst,1)+" kWh")}</tr></tbody></table>
+   <p class="small">Valores e prazos de cada opção constam nas páginas seguintes. Estimativas de economia seguem as premissas desta proposta.</p>`;
+  const tpl=parts[0].all[1].cloneNode(true); tpl.querySelector(".pb").innerHTML=comp;
+  const opcs=rs.map(x=>`<span><i class="bx"></i>${NM[x.k]} · ${brl2(x.r.invest)}</span>`).join("");
+  const ac=parts[0].all[1].cloneNode(true);
+  ac.querySelector(".pb").innerHTML=`<h2>Aceite da proposta</h2>
+   <p class="lead">Proposta <b>${pesc(ref)}</b> · emitida em ${dataVer} · válida até ${validade}</p>
+   <table class="kv"><tbody>
+    <tr><td>Contratante</td><td>${pesc(I.nome)}</td></tr>
+    <tr><td>CPF / CNPJ</td>${window.CAD_DOC?`<td>${pesc(window.CAD_DOC)}</td>`:`<td class="blank"></td>`}</tr>
+    <tr><td>Endereço da instalação</td><td>${pesc([I.end,I.cid,I.cep].filter(Boolean).join(" · "))||"&nbsp;"}</td></tr>
+    <tr><td>Contratada</td><td>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</td></tr>
+    <tr><td>Prazo de entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr></tbody></table>
+   <p class="chk"><b>Opção escolhida:</b> ${opcs}</p>
+   <p class="small" style="font-size:10.5px;color:#1D3140;margin:12px 0 4px">Declaro que li e estou de acordo com os produtos, quantidades, valores e condições da opção marcada. Nas opções com baterias, confirmo as cargas listadas; equipamentos fora da lista, ou com potência maior que a informada, exigem novo dimensionamento.</p>
+   <p class="chk"><b>Forma de pagamento:</b> <span><i class="bx"></i>À vista</span><span><i class="bx"></i>Financiamento</span><span><i class="bx"></i>Outra: ______________</span></p>
+   <p class="small" style="font-size:10.5px">Local e data: ______________________________, ____ / ____ / ________</p>
+   <div class="sign big"><div><i></i><span>${pesc(I.nome)}<br>Contratante</span></div>
+    <div>${pp.assin?`<img src="${pp.assin}" class="assin" alt="">`:""}<i></i><span>${pesc(pp.resp||"Responsável técnico")}${pp.crea?" · "+pesc(pp.crea):""}<br>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</span></div></div>`;
+  const out=[parts[0].cover];
+  parts.forEach((p,i)=>{ p.pages.forEach((pg,j)=>{ out.push(pg); if(i===0&&j===0) out.push(tpl); }); });
+  out.push(ac);
+  const N=out.length, body=docs[0].body; body.innerHTML="";
+  out.forEach((sec,i)=>{ const sp=sec.querySelector(".pf1 span"); if(sp) sp.textContent="Folha "+(i+1)+" de "+N; body.appendChild(docs[0].adoptNode(sec)); });
+  return "<!DOCTYPE html>\n"+docs[0].documentElement.outerHTML;
+}
+estUi();
+const _ap0=atualizarPrev; atualizarPrev=function(){ if(VERBLK) return; return _ap0.apply(this,arguments); };
+
+/* ---- DRE: todo orçamento novo entra com o modelo de precificação padrão (V1) ---- */
+const _pmApl0=$("pm-apl").onclick;
+$("pm-apl").onclick=function(){ _pmApl0.apply(this,arguments); const m=pmList().find(x=>x.id===$("pm-sel").value); if(m){ $("pm-atual").value=m.nome; try{ renderPreco(); }catch(e){} } };
+function pmPadrao(){ const a=pmList(), m=a.find(x=>/v1/i.test(x.nome))||a[0]; if(!m) return; pmFill(m.id); $("pm-sel").value=m.id; $("pm-apl").onclick(); }
 
 integrar();
