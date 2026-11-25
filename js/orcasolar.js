@@ -2174,13 +2174,27 @@ const HIB_LIB=[
  {n:"Compressor 2 cv",w:1500,f:6,h:4,c:0},{n:"Chuveiro elétrico (não recomendado)",w:5500,f:1,h:0.7,c:0},
  {n:"Outro (preencher)",w:100,f:1,h:1,c:0}
 ];
+
+/* ---- catálogo embutido (dados técnicos dos datasheets; sem preço) ---- */
+const HIB_INV=[
+ {id:"h_deye6",nome:"Deye híbrido monofásico 6 kW",kw:6,kwAC:6,pendente:true},
+ {id:"h_deye75",nome:"Deye SUN-7.5K-SG05LP1-EU-SM2 (híbrido 7,5 kW)",kw:7.5,kwAC:8,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (2+2 strings), 150–425 V, até 12,8 kWp de entrada FV"}
+];
+const HIB_BAT=[
+ {id:"b_sef5f",nome:"Foco Energia SE-F5-F · LiFePO₄ 51,2 V · 100 Ah · 5,12 kWh",kwh:5.12,kw:2.56,tensao:51.2,dod:80,ciclos:6000,garantia:5,thr:8,iMax:120}
+];
+try{ DEF.modulos.push({id:"m_dah590",marca:"DAH Solar",modelo:"DHN-72X16/DG 590 Wp bifacial",wp:590,comp:2278,larg:1134,voc:51.8,isc:14.26,vmp:44.0,imp:13.41,coefVoc:-0.25,coefP:-0.29,garantia:30,preco:0,
+ det:["Tecnologia TOPCon (N-type) bifacial · 144 meias-células (6×24) · vidro duplo de 2,0 mm","Eficiência do módulo 22,84% · tolerância de potência 0 a +5 W · fator de bifacialidade 80±5%","Peso 30,8 kg · moldura composta · caixa de junção IP68 com 3 diodos de bypass · conector compatível MC4","Tensão máxima do sistema 1500 V · fusível máx. 30 A · NOCT 45±2 °C","Garantia de produto de 15 anos · garantia linear de potência de 30 anos (87,4% ao final)","Certificações IEC 61215, IEC 61730, CE e INMETRO"],
+ ds:{arquivo:"590w.pdf"}}); }catch(e){}
+function hibBatSel(){ return HIB_BAT.find(b=>b.id===($("hib-bat-sel")||{}).value); }
 const HIB_TIPOS={on:"On-grid (somente rede)",hib:"Híbrido com backup"};
 function hibAtivo(){ return ($("hib-tipo")||{}).value==="hib"; }
 function hibDeye(){
   const r=R; let lig=""; try{ lig=propInfo().lig||""; }catch(e){}
   const kwOn=r&&r.inv?r.inv.kw*(r.qtdInv||1):0, mono=!/tri/i.test(lig);
   if(!mono) return {nome:"Inversor híbrido trifásico (modelo a definir)",kw:0,tri:true,kwOn};
-  return kwOn<=5.0001?{nome:"Deye híbrido monofásico 5 kW",kw:5,kwOn}:{nome:"Deye híbrido monofásico 7,5 kW",kw:7.5,kwOn};
+  const h=kwOn<=6.0001?HIB_INV[0]:HIB_INV[1];
+  return Object.assign({},h,{kw:h.kwAC,kwNom:h.kw,kwOn,mono});
 }
 function hibOpcaoB(){
   const kit=v("hib-kit"); if(!(kit>0)||!R) return null;
@@ -2239,7 +2253,7 @@ function hibRes(){
     <tr><td>Consumo total das cargas</td><td>${num(c.whDia/1000,1)} kWh/dia (críticas: ${num(c.whCrit/1000,1)} kWh/dia)</td></tr>
     <tr><td>Potência média das críticas</td><td>${num(c.pMed,2)} kW</td></tr>
     <tr><td>Capacidade nominal necessária</td><td>${num(c.capReq,1)} kWh (energia ÷ (DoD ${num(c.dod*100,0)}% × eficiência ${num(c.ef*100,0)}%))</td></tr>
-    <tr><td>Inversor híbrido (pela regra ON)</td><td><b>${esc(c.dy.nome)}</b> · on-grid de ${num(c.dy.kwOn,1)} kW (até 5 kW → 5 kW; acima → 7,5 kW)</td></tr>
+    <tr><td>Inversor híbrido (pela regra ON)</td><td><b>${esc(c.dy.nome)}</b> · on-grid de ${num(c.dy.kwOn,1)} kW (até 6 kW → 6 kW; acima → 7,5 kW)</td></tr>
     <tr><td>Potência exigida pelas cargas</td><td>${num(c.pNec,2)} kW (folga ${num(c.folga,2)}×; surto ${num(c.sx,1)}× por alguns segundos)</td></tr>
     <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,1)} kWh = ${num(c.capInst,1)} kWh</b> (${c.nCap} pela energia, ${c.nPot} pela potência)</td></tr>
     <tr><td>Autonomia real do banco</td><td>${num(c.autH,1)} h com as cargas críticas</td></tr>
@@ -2252,7 +2266,7 @@ function hibPagina(r){
   const rb=hibOpcaoB(), fora=c.A.filter(x=>!x.c);
   const pb=x=>{ if(!x||x.payback===null) return "acima de 25 anos"; const m=Math.round(x.payback*12),a=Math.floor(m/12),mm=m%12; return (a===0?mm+" meses":a+(a===1?" ano":" anos")+(mm?" e "+mm+(mm===1?" mês":" meses"):"")); };
   const rows=c.crit.map(x=>`<tr><td>${pesc(x.n)}</td><td>${x.q}</td><td>${num(x.w,0)} W</td><td>${num(x.h,1)} h/dia</td></tr>`).join("");
-  const nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim();
+  const nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim(), bs=hibBatSel();
   const comp=rb?`<table class="data"><thead><tr><th></th><th>Opção A · On-grid</th><th>Opção B · Híbrido com backup</th></tr></thead><tbody>
     <tr><td>Investimento</td><td>${brl2(r.invest)}</td><td><b>${brl2(rb.invest)}</b></td></tr>
     <tr><td>Payback estimado</td><td>${pb(r)}</td><td>${pb(rb)}</td></tr>
@@ -2260,18 +2274,23 @@ function hibPagina(r){
   return [`<h2>Opção B: sistema híbrido com backup</h2>
    <p class="lead">Mesma geração solar, com inversor híbrido e baterias: o sistema segue alimentando as cargas essenciais quando a rede da concessionária falta.</p>
    ${comp}
-   <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${c.dy.kw>0?num(c.dy.kw,1)+" kW":"-"}</b><span>${pesc(c.dy.nome)}</span></div></div>
+   <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${c.dy.kwNom?num(c.dy.kwNom,1)+" kW":"-"}</b><span>${pesc(c.dy.nome)}</span></div></div>
    <h3 class="sub">Cargas prioritárias atendidas no backup</h3>
    <table class="data l"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência</th><th>Uso previsto</th></tr></thead><tbody>${rows}</tbody></table>
    ${fora.length?`<p class="small"><b>Não atendidas pelo backup:</b> ${fora.map(x=>pesc(x.n)).join(", ")}. Seguem funcionando normalmente com a rede.</p>`:""}
    <h3 class="sub">Como foi dimensionado</h3>
    <table class="kv"><tbody>
-    <tr><td>Armazenamento</td><td>${pesc(nome)}, profundidade de descarga (DoD) de ${num(c.dod*100,0)}%</td></tr>
+    <tr><td>Inversor híbrido</td><td>${pesc(c.dy.nome)}${c.dy.surto?`, suporta partida de motores (${c.dy.surto})`:""}</td></tr>
+    <tr><td>Armazenamento</td><td>${pesc(nome)}, profundidade de descarga (DoD) de ${num(c.dod*100,0)}%</td></tr>${bs?`
+    <tr><td>Vida útil da bateria</td><td>≥ ${num(bs.ciclos,0)} ciclos · garantia de ${bs.garantia} anos (condições do fabricante)</td></tr>`:""}
     <tr><td>Duração prevista do backup</td><td>${num(c.H,1)} horas sem rede, com as cargas acima ligadas</td></tr>
     <tr><td>Partida de motores</td><td>Pico de ${num(c.pico,2)} kW e surto de ${num(c.surto,2)} kW considerados</td></tr></tbody></table>
    <p class="small">A autonomia depende das cargas efetivamente ligadas e do estado de carga da bateria no momento da falta. Equipamentos fora desta lista, ou com potência maior que a informada, exigem novo dimensionamento. A confirmação das cargas pelo cliente integra o aceite desta proposta.</p>`];
 }
 function hibBind(){
+  const bsel=$("hib-bat-sel"); bsel.innerHTML='<option value="">Outra (preencher abaixo)</option>'+HIB_BAT.map(b=>`<option value="${b.id}">${esc(b.nome)}</option>`).join("");
+  bsel.value=HIB_BAT[0].id;
+  bsel.addEventListener("change",()=>{ const b=hibBatSel(); if(b){ $("hib-bat-nome").value=b.nome; $("hib-bat-kwh").value=b.kwh; $("hib-bat-kw").value=b.kw; $("hib-tensao").value=b.tensao; $("hib-dod").value=b.dod; } hibRender(); calc(); });
   const sel=$("hib-lib"); sel.innerHTML=HIB_LIB.map((x,i)=>`<option value="${i}">${esc(x.n)} · ${x.w} W</option>`).join("");
   $("hib-add").onclick=()=>{ const l=HIB_LIB[+sel.value]; HIB.cargas.push({n:l.n,q:1,w:l.w,f:l.f,h:l.h,c:l.c}); hibRender(); calc(); };
   $("hib-rows").addEventListener("input",e=>{ const tr=e.target.closest("tr[data-i]"); if(!tr) return; const x=HIB.cargas[+tr.dataset.i], k=e.target.dataset.k; if(!x||!k) return;
@@ -2282,6 +2301,6 @@ function hibBind(){
 }
 const _snapH=snapshot; snapshot=function(){ const s=_snapH.apply(this,arguments); s.hib=clone(HIB.cargas); return s; };
 const _restH=restore; restore=function(s){ _restH.apply(this,arguments); HIB.cargas=(s&&s.hib)?clone(s.hib):[]; try{ hibRender(); }catch(e){} };
-hibBind(); hibRender();
+hibBind(); if(!$("hib-bat-nome").value){ const b=hibBatSel(); if(b) $("hib-bat-nome").value=b.nome; } hibRender();
 
 integrar();
