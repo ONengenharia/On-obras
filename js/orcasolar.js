@@ -532,7 +532,7 @@ $("tbl-dre").addEventListener("input", e => {
 
 function renderPreco(){
   const r=R; if(!r) return; const P=r.P;
-  { const kr=$("kit-ref"); if(kr) kr.innerHTML = v("kitcot")>0 ? "Kit cotado em uso no preço: <b>"+brl(v("kitcot"))+"</b> · catálogo (referência): "+brl(r.Kest) : "<b class=neg>Informe o valor do kit cotado.</b> A base de preço de todos os orçamentos é o valor do kit; sem ele, o preço usa uma estimativa do catálogo (sem preços atualizados) e não serve para proposta."; }
+  { const kr=$("kit-ref"); if(kr) kr.innerHTML = v("kitcot")>0 ? "Kit cotado em uso no preço: <b>"+brl2(v("kitcot"))+"</b> · catálogo (referência): "+brl2(r.Kest) : "<b class=neg>Informe o valor do kit cotado.</b> A base de preço de todos os orçamentos é o valor do kit; sem ele, o preço usa uma estimativa do catálogo (sem preços atualizados) e não serve para proposta."; }
   if(typeof kitMargemSync==="function") kitMargemSync(r);
   { const ka=$("kit-aviso"); if(ka) ka.style.display = v("kitcot")>0 ? "none" : ""; }
   $("tbl-kit").innerHTML = `<thead><tr><th>Item</th><th>Qtd.</th><th>Unitário</th><th>Total</th></tr></thead><tbody>`+
@@ -586,7 +586,7 @@ function renderPreco(){
     <div class="kpi"><div class="l">Preço para ${num(P.meta*100)}% líquido</div><div class="v">${P.alvo?brl(P.alvo):"-"}</div><div class="s">${diffAlvo===null?"meta inviável com esses percentuais":(diffAlvo>=0?"você está "+brl(diffAlvo)+" acima":"faltam "+brl(-diffAlvo))}</div></div>
     <div class="kpi"><div class="l">Preço mínimo (resultado zero)</div><div class="v">${P.minimo?brl(P.minimo):"-"}</div><div class="s">${P.minimo?num(P.minimo/(r.kwp*1000),2)+" R$/Wp":""}</div></div>
     <div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl(P.lista*(1-v("desclib")/100))}</div><div class="s">${num(P.lista*(1-v("desclib")/100)/(r.kwp*1000),2)} R$/Wp · tabela ${brl(P.lista)}</div></div>`;
-  $("preco-kpis").innerHTML = `<div class="kpi main"><div class="l">Preço de venda ${P.desc>0?"(após desconto)":""}</div><div class="v">${brl(recP)}</div><div class="s">${brl2(wpPrice)} por Wp</div></div><div class="kpi"><div class="l">Preço de tabela</div><div class="v">${brl(P.lista)}</div><div class="s">${num(P.lista/(r.kwp*1000),2)} R$/Wp</div></div><div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl(P.lista*(1-v("desclib")/100))}</div><div class="s">abaixo disso, só com aprovação</div></div>`;
+  $("preco-kpis").innerHTML = `<div class="kpi main"><div class="l">Preço de venda ${P.desc>0?"(após desconto)":""}</div><div class="v">${brl2(recP)}</div><div class="s">${brl2(wpPrice)} por Wp</div></div><div class="kpi"><div class="l">Preço de tabela</div><div class="v">${brl2(P.lista)}</div><div class="s">${num(P.lista/(r.kwp*1000),2)} R$/Wp</div></div><div class="kpi"><div class="l">Preço mínimo liberado (−${num(v("desclib"),1)}%)</div><div class="v">${brl2(P.lista*(1-v("desclib")/100))}</div><div class="s">abaixo disso, só com aprovação</div></div>`;
 
   const segs=[{l:"Kit",v:P.K,c:"--s1"},{l:"Impostos e comissão",v:dedP,c:"--s2"},{l:"Custos da obra",v:obP,c:"--s3"},{l:"Rateio",v:raP,c:"--s4"},{l:"Resultado",v:Math.max(liqP,0),c:"--s5"}];
   const tot=segs.reduce((s,x)=>s+x.v,0)||1;
@@ -1884,7 +1884,7 @@ function kitMargemSync(r){
   const P=r.P, mr=P.lista-P.K, pc=P.lista>0?mr/P.lista*100:0, a=document.activeElement;
   if(a!==$("km-pct")) $("km-pct").value=(Math.round(pc*10)/10);
   if(a!==$("km-rs")) $("km-rs").value=Math.round(mr*100)/100;
-  $("kit-soma").innerHTML=`<span>Kit <b>${brl(P.K)}</b></span><span>+</span><span>Margem <b style="color:var(--accent)">${brl(mr)}</b> (${num(pc,1)}%)</span><span>=</span><span>Preço de lista <b>${brl(P.lista)}</b></span>${P.desc>0?`<span class="mini">· com desconto: ${brl(P.receita)}</span>`:""}`;
+  $("kit-soma").innerHTML=`<span>Kit <b>${brl2(P.K)}</b></span><span>+</span><span>Margem <b style="color:var(--accent)">${brl2(mr)}</b> (${num(pc,1)}%)</span><span>=</span><span>Preço de lista <b>${brl2(P.lista)}</b></span>${P.desc>0?`<span class="mini">· com desconto: ${brl2(P.receita)}</span>`:""}`;
 }
 function kmAplicar(modo,val){
   $("origem").value="preco"; $("metodo").value=modo; $("metodo").dispatchEvent(new Event("change",{bubbles:true}));
