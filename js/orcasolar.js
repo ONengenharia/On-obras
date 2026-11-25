@@ -1452,6 +1452,7 @@ async function integrar(){
   if(ro.data&&ro.data.dados&&ro.data.dados.f){ restore(ro.data.dados); setSv("Orçamento carregado · "+new Date(ro.data.atualizado_em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})); }
   else if(neg){
     $("cliente").value=neg.cliente||neg.titulo||""; $("pcid").value=neg.cidade||""; if(neg.cidade){ const mc=aplicarCidade(neg.cidade); if(mc&&!mc.exato) setSv("Cidade fora da lista: usei "+mc.k+" como irradiação. Ajuste se quiser."); }
+    try{ zerarNovo(); }catch(e){ console.error(e); }
     setSv("Novo orçamento para "+(neg.cliente||neg.titulo||"o negócio"));
   }
   if(neg&&neg.cidade&&!$("pcid").value) aplicarCidade(neg.cidade);
@@ -2407,5 +2408,24 @@ function hibBind(){
 const _snapH=snapshot; snapshot=function(){ const s=_snapH.apply(this,arguments); s.hib=clone(HIB.cargas); return s; };
 const _restH=restore; restore=function(s){ _restH.apply(this,arguments); HIB.cargas=(s&&s.hib)?clone(s.hib):[]; try{ hibRender(); }catch(e){} };
 hibBind(); if(!$("hib-bat-nome").value){ const b=hibBatSel(); if(b) $("hib-bat-nome").value=b.nome; } hibRender();
+
+/* ---- negócio novo: campos de entrada vêm em branco (sem valores herdados) ---- */
+var NOVO_ZERO=false;
+const _rs0=refreshSelects;
+refreshSelects=function(){
+  const ids=["modsel","telsel","concsel"], cur=ids.map(id=>$(id).value);
+  _rs0.apply(this,arguments);
+  if(NOVO_ZERO) ids.forEach((id,i)=>{ const el=$(id); if(!el.querySelector('option[value=""]')) el.insertAdjacentHTML("afterbegin",'<option value="">Selecione…</option>'); if(!cur[i]) el.value=""; });
+};
+const _cmp0=compute;
+compute=function(){
+  if(NOVO_ZERO&&(!$("padrao").value||!(v("tarifa")>0)||!(v("consumo")>0))) return null;
+  return _cmp0.apply(this,arguments);
+};
+function zerarNovo(){
+  NOVO_ZERO=true;
+  ["modsel","telsel","concsel","pclasse","padrao","tensao"].forEach(id=>{ const el=$(id); if(!el.querySelector('option[value=""]')) el.insertAdjacentHTML("afterbegin",'<option value="">Selecione…</option>'); el.value=""; });
+  $("tarifa").value=""; $("consumo").value=""; $("consumo").placeholder="kWh";
+}
 
 integrar();
