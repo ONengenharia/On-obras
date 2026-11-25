@@ -2177,7 +2177,8 @@ const HIB_LIB=[
 
 /* ---- catálogo embutido (dados técnicos dos datasheets; sem preço) ---- */
 const HIB_INV=[
- {id:"h_deye6",nome:"Deye híbrido monofásico 6 kW",kw:6,kwAC:6,pendente:true},
+ {id:"h_deye5",nome:"Deye SUN-5K-SG04LP1-EU-SM2 (híbrido 5 kW)",kw:5,kwAC:5,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 8 kWp de entrada FV"},
+ {id:"h_deye6",nome:"Deye SUN-6K-SG04LP1-EU-SM2 (híbrido 6 kW)",kw:6,kwAC:6,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 9,6 kWp de entrada FV"},
  {id:"h_deye75",nome:"Deye SUN-7.5K-SG05LP1-EU-SM2 (híbrido 7,5 kW)",kw:7.5,kwAC:8,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (2+2 strings), 150–425 V, até 12,8 kWp de entrada FV"}
 ];
 const HIB_BAT=[
@@ -2193,7 +2194,7 @@ function hibDeye(){
   const r=R; let lig=""; try{ lig=propInfo().lig||""; }catch(e){}
   const kwOn=r&&r.inv?r.inv.kw*(r.qtdInv||1):0, mono=!/tri/i.test(lig);
   if(!mono) return {nome:"Inversor híbrido trifásico (modelo a definir)",kw:0,tri:true,kwOn};
-  const h=kwOn<=6.0001?HIB_INV[0]:HIB_INV[1];
+  const h=kwOn<=5.0001?HIB_INV[0]:kwOn<=6.0001?HIB_INV[1]:HIB_INV[2];
   return Object.assign({},h,{kw:h.kwAC,kwNom:h.kw,kwOn,mono});
 }
 function hibOpcaoB(){
@@ -2253,7 +2254,7 @@ function hibRes(){
     <tr><td>Consumo total das cargas</td><td>${num(c.whDia/1000,1)} kWh/dia (críticas: ${num(c.whCrit/1000,1)} kWh/dia)</td></tr>
     <tr><td>Potência média das críticas</td><td>${num(c.pMed,2)} kW</td></tr>
     <tr><td>Capacidade nominal necessária</td><td>${num(c.capReq,1)} kWh (energia ÷ (DoD ${num(c.dod*100,0)}% × eficiência ${num(c.ef*100,0)}%))</td></tr>
-    <tr><td>Inversor híbrido (pela regra ON)</td><td><b>${esc(c.dy.nome)}</b> · on-grid de ${num(c.dy.kwOn,1)} kW (até 6 kW → 6 kW; acima → 7,5 kW)</td></tr>
+    <tr><td>Inversor híbrido (pela regra ON)</td><td><b>${esc(c.dy.nome)}</b> · on-grid de ${num(c.dy.kwOn,1)} kW (até 5 kW → 5 kW; até 6 kW → 6 kW; acima → 7,5 kW)</td></tr>
     <tr><td>Potência exigida pelas cargas</td><td>${num(c.pNec,2)} kW (folga ${num(c.folga,2)}×; surto ${num(c.sx,1)}× por alguns segundos)</td></tr>
     <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,1)} kWh = ${num(c.capInst,1)} kWh</b> (${c.nCap} pela energia, ${c.nPot} pela potência)</td></tr>
     <tr><td>Autonomia real do banco</td><td>${num(c.autH,1)} h com as cargas críticas</td></tr>
