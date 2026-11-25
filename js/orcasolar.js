@@ -2442,9 +2442,17 @@ refreshSelects=function(){
 };
 const _cmp0=compute;
 compute=function(){
+  if(typeof EST!=="undefined"&&EST.cur==="off"){
+    /* off-grid não usa fatura: valores de apoio só para o motor, sem tocar nos campos do cliente */
+    const ids=["tarifa","consumo","padrao"], bk=ids.map(i=>$(i).value);
+    if(!(v("tarifa")>0)) $("tarifa").value="1"; if(!(v("consumo")>0)) $("consumo").value="500"; if(!$("padrao").value) $("padrao").selectedIndex=Math.min(1,$("padrao").options.length-1);
+    try{ return _cmp0.apply(this,arguments); } finally{ ids.forEach((i,k)=>{ $(i).value=bk[k]; }); }
+  }
   if(NOVO_ZERO&&(!$("padrao").value||!(v("tarifa")>0)||!(v("consumo")>0))) return null;
   return _cmp0.apply(this,arguments);
 };
+(function(){ const st=document.createElement("style"); st.textContent=
+ "body.est-off label:has(#tarifa),body.est-off label:has(#fiob),body.est-off label:has(#consumo),body.est-off label:has(#meta),body.est-off label:has(#reaj),body.est-off label:has(#injmax),body.est-off label:has(#padrao),body.est-off #view-ent details:has(#cm-grid),body.est-off #view-sis>section.card:first-of-type,body.est-off #view-sis section.card:has(#tbl-conta),body.est-off #view-sis section.card:has(#tbl-tec),body.est-off #view-preco section.card:has(#ret-kpis){display:none!important}"; document.head.appendChild(st); })();
 function zerarNovo(){
   NOVO_ZERO=true;
   ["modsel","telsel","concsel","pclasse","padrao","tensao"].forEach(id=>{ const el=$(id); if(!el.querySelector('option[value=""]')) el.insertAdjacentHTML("afterbegin",'<option value="">Selecione…</option>'); el.value=""; });
@@ -2478,6 +2486,7 @@ function estGo(to){
   try{ renderPreco(); }catch(e){} calc();
 }
 function estUi(){
+  document.body.classList.toggle("est-off",typeof EST!=="undefined"&&EST.cur==="off");
   const bar=$("est-bar"); if(!bar) return;
   bar.querySelectorAll("[data-est]").forEach(b=>{ const k=b.dataset.est, on=EST.cur===k; b.classList.toggle("alt",!on); b.setAttribute("aria-pressed",on);
     const bloq=!ISADM&&k!=="on"; b.disabled=bloq;
