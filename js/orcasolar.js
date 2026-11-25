@@ -565,7 +565,7 @@ function renderPreco(){
   out("liq","Resultado líquido",liqP,liqE,false,"total");
 
   const act = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.real : null;
-  $("tbl-dre").innerHTML = `<thead><tr><th>Item</th><th>Previsto</th><th>% da receita</th><th>Realizado</th><th>Desvio</th></tr></thead><tbody>` +
+  $("tbl-dre").innerHTML = `<thead><tr><th>Item</th><th>Modelo (previsto)</th><th>% da receita</th><th>Realizado (preencher)</th><th>Desvio</th></tr></thead><tbody>` +
     rows.map(x=>{
       const dev = x.eff-x.prev;
       const bad = x.cost ? dev>0.005 : dev<-0.005;
