@@ -554,10 +554,11 @@ async function painel(id){
     const k=contas();
     root.innerHTML=`<div class="app full">${topo(C.titulo,`${esc([C.cliente,C.cidade].filter(Boolean).join(" · "))} · previsto da v${(C.previsto&&C.previsto.versao)||1} do orçamento${C.previsto&&C.previsto.gerado_em?" em "+fdata(C.previsto.gerado_em):""}`,
       `<div class="tot"><div class="eye">${k.prevEsc-k.esc>=0?"Economia no material":"Material acima do previsto"}</div><div class="v" style="color:${k.prevEsc-k.esc>=0?"#7ee2a8":"#ffb4ab"}">${k.ne?brl(Math.abs(k.prevEsc-k.esc)):"—"}</div><div class="eye">${k.ne?pct(k.prevEsc?Math.abs(k.prevEsc-k.esc)/k.prevEsc*100:0)+" sobre o previsto dos itens escolhidos":"escolha os fornecedores"}</div></div>
-       <div class="tools">${C.orcamento_id&&ADM?`<a class="btn" href="orcarede.html?id=${C.orcamento_id}">Orçamento</a>`:""}<button class="btn" id="bSt">${C.status==="concluida"?"Reabrir":"✓ Concluir compras"}</button></div>
+       <div class="tools"><button class="btn" id="bHist" title="Quem alterou o quê e quando">🕘 Histórico</button>${C.orcamento_id&&ADM?`<a class="btn" href="orcarede.html?id=${C.orcamento_id}">Orçamento</a>`:""}<button class="btn" id="bSt">${C.status==="concluida"?"Reabrir":"✓ Concluir compras"}</button></div>
        <nav class="steps">${[["painel","Painel"],["comparativo","Comparativo"],["cotacoes",`Cotações (${CT.length})`],["pedidos",`Pedidos / OC (${PD.length})`],["dre","Gastos / DRE"]].map(([a,l],i)=>`<button data-a="${a}" class="${aba===a?"on":""}"><b>${i+1}</b>${l}</button>`).join("")}</nav>`)}
      <div id="full"></div></div>`;
     $$("[data-a]").forEach(b=>b.onclick=()=>{aba=b.dataset.a;try{sessionStorage.setItem("cmp.aba."+id,aba)}catch(e){}shell()});
+    $("#bHist").onclick=abrirHist;
     $("#bSt").onclick=async()=>{const s=C.status==="concluida"?"aberta":"concluida";await chk(O.from("compras").update({status:s}).eq("id",id));C.status=s;shell()};
     ({painel:tPainel,comparativo:tComp,cotacoes:tCot,pedidos:tPed,dre:tDre}[aba]||tPainel)();const sc=document.querySelector(".cmpsc");if(sc&&keep){sc.scrollTop=keep[0];sc.scrollLeft=keep[1]}window.scrollTo(0,py)}
 
@@ -683,7 +684,7 @@ async function painel(id){
     let sPE=0,sE=0,sEn=0;L.forEach(i=>{const v=vEsc(i);if(v!=null){sPE+=qc(i)*(+i.preco_previsto||0);sE+=qc(i)*v;sEn++}});
     $("#full").innerHTML=`<div class="wrap2 wide3"><div class="card">
       <div class="row"><h2>Comparativo por item</h2><div class="tools">
-        <button class="btn sm" id="cBase" title="Envia os preços escolhidos nesta compra para a base de materiais (histórico de preços)">📥 Atualizar base de orçamento</button><button class="btn sm" id="cRes" title="Lista simples: item, quantidade e de onde vem (estoque ou empresa)">📋 Resumir comparações</button><button class="btn sm pri" id="cMin" title="Para os itens sem escolha, escolhe o fornecedor mais barato entre os selecionados">Escolher o mais barato</button><button class="btn sm" id="cLimpa">Limpar escolhas</button></div></div>
+        <button class="btn sm" id="cAddMat" title="Adicionar material à compra ou reativar um item retirado">＋ Material</button><button class="btn sm" id="cBase" title="Envia os preços escolhidos nesta compra para a base de materiais (histórico de preços)">📥 Atualizar base de orçamento</button><button class="btn sm" id="cRes" title="Lista simples: item, quantidade e de onde vem (estoque ou empresa)">📋 Resumir comparações</button><button class="btn sm pri" id="cMin" title="Para os itens sem escolha, escolhe o fornecedor mais barato entre os selecionados">Escolher o mais barato</button><button class="btn sm" id="cLimpa">Limpar escolhas</button></div></div>
       <div class="filtros">
         <input class="inp" id="cQ" placeholder="Material, código ou OC" value="${esc(fq)}">
         <select class="inp" id="cF">${[["","Todos os itens"],["naoesc","Sem escolha"],["esc","Já escolhidos"],["barato","Escolhidos no mais barato"],["caro","Escolhidos mais caros ⚠"],["sem","Sem cotação"],["semoc","Pendentes (sem OC)"],["oc","Com OC (comprados)"],["estoque","Com estoque (qualquer)"],["estT","Do estoque — cobre tudo"],["estP","Estoque parcial"],["sem0","Sem estoque"]].map(([v,l])=>`<option value="${v}" ${ff===v?"selected":""}>${l}</option>`).join("")}</select>
@@ -696,7 +697,7 @@ async function painel(id){
       <div class="cmpsc" style="overflow:auto;max-height:calc(100vh - 330px)"><table class="tbl cmp"><thead><tr><th>Material</th><th class="n">Orçado</th><th class="n">Estoque</th><th class="n">A comprar</th><th class="n">Previsto</th>${VC.map(c=>`<th class="n fcol" title="${esc(c.documento||"")}">${esc(c.fornecedor_nome)}<small>${c.frete?"frete "+brl(c.frete):""}</small></th>`).join("")}<th class="n">Escolhido</th><th class="n">Total</th><th class="n">vs previsto</th></tr></thead><tbody>
       ${L.map(i=>{const f=faixa(i,VC),fa=faixa(i),e=vEsc(i),q=qc(i),caro=fa&&e!=null&&e>fa.min.v+1e-6;
         const et=+i.estoque>0,eT=et&&q===0;return `<tr class="${i.oc?"oc":eT?"estT":caro?"caro":et?"estP":""} ${q?"":"ina"}"><td><b>${esc(i.descricao)}</b>${eT?` <span class="etq">📦 DO ESTOQUE</span>`:et?` <span class="etq p">📦 estoque parcial</span>`:""}<span class="sm">${esc(i.material_codigo||"")}${i.subgrupo?" · "+esc(i.subgrupo):""}${i.oc?` · <b class="ocb">OC ${esc(i.oc)}</b>`:""}</span>${caro?`<span class="warn">⚠ ${brl((e-fa.min.v)*q)} mais caro que ${esc(nomeC(fa.min.c))}${i.motivo?" · motivo: "+esc(i.motivo):""}</span>`:""}</td>
-          <td class="n">${num(i.qtd,2)} ${esc(i.unidade||"")}</td><td class="n"><input class="inp n est" data-est="${i.id}" value="${+i.estoque?num(i.estoque,3):""}" placeholder="0" inputmode="decimal" ${i.oc?"disabled":""}></td><td class="n"><b>${num(q,2)}</b></td>
+          <td class="n"><input class="inp n est" data-qt="${i.id}" value="${num(i.qtd,2)}" inputmode="decimal" ${i.oc?"disabled title=\"Item com OC: quantidade travada\"":"title=\"Ajustar quantidade (0 retira o item)\""} style="width:74px"> <span class="sm" style="display:inline">${esc(i.unidade||"")}</span></td><td class="n"><input class="inp n est" data-est="${i.id}" value="${+i.estoque?num(i.estoque,3):""}" placeholder="0" inputmode="decimal" ${i.oc?"disabled":""}></td><td class="n"><b>${num(q,2)}</b></td>
           <td class="n">${i.preco_previsto!=null?brl(i.preco_previsto):"—"}</td>
           ${VC.map(c=>{const v=(PM[i.id]||{})[c.id];if(!(v>0))return `<td class="n"><button class="addp" data-ap="${i.id}" data-c="${c.id}" title="Digitar preço">＋</button></td>`;
             const cls=f&&f.ps.length>1?(v===f.min.v?"cmin":v===f.max.v?"cmax":""):"";const on=i.cotacao_escolhida==c.id;
@@ -711,6 +712,9 @@ async function painel(id){
     if($("#cfm"))$("#cfm").onchange=e=>{fmodo=e.target.value;tComp()};
     $$("[data-sc]").forEach(b=>b.onclick=()=>{const v=b.dataset.sc;if(v==="all")selC=null;else{const cid=+v;if(!selC)selC=new Set(CT.map(c=>c.id));selC.has(cid)?selC.delete(cid):selC.add(cid);if(!selC.size||selC.size===CT.length)selC=null}
       try{sessionStorage.setItem("cmp.sel."+id,JSON.stringify(selC?[...selC]:null))}catch(e){}tComp()});
+    $$("[data-qt]").forEach(inp=>inp.onchange=async()=>{const it=IT.find(x=>x.id==inp.dataset.qt),v=Math.max(0,pnum(inp.value)),antes=+it.qtd;if(v===antes)return;
+      await chk(O.from("compra_itens").update({qtd:v}).eq("id",it.id));it.qtd=v;await logC(v===0?"Item retirado":"Quantidade alterada",it.descricao,{qtd:antes},{qtd:v});shell()});
+    if($("#cAddMat"))$("#cAddMat").onclick=addMaterial;
     $$("[data-est]").forEach(inp=>inp.onchange=async()=>{const it=IT.find(x=>x.id==inp.dataset.est);const v=Math.max(0,pnum(inp.value));await chk(O.from("compra_itens").update({estoque:v}).eq("id",it.id));it.estoque=v;tComp()});
     $$("[data-es]").forEach(b=>b.onclick=()=>escolher(IT.find(i=>i.id==b.dataset.es),+b.dataset.c));
     $$("[data-ap]").forEach(b=>b.onclick=()=>precoManual(IT.find(i=>i.id==b.dataset.ap),+b.dataset.c));
@@ -771,6 +775,66 @@ async function painel(id){
       const ix=PR.findIndex(p=>p.cotacao_id==cid&&p.item_id==i.id);if(ix>=0)PR[ix]=r;else PR.push(r);PM=P();
       if(i.cotacao_escolhida==cid){await salvaEsc(i,cid,nv,i.motivo)}shell()},"Salvar")}
 
+  /* ---- histórico automático (quem, o quê, antes → depois, quando) ---- */
+  let LOG=[];
+  async function logC(acao,descricao,antes,depois){try{const r=await O.from("compra_log").insert({compra_id:id,user_id:perfil.id,user_nome:quem(),acao,descricao,antes:antes==null?null:antes,depois:depois==null?null:depois}).select("*").single();if(r.data)LOG.unshift(r.data)}catch(e){console.warn("log",e)}}
+  const dtl=v=>{try{return new Date(v).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(e){return""}};
+  const difTxt=(a,b)=>{const ks=[...new Set([...Object.keys(a||{}),...Object.keys(b||{})])];return ks.map(k=>{const f=v=>v==null?"—":(typeof v==="number"?num(v,k==="preco"?4:2):String(v));return `${k==="preco"?"preço":k}: ${f((a||{})[k])} → ${f((b||{})[k])}`}).join(" · ")};
+  async function abrirHist(){
+    const r=await O.from("compra_log").select("*").eq("compra_id",id).order("em",{ascending:false}).limit(500);
+    const faltaTab=r.error&&/compra_log/.test(r.error.message||"");LOG=r.data||[];
+    const md=modal(`<h2>Histórico de alterações</h2><p class="note">Registrado automaticamente: quem alterou, o que mudou e quando.</p>${faltaTab?'<p class="note" style="color:var(--warn)">O histórico ainda não está habilitado no banco.</p>':""}
+      <div style="overflow:auto;max-height:60vh"><table class="tbl"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody>${LOG.map(l=>`<tr><td class="mono" style="white-space:nowrap">${dtl(l.em)}</td><td>${esc(l.user_nome||"")}</td><td><b>${esc(l.acao)}</b></td><td>${esc(l.descricao||"")}<span class="sm">${esc(difTxt(l.antes,l.depois))}</span></td></tr>`).join("")||'<tr><td colspan="4" class="note">Nenhuma alteração registrada ainda.</td></tr>'}</tbody></table></div>`,()=>{},"Fechar");
+  }
+  /* ---- adicionar / reativar material pelo Comparativo ---- */
+  let MATB=null;
+  async function addMaterial(){
+    if(!MATB){const r=await O.from("materiais").select("codigo,nome,unidade,subgrupo").eq("ativo",true).limit(6000);MATB=r.data||[]}
+    const md=modal(`<h2>Adicionar material à compra</h2><p class="note">Procure na base de materiais. Se o material já está na compra (inclusive um item retirado), só a quantidade é ajustada.</p>
+      <datalist id="dlMB">${MATB.map(m=>`<option value="${esc(m.codigo)} · ${esc(m.nome)}">`).join("")}</datalist>
+      <label class="fld">Material<input name="mat" list="dlMB" required autocomplete="off" placeholder="Código ou nome (ou escreva um item livre)"></label>
+      <div class="grid2"><label class="fld">Quantidade<input name="qtd" inputmode="decimal" required></label><label class="fld">Preço previsto unit. (R$)<input name="pv" inputmode="decimal" placeholder="0"></label></div>`,async f=>{
+      const raw=(f.mat||"").trim(),cod=raw.split(" · ")[0].trim(),m=MATB.find(x=>x.codigo===cod),q=pnum(f.qtd);
+      if(!(q>0)){toast("Informe a quantidade.");return false}
+      const ex=m?IT.find(i=>i.material_codigo===m.codigo):null;
+      if(ex){const antes={qtd:+ex.qtd};await chk(O.from("compra_itens").update({qtd:q}).eq("id",ex.id));ex.qtd=q;await logC(antes.qtd>0?"Quantidade alterada":"Item reativado",ex.descricao,antes,{qtd:q});shell();return}
+      const pv=pnum(f.pv)||0,ordem=Math.max(0,...IT.map(i=>+i.ordem||0))+1;
+      const row={compra_id:id,material_codigo:m?m.codigo:null,descricao:m?m.nome:raw,unidade:m?m.unidade:"UN",qtd:q,preco_previsto:pv,subgrupo:m?m.subgrupo:null,ordem};
+      const r=await chk(O.from("compra_itens").insert(row).select("*").single());IT.push(r);await logC("Material adicionado",r.descricao,null,{qtd:q,preco:pv});shell()},"Adicionar");
+  }
+  /* ---- ajustar uma cotação sem importar de novo ---- */
+  function editCot(c){
+    const m=document.createElement("div");m.className="modal";
+    const W=PR.filter(p=>p.cotacao_id==c.id).map(p=>({item:p.item_id,pu:+p.preco_unit,orig:+p.preco_unit,del:false,novo:false})).filter(w=>IT.find(i=>i.id==w.item));
+    const meta={documento:c.documento||"",data:c.data||"",prazo:c.prazo||"",obs:c.obs||""};
+    const draw=()=>{const livres=ativos().filter(i=>!W.some(w=>w.item==i.id&&!w.del));
+      m.innerHTML=`<div class="mbox wide" style="width:min(900px,96vw)"><div class="row"><h2>Ajustar cotação · ${esc(c.fornecedor_nome)}</h2><button class="btn" data-xm>Fechar</button></div>
+       <p class="note">Corrija preços, retire ou inclua itens desta cotação (negociação, troca de item…). Não precisa importar de novo. Tudo fica no histórico.</p>
+       <div class="grid3f"><label class="fld">Documento<input id="ecD" value="${esc(meta.documento)}"></label><label class="fld">Data<input type="date" id="ecT" value="${esc(meta.data)}"></label><label class="fld">Prazo<input id="ecP" value="${esc(meta.prazo)}"></label></div>
+       <div style="overflow:auto;max-height:42vh"><table class="tbl"><thead><tr><th>Item</th><th class="n">Qtd</th><th class="n">Valor unit.</th><th class="n">Total</th><th></th></tr></thead><tbody>${W.map((w,k)=>{const i=IT.find(x=>x.id==w.item),bl=!!i.oc;return `<tr class="${w.del?"ina":""}"><td>${esc(i.descricao)}${w.novo?' <span class="sm">novo nesta cotação</span>':""}${bl?' <span class="sm">com OC: preço travado</span>':""}</td><td class="n">${num(+i.qtd,2)} ${esc(i.unidade||"")}</td><td class="n"><input class="inp n" data-ep="${k}" value="${num(w.pu,4)}" inputmode="decimal" style="width:110px" ${w.del||bl?"disabled":""}></td><td class="n">${brl(w.pu*(+i.qtd))}</td><td class="n">${bl?"":`<button class="xb" data-ed="${k}" title="${w.del?"Desfazer":"Retirar da cotação"}">${w.del?"↺":"🗑"}</button>`}</td></tr>`}).join("")||'<tr><td colspan="5" class="note">Sem itens.</td></tr>'}</tbody></table></div>
+       <div style="display:flex;gap:8px;align-items:center;margin:10px 0"><select class="inp" id="ecI" style="flex:1"><option value="">+ Incluir item nesta cotação…</option>${livres.map(i=>`<option value="${i.id}">${esc(i.descricao)} (${num(+i.qtd,2)} ${esc(i.unidade||"")})</option>`).join("")}</select><input class="inp n" id="ecV" placeholder="Valor unit. R$" inputmode="decimal" style="width:130px"><button class="btn" id="ecA" type="button">Incluir</button></div>
+       <div class="row"><span class="note">${W.filter(w=>!w.del).length} item(ns) · ${brl(W.filter(w=>!w.del).reduce((t,w)=>t+w.pu*(+(IT.find(i=>i.id==w.item)||{}).qtd||0),0))}</span><button class="btn pri" id="ecOk">Salvar ajustes</button></div></div>`;
+      m.querySelector("[data-xm]").onclick=()=>m.remove();
+      m.querySelectorAll("[data-ep]").forEach(x=>x.onchange=()=>{const v=pnum(x.value);if(v>0)W[+x.dataset.ep].pu=v;draw()});
+      m.querySelectorAll("[data-ed]").forEach(b=>b.onclick=()=>{const w=W[+b.dataset.ed];if(w.novo){W.splice(+b.dataset.ed,1)}else w.del=!w.del;draw()});
+      m.querySelector("#ecA").onclick=()=>{const it=+m.querySelector("#ecI").value,v=pnum(m.querySelector("#ecV").value);if(!it||!(v>0)){toast("Escolha o item e informe o valor.");return}
+        const ex=W.find(w=>w.item==it);if(ex){ex.del=false;ex.pu=v}else W.push({item:it,pu:v,orig:null,del:false,novo:true});draw()};
+      m.querySelector("#ecOk").onclick=async()=>{meta.documento=m.querySelector("#ecD").value;meta.data=m.querySelector("#ecT").value;meta.prazo=m.querySelector("#ecP").value;
+        const up={documento:meta.documento.trim()||null,data:meta.data||null,prazo:meta.prazo.trim()||null};
+        if(up.documento!==(c.documento||null)||(up.data||null)!==(c.data||null)||up.prazo!==(c.prazo||null)){await chk(O.from("compra_cotacoes").update(up).eq("id",c.id));Object.assign(c,up);await logC("Cotação editada","Cotação de "+c.fornecedor_nome,null,up)}
+        for(const w of W){const i=IT.find(x=>x.id==w.item);
+          if(w.del&&!w.novo){await chk(O.from("compra_precos").delete().eq("cotacao_id",c.id).eq("item_id",i.id));PR=PR.filter(p=>!(p.cotacao_id==c.id&&p.item_id==i.id));
+            if(i.cotacao_escolhida==c.id&&!i.oc){await chk(O.from("compra_itens").update({cotacao_escolhida:null,preco_escolhido:null}).eq("id",i.id));i.cotacao_escolhida=null;i.preco_escolhido=null}
+            await logC("Item retirado da cotação",c.fornecedor_nome+" · "+i.descricao,{preco:w.orig},null)}
+          else if(!w.del&&(w.novo||w.pu!==w.orig)){const r=await chk(O.from("compra_precos").upsert({cotacao_id:c.id,item_id:i.id,preco_unit:w.pu,qtd:+i.qtd,texto:"ajustado"},{onConflict:"cotacao_id,item_id"}).select("*").single());
+            const ix=PR.findIndex(p=>p.cotacao_id==c.id&&p.item_id==i.id);if(ix>=0)PR[ix]=r;else PR.push(r);
+            if(i.cotacao_escolhida==c.id&&!i.oc){await chk(O.from("compra_itens").update({preco_escolhido:w.pu}).eq("id",i.id));i.preco_escolhido=w.pu}
+            await logC(w.novo?"Item incluído na cotação":"Preço ajustado",c.fornecedor_nome+" · "+i.descricao,w.novo?null:{preco:w.orig},{preco:w.pu})}}
+        PM=P();m.remove();shell()};
+    };
+    draw();document.body.appendChild(m);cmpModal(m);
+  }
+
   /* ---- Cotações ---- */
   function tCot(){
     const pf=porFornecedor();
@@ -778,10 +842,11 @@ async function painel(id){
        <label class="btn pri" style="position:relative;overflow:hidden">⬆ Importar PDF, Excel ou imagem<input type="file" id="cotF" accept=".pdf,.xlsx,.xls,.csv,image/*" multiple style="position:absolute;inset:0;opacity:0"></label><button class="btn" id="cotM">+ Cotação manual</button></div></div>
       <p class="note">O sistema lê a coluna de descrição/item, quantidade e valor unitário, e liga cada linha a um material desta obra. Na revisão você confirma ou corrige; o que você corrigir fica aprendido para as próximas.</p>
       <table class="tbl"><thead><tr><th>Fornecedor</th><th class="hm">Documento</th><th class="hm">Data</th><th class="n">Itens cotados</th><th class="n">Total cotado</th><th class="n">Frete</th><th></th></tr></thead><tbody>
-      ${pf.map(({c,tot,n})=>`<tr><td><b>${esc(c.fornecedor_nome)}</b>${c.prazo?`<span class="sm">prazo ${esc(c.prazo)}</span>`:""}</td><td class="hm">${esc(c.documento||"")}</td><td class="hm">${fdata(c.data)}</td><td class="n">${n}/${ativos().length}</td><td class="n">${brl(tot)}</td><td class="n"><input class="inp n" data-fr="${c.id}" value="${c.frete?num(c.frete,2):""}" placeholder="0" style="width:90px"></td><td class="n"><button class="xb" data-dc="${c.id}" title="Excluir cotação">🗑</button></td></tr>`).join("")||'<tr><td colspan="7" class="note">Nenhuma cotação.</td></tr>'}</tbody></table></div></div>`;
+      ${pf.map(({c,tot,n})=>`<tr><td><b>${esc(c.fornecedor_nome)}</b>${c.prazo?`<span class="sm">prazo ${esc(c.prazo)}</span>`:""}</td><td class="hm">${esc(c.documento||"")}</td><td class="hm">${fdata(c.data)}</td><td class="n">${n}/${ativos().length}</td><td class="n">${brl(tot)}</td><td class="n"><input class="inp n" data-fr="${c.id}" value="${c.frete?num(c.frete,2):""}" placeholder="0" style="width:90px"></td><td class="n"><button class="btn sm" data-ec="${c.id}" title="Ajustar preços e itens desta cotação sem importar de novo">✏️ Ajustar</button> <button class="xb" data-dc="${c.id}" title="Excluir cotação">🗑</button></td></tr>`).join("")||'<tr><td colspan="7" class="note">Nenhuma cotação.</td></tr>'}</tbody></table></div></div>`;
     $("#cotF").onchange=async e=>{const fs=[...e.target.files];e.target.value="";for(const f of fs)await importar(f)};
     $("#cotM").onclick=()=>fornDialog(null,(fid,nome)=>cotManual(fid,nome));
     $$("[data-fr]").forEach(x=>x.onchange=async()=>{const c=CT.find(c=>c.id==x.dataset.fr);c.frete=pnum(x.value);await chk(O.from("compra_cotacoes").update({frete:c.frete}).eq("id",c.id));tCot()});
+    $$("[data-ec]").forEach(b=>b.onclick=()=>editCot(CT.find(c=>c.id==b.dataset.ec)));
     $$("[data-dc]").forEach(b=>b.onclick=()=>{const c=CT.find(c=>c.id==b.dataset.dc);modal(`<h2>Excluir a cotação de ${esc(c.fornecedor_nome)}?</h2><p class="note">Os preços dela somem do comparativo e as escolhas feitas nela são desfeitas.</p>`,async()=>{
       await chk(O.from("compra_cotacoes").delete().eq("id",c.id));CT=CT.filter(x=>x!==c);PR=PR.filter(p=>p.cotacao_id!=c.id);PM=P();IT.forEach(i=>{if(i.cotacao_escolhida==c.id){i.cotacao_escolhida=null;i.preco_escolhido=null}});shell()},"Excluir")})}
 
