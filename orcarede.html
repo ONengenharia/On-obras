@@ -704,12 +704,12 @@ async function config(aba){
        <button class="btn" id="tNovo">+ Tipo de rede</button>`;
       const aplF=()=>{const g=window.__trf||"",q=($("#trQ")?$("#trQ").value:"").toLowerCase().trim();$$("#cDet .tr[data-g]").forEach(e=>{e.style.display=(!g||e.dataset.g===g)&&(!q||e.dataset.q.includes(q))?"":"none"});$$("[data-trg]").forEach(b=>b.classList.toggle("on",b.dataset.trg===g))};
       $$("[data-trg]").forEach(b=>b.onclick=()=>{window.__trf=b.dataset.trg;aplF()});if($("#trQ"))$("#trQ").oninput=aplF;aplF();
-      const form=t=>{const its=t?TRI.filter(i=>i.tipo_rede_id===t.id):[];return `<h2>${t?"Editar":"Novo"} tipo de rede</h2><div class="grid2"><label class="fld">Nome<input name="nome" required value="${esc(t?t.nome:"")}" placeholder="MT compacta 50mm 25kV"></label><label class="fld">Cor<input type="color" name="cor" value="${t?t.cor:PALETA[TRD.length%PALETA.length]}"></label></div>
+      const form=t=>{const its=t?TRI.filter(i=>i.tipo_rede_id===t.id):[];return `<h2>${t?"Editar":"Novo"} tipo de rede</h2><div class="grid2"><label class="fld">Nome<input name="nome" required value="${esc(t?t.nome:"")}" placeholder="MT compacta 50mm 25kV"></label><label class="fld">Cor<input type="color" name="cor" value="${t?t.cor:PALETA[TRD.length%PALETA.length]}"></label><label class="fld">Segmento da obra<select name="seg"><option value="">automático (MT/BT pelo nome)</option>${SEGP.map(x=>`<option ${t&&t.segmento===x.nome?"selected":""}>${esc(x.nome)}</option>`).join("")}</select></label></div>
         <h3 class="h3">Materiais por metro de vão</h3><div id="tIts">${(its.length?its:[{}]).map(i=>trLinha(i)).join("")}</div><button type="button" class="btn sm" id="tAdd">+ material</button>`};
       const trLinha=i=>`<div class="grid3 tl"><input class="inp" list="dlMat" name="m" placeholder="Material" value="${i.material_codigo?esc(i.material_codigo+" · "+((M[i.material_codigo]||{}).nome||"")):""}"><input class="inp" name="x" placeholder="Multiplicador" value="${i.multiplicador!=null?num(i.multiplicador,3):"1"}"><button type="button" class="btn sm" data-rm>✕</button></div>`;
       const abre=t=>{const md=modal(form(t),async(f,m)=>{const L=$$(".tl",m).map(r=>({c:codDe(r.querySelector("[name=m]").value),x:pnum(r.querySelector("[name=x]").value)})).filter(r=>r.c);
           if(L.some(r=>!M[r.c])){toast("Há material que não está na base.");return false}
-          let id=t&&t.id;const row={concessionaria_id:null,nome:f.nome.trim(),cor:f.cor,pasta_id:null};
+          let id=t&&t.id;const row={concessionaria_id:null,nome:f.nome.trim(),cor:f.cor,pasta_id:null,segmento:f.seg||null};
           if(id)await chk(O.from("tipos_rede").update(row).eq("id",id));else id=(await chk(O.from("tipos_rede").insert({...row,ordem:TRD.length}).select("id").single())).id;
           await chk(O.from("tipos_rede_itens").delete().eq("tipo_rede_id",id));
           if(L.length)await chk(O.from("tipos_rede_itens").insert(L.map(r=>({tipo_rede_id:id,material_codigo:r.c,multiplicador:r.x||1}))));concDetalhe(cid)},t?"Salvar":"Criar");
@@ -1300,10 +1300,11 @@ async function editor(id){
   const preco=c=>{const o=OP[c];return (o&&(o.manual||ORC.modo_preco==="travado"))?(o?o.v:VIG[c]):(VIG[c]??(o&&o.v))};
   const ptById=i=>PTS.find(p=>p.id===i);
   const sobra=v=>v.sobra_pct??ORC.sobra_condutor_pct;
-  const segVao=v=>{if(v.segmento_id)return v.segmento_id;const t=TRM[v.tipo_rede_id];if(!t)return null;const k=/^MT/i.test(t.nome)?"MT":/^BT/i.test(t.nome)?"BT":"";const s=SEGS.find(s=>s.nome===k);return s?s.id:null};
+  const segTipo=t=>{if(!t||!t.segmento)return null;const s=SEGS.find(s=>s.nome===t.segmento);return s?s.id:null};
+  const segVao=v=>{if(v.segmento_id)return v.segmento_id;const t=TRM[v.tipo_rede_id];if(!t)return null;if(t.segmento)return segTipo(t);const k=/^MT/i.test(t.nome)?"MT":/^BT/i.test(t.nome)?"BT":"";const s=SEGS.find(s=>s.nome===k);return s?s.id:null};
   let _IX=null;const ix=()=>{if(_IX)return _IX;const byP={},peM={};for(const i of IT)(byP[i.ponto_id]=byP[i.ponto_id]||[]).push(i);const peP={};for(const e of PE){peM[e.id]=e;(peP[e.ponto_id]=peP[e.ponto_id]||[]).push(e)}_IX={byP,peM,peP};setTimeout(()=>{_IX=null},0);return _IX};
   function linhasPonto(p){const X=ix();const L=(X.byP[p.id]||[]).map(i=>{const e=i.ponto_estrutura_id&&X.peM[i.ponto_estrutura_id];const k=i.auto==="cinta"?"Cintas":e?((ESTM[e.estrutura_id]||{}).categoria||"Grupos sem categoria"):"Avulsos";return{c:i.material_codigo,q:+i.quantidade,s:(e&&e.segmento_id)||p.segmento_id,k:dk(p.planta_id)+k}});if(p.poste_id&&POM[p.poste_id])L.push({c:POM[p.poste_id].material_codigo,q:1,s:p.segmento_id,poste:1,k:dk(p.planta_id)+"Postes"});return L}
-  function linhasRamal(r){const pt=ptById(r.ponto_id),t=TRM[r.tipo_rede_id];if(!t||!pt)return[];const k=(1+(r.sobra_pct??ORC.sobra_condutor_pct)/100)*(+r.metros)*(+r.quantidade),s=pt.segmento_id,d=dk(pt.planta_id);return t.itens.map(i=>({c:i.material_codigo,q:k*i.multiplicador,s,k:d+(/^CIVIL/i.test(t.nome)||/duto/i.test(t.nome)?"Ramais · Dutos":"Ramais · Cabos")}))}
+  function linhasRamal(r){const pt=ptById(r.ponto_id),t=TRM[r.tipo_rede_id];if(!t||!pt)return[];const k=(1+(r.sobra_pct??ORC.sobra_condutor_pct)/100)*(+r.metros)*(+r.quantidade),s=pt.segmento_id||segTipo(t),d=dk(pt.planta_id);return t.itens.map(i=>({c:i.material_codigo,q:k*i.multiplicador,s,k:d+(/^CIVIL/i.test(t.nome)||/duto/i.test(t.nome)?"Ramais · Dutos":"Ramais · Cabos")}))}
   function linhasVao(v){const _pa=ptById(v.ponto_a),dkv=dk(_pa&&_pa.planta_id);const k=(1+sobra(v)/100)*(+v.comprimento_m);const t=TRM[v.tipo_rede_id];const s=segVao(v);if(t)return t.itens.map(i=>({c:i.material_codigo,q:k*i.multiplicador,s,k:dkv+(/^(CIVIL|DADOS)/i.test(t.nome)?"Banco de dutos":"Condutores / Rede")}));return v.material_codigo?[{c:v.material_codigo,q:k,s,k:dkv+"Condutores / Rede"}]:[]}
   let _TD=null,_TK="";const todas=()=>{const k=IT.length+"|"+PE.length+"|"+PTS.length+"|"+VAOS.length+"|"+EXT.length+"|"+RAM.length+"|"+RAM.reduce((a,r)=>a+(+r.metros)*(+r.quantidade),0)+"|"+RAM.map(r=>r.tipo_rede_id).join(",");if(_TD&&_TK===k)return _TD;_TK=k;_IX=null;_TD=todas0();setTimeout(()=>{_TD=null},0);return _TD};
   const todas0=()=>PTS.flatMap(linhasPonto).concat(VAOS.flatMap(linhasVao),RAM.flatMap(linhasRamal),EXT.map(x=>({c:x.material_codigo,q:+x.quantidade,s:x.segmento_id,extra:1,k:"Avulsos"})));
@@ -2023,14 +2024,14 @@ async function editor(id){
       const cx=ps.reduce((s,p)=>s+p.X,0)/ps.length,cy=ps.reduce((s,p)=>s+p.Y,0)/ps.length;const a=kInv(cx-CAM.ox,cy-CAM.oy);CAM.rot=n;const p2=kP(a.x,a.y);CAM.ox+=cx-p2.X;CAM.oy+=cy-p2.Y;camSalva();renderKml()}}
   function novoCabo(pre){
     const linha=(it)=>`<div class="gl tl2"><input class="inp" list="dlMat" name="m" placeholder="Material (duto, cabo, areia…)" value="${it?esc(it.material_codigo+" · "+((MAT[it.material_codigo]||{}).nome||"")):""}"><input class="inp n" name="x" value="${it?it.multiplicador:1}" placeholder="Mult."><span></span><button type="button" class="btn sm" data-rm>✕</button></div>`;
-    const md=modal(`<h2>${SUBT?"Nova configuração de trecho":"Incluir cabo"}</h2><div class="grid2"><label class="fld">Nome<input name="nome" required value="${pre?esc(pre.nome.replace(/^(CIVIL|MT|BT|DADOS) · /,"")+" (cópia)"):""}" placeholder="${SUBT?"Ramal 1 duto 2\" (50 mm)":"MT compacta 185 mm² 25 kV"}"></label><label class="fld">Cor no mapa<input type="color" name="cor" value="${pre?pre.cor:["#c2185b","#1565c0","#00897b","#ef6c00","#6a3fbf"][TR.length%5]}"></label></div>
+    const md=modal(`<h2>${SUBT?"Nova configuração de trecho":"Incluir cabo"}</h2><div class="grid2"><label class="fld">Nome<input name="nome" required value="${pre?esc(pre.nome.replace(/^(CIVIL|MT|BT|DADOS) · /,"")+" (cópia)"):""}" placeholder="${SUBT?"Ramal 1 duto 2\" (50 mm)":"MT compacta 185 mm² 25 kV"}"></label><label class="fld">Segmento da obra<select name="seg"><option value="">automático</option>${SEG_PADRAO.map(x=>`<option ${pre&&pre.segmento===x[0]?"selected":""}>${esc(x[0])}</option>`).join("")}</select></label><label class="fld">Cor no mapa<input type="color" name="cor" value="${pre?pre.cor:["#c2185b","#1565c0","#00897b","#ef6c00","#6a3fbf"][TR.length%5]}"></label></div>
       <datalist id="dlMat">${MATS.map(x=>`<option value="${esc(x.codigo)} · ${esc(x.nome)}">`).join("")}</datalist>
       <div class="lbl">Materiais por metro de vão</div><div id="ncIts">${pre&&pre.itens&&pre.itens.length?pre.itens.map(linha).join(""):linha()}</div><button type="button" class="btn sm" id="ncAdd">+ material</button>
       <p class="note">Ex.: MT compacta = 3× cabo protegido + 1× cordoalha. A quantidade é vão × multiplicador × (1 + sobra).</p>
       <p class="note">O cabo fica no cadastro geral e aparece em todos os orçamentos.</p>`,async(f,mm)=>{
       const L=$$(".tl2",mm).map(r=>({c:r.querySelector("[name=m]").value.split(" · ")[0].trim(),x:pnum(r.querySelector("[name=x]").value)})).filter(r=>r.c);
       if(!L.length){toast("Inclua pelo menos um material.");return false}if(L.some(r=>!MAT[r.c])){toast("Escolha os materiais da lista.");return false}
-      const t=await chk(O.from("tipos_rede").insert({concessionaria_id:SUBT?conc:null,nome:(()=>{let n=f.nome.trim();const px=SUBT&&LOT&&PLA?{civil:"CIVIL",mt:"MT",bt:"BT",dados:"DADOS"}[PLA.disciplina]:"";return px&&!new RegExp("^"+px,"i").test(n)?px+" · "+n:n})(),cor:f.cor,ordem:TR.length,pasta_id:null}).select("*").single());
+      const t=await chk(O.from("tipos_rede").insert({concessionaria_id:SUBT?conc:null,nome:(()=>{let n=f.nome.trim();const px=SUBT&&LOT&&PLA?{civil:"CIVIL",mt:"MT",bt:"BT",dados:"DADOS"}[PLA.disciplina]:"";return px&&!new RegExp("^"+px,"i").test(n)?px+" · "+n:n})(),cor:f.cor,ordem:TR.length,pasta_id:null,segmento:f.seg||null}).select("*").single());
       const its=L.map(r=>({tipo_rede_id:t.id,material_codigo:r.c,multiplicador:r.x||1}));await chk(O.from("tipos_rede_itens").insert(its));
       t.itens=its;TR.push(t);TRM[t.id]=t;tracing=t.id;traceSobra=null;anchor=null;placing=false;calib=null;renderMapbar();updHint();renderPins();toast(`Cabo “${t.nome}” incluído. Clique nos postes para traçar.`)},"Incluir e traçar");
     md.querySelector(".mbox").classList.add("wide");
@@ -2049,10 +2050,13 @@ async function editor(id){
       else el.insertAdjacentHTML("afterbegin",`<button type="button" class="xb" id="legT" title="Recolher a legenda" style="font-size:11px;cursor:pointer;opacity:.75;justify-self:end">▾ recolher</button>`);
       const lt=$("#legT",el);if(lt){lt.onpointerdown=e=>e.stopPropagation();lt.onclick=e=>{e.stopPropagation();tg(!mn)}}}
     $$("[data-redeoc]",el).forEach(b=>{b.onpointerdown=e=>e.stopPropagation();b.onclick=e=>{e.stopPropagation();const k=b.dataset.redeoc;redeOc.has(k)?redeOc.delete(k):redeOc.add(k);renderPins()}})}
+  async function ensureSeg(nome){if(SEGS.some(s=>s.nome===nome))return;const sp=(SEG_PADRAO||[]).find(x=>x[0]===nome);
+    const r=await chk(O.from("orc_segmentos").insert({orcamento_id:ORC.id,nome,cor:sp?sp[1]:"#888888",ordem:SEGS.length}).select("*").single());SEGS.push(r)}
   async function traceTap(pid){
     if(!anchor||anchor===pid){anchor=pid;renderPins();updHint();return}
     const dup=VAOS.some(g=>g.tipo_rede_id===tracing&&((g.ponto_a===anchor&&g.ponto_b===pid)||(g.ponto_a===pid&&g.ponto_b===anchor)));
     if(!dup){const v={orcamento_id:ORC.id,ponto_a:anchor,ponto_b:pid,tipo_rede_id:tracing,comprimento_m:0,sobra_pct:traceSobra};v.comprimento_m=+(lenPx(v)*escala).toFixed(2);
+      const tt=TRM[tracing];if(tt&&tt.segmento)await ensureSeg(tt.segmento);
       const r=await chk(O.from("orc_vaos").insert(v).select("*").single());VAOS.push(r);renderHead()}
     anchor=pid;renderPins();updHint();
   }
