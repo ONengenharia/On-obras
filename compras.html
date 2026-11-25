@@ -622,7 +622,7 @@ async function painel(id){
     const dvRows=[["Material",matPrev,matProj],["Custos",custoPrev,custoReal],["Total",totPrev,totReal]];
     if(pv.total){const lp=+pv.lucro||((+pv.total)-totPrev),lr=(+pv.total)-totReal;dvRows.push(["Lucro",lp,lr,true])}
     const termo=p=>{ /* p = % do previsto consumido (quanto maior, pior). <=85 verde · 85–100 esverdeado→amarelo · >100 vermelho */
-      if(p>100)return"#e5484d";if(p<=85)return"#2fb67c";const t=(p-85)/15,a=[47,182,124],b=[232,179,40];return`rgb(${a.map((v,k)=>Math.round(v+(b[k]-v)*t)).join(",")})`};
+      if(p>100){const u=Math.min((p-100)/20,1),a=[240,150,150],b=[214,28,36];return`rgb(${a.map((v,k)=>Math.round(v+(b[k]-v)*u)).join(",")})`}if(p<=85)return"#2fb67c";const t=(p-85)/15,a=[47,182,124],b=[232,179,40];return`rgb(${a.map((v,k)=>Math.round(v+(b[k]-v)*t)).join(",")})`};
     const dv=dvRows.map(([t,a,b,inv])=>{const d=inv?b-a:a-b,ok=d>=0;
       const pr=a?b/a*100:0,pc=a?(inv?(b?a/b*100:200):pr):0;   /* lucro: quanto menor que o previsto, pior */
       const cor=termo(pc),sit=Math.abs(d)<0.005?"no previsto":inv?(d>0?"acima do previsto":"abaixo do previsto"):(d>0?"economia":"acima do previsto");
@@ -631,7 +631,7 @@ async function painel(id){
         <div class="vv">${brl(b)}</div><small>previsto ${brl(a)}</small>
         <div class="dd"><span class="chp" style="background:color-mix(in srgb,${cor} 22%,transparent);color:${cor}">${sit}${Math.abs(d)<0.005?"":" · "+(d>=0?"+":"−")+brl(Math.abs(d))}</span></div></div>`}).join("");
     const mini=`
-      <div class="card mn" data-span="6"><h3>Previsto × realizado</h3><div class="g4d">${dv}</div><div class="note" style="font-size:10.5px;margin-top:8px">Anel = quanto do previsto foi praticado. <b style="color:#2fb67c">Verde</b> = ótimo (até 85%) · vai <b style="color:#e8b328">amarelando</b> até 100% (dentro do esperado) · <b style="color:#e5484d">vermelho</b> = passou do previsto (ou lucro abaixo do previsto).</div></div>
+      <div class="card mn" data-span="6"><h3>Previsto × realizado</h3><div class="g4d">${dv}</div><div class="note" style="font-size:10.5px;margin-top:8px">Anel = quanto do previsto foi praticado. <b style="color:#2fb67c">Verde</b> = ótimo (até 85%) · vai <b style="color:#e8b328">amarelando</b> até 100% (dentro do esperado) · <b style="color:#f09696">vermelho fraco</b> logo acima de 100%, ficando <b style="color:#d61c24">vermelho forte</b> a partir de ~120% (ou lucro bem abaixo do previsto).</div></div>
       <div class="card mn org" data-span="6"><h3>Origem do material <span class="note">(valores pelo previsto)</span></h3>
         <div class="sk2">${["est","oc","esc","pen"].filter(k=>O4[k]>0).map(k=>`<i style="width:${pe(O4[k])}%;background:${COR[k]}" title="${NOM[k]}"><em>${k==="est"?"📦 ":k==="oc"?"🛒 ":""}${NOM[k]==="Com OC"?"Comprado (OC)":NOM[k]} ${pe(O4[k]).toFixed(1).replace(".",",")}%</em></i>`).join("")}</div>
         <div class="og2"><div style="border-color:${COR.est}"><span>📦 DO ESTOQUE</span><b>${brl(O4.est)}</b><small>${nEstAny} iten(s) · ${N4.est} cobertos 100% · ${pe(O4.est).toFixed(1).replace(".",",")}%</small></div>
