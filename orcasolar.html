@@ -375,6 +375,7 @@ table.ed td:first-child input{min-width:96px}
         <label>Modelo / química<input id="hib-bat-nome" data-hf placeholder="Ex.: Bateria LiFePO4 48 V 5 kWh"></label>
         <label>Capacidade nominal (kWh)<input id="hib-bat-kwh" data-hf type="number" min="0" step="0.01" value="5.12"></label>
         <label>Potência contínua (kW)<input id="hib-bat-kw" data-hf type="number" min="0" step="0.01" value="2.56"></label>
+        <label>Quantidade de baterias (vazio = automático)<input id="hib-nbat" data-hf type="number" min="1" step="1" placeholder="automático"></label>
       </div>
       <div id="hib-res" class="mt"></div>
     </section>
@@ -756,6 +757,6 @@ table.ed td:first-child input{min-width:96px}
 <script src="vendor/supabase.js"></script>
 <script src="js/config.js"></script>
 <script src="js/cidades.js?v=1"></script>
-<script src="js/orcasolar.js?v=22"></script>
+<script src="js/orcasolar.js?v=23"></script>
 </body>
 </html>
