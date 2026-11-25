@@ -1080,7 +1080,7 @@ function propostaHTML(){
     <div class="cv-foot"><span>Emitida em ${dataVer} · válida até ${validade}</span><span>${pesc(CONFIG.empresa||"ON Engenharia")}</span><span>${pesc(CONFIG.contato||"")}</span></div>
   </section>`;
   const capaHtml=_CM?capaModelo(_CM,pillTxt,nome,local):capaSvg;
-  const kp4=`<div class="kpis4"><div><b>${num(r.kwp,2)} kWp</b><span>potência</span></div><div><b>${r.modulos} módulos</b><span>de ${mod.wp} Wp</span></div><div><b>${num(r.gerMes+r.rateio)} kWh</b><span>geração por mês${r.rateio>0?" (inclui rateio)":""}</span></div><div><b>${num(r.areaTotal,0)} m²</b><span>área necessária</span></div></div>`;
+  const kp4=`<div class="kpis4"><div><b>${num(r.kwp,2)} kWp</b><span>potência</span></div><div><b>${r.modulos} módulos</b><span>de ${mod.wp} Wp</span></div><div><b>${num(r.gerMes+r.rateio)} kWh</b><span>geração por mês (média anual)${r.rateio>0?" · inclui rateio":""}</span></div><div><b>${num(r.areaTotal,0)} m²</b><span>área necessária</span></div></div>`;
   const faces=r.al.faces.filter(f=>f.n>0).map(f=>`${ORI[f.ori][0]} (${f.n})`).join(" · ")||"Norte";
   const detalhes=`<table class="kv"><tbody>
       <tr><td>Concessionária</td><td>${pesc(I.dist)} · UC ${pesc(I.uc)} · ${I.lig}</td></tr>
@@ -1196,7 +1196,7 @@ function propostaHTML(){
     paginas=fins.length?[RM(quem+det),ger,proj,prod,RM(pag),RM(ecoParc),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))]:[RM(quem+det),ger,proj,prod,RM(pag+pagEco),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))];
   }
   let seguroP=[]; if(comSeg){ seguroP=paginasSeguro(nome,seg,0,0,LOGO); }
-  const todas=[...paginas,...seguroP];
+  const todas=[...paginas,...(typeof hibPagina==="function"?hibPagina(r):[]),...seguroP];
   const total=1+todas.length;
   const head=()=>`<header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${pesc(nome)}</span></header>`;
   const foot=n=>`<footer class="pf"><div class="pf1"><b>Proposta ${pesc(ref)}</b><span>Folha ${n} de ${total}</span></div><div class="pf2">${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")} · <a href="https://onengenhariaeletrica.com.br/">onengenhariaeletrica.com.br</a> · <a href="https://www.instagram.com/on_engenharia_/">@on_engenharia_</a></div></footer>`;
@@ -2147,5 +2147,167 @@ $("pr-baixar").onclick=async function(){
   a.download="Proposta - "+(($("cliente").value||"cliente").replace(/[\\/:*?"<>|]/g,"").trim())+" - v"+x.v+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 };
 try{ pselFill(); }catch(e){}
+
+/* ---- fatura: UC é o código da unidade consumidora (até 15 dígitos, com zeros), não o número do medidor ---- */
+const _parseFatura0=parseFatura;
+parseFatura=function(linhas){
+  const o=_parseFatura0.apply(this,arguments), T=(linhas||[]).join("\n");
+  const med=[]; let m, re=/(\d{5,12})\s+(?:Energia Ativa|CONSUMO\s+kWh)/gi; while((m=re.exec(T))) med.push(m[1]);
+  const mm=T.match(/Medidor\D{0,20}(\d{5,12})/i); if(mm) med.push(mm[1]);
+  const lab=T.match(/(?:Unidade\s+Consumidora|N[uú]mero\s+da\s+UC|C[oó]digo\s+da\s+(?:UC|Instala[cç][aã]o)|N[ºo°.]*\s*da\s+Instala[cç][aã]o|Instala[cç][aã]o|\bUC\b)[^\d\n]{0,25}(\d{6,15})/i);
+  const longo=T.match(/(?<!\d)(\d{13,15})(?!\d)/);
+  if(lab) o.uc=lab[1]; else if(longo) o.uc=longo[1]; else if(o.uc&&med.includes(o.uc)) delete o.uc;
+  return o;
+};
+
+/* ================= SISTEMA HÍBRIDO / OFF-GRID (fase 1: híbrido com backup) ================= */
+const HIB={cargas:[]};
+const HIB_LIB=[
+ {n:"Geladeira / freezer",w:200,f:3,h:24,c:1},{n:"Iluminação LED (conjunto)",w:150,f:1,h:5,c:1},
+ {n:"Roteador / modem",w:15,f:1,h:24,c:1},{n:"Câmeras CFTV + DVR",w:60,f:1,h:24,c:1},
+ {n:"Cerca elétrica / alarme",w:20,f:1,h:24,c:1},{n:"Portão eletrônico",w:300,f:3,h:0.2,c:1},
+ {n:"TV + decodificador",w:150,f:1,h:5,c:0},{n:"Computador / notebook",w:150,f:1,h:8,c:1},
+ {n:"Ventilador",w:80,f:2,h:8,c:0},{n:"Ar-condicionado 9.000 BTU inverter",w:800,f:2,h:8,c:0},
+ {n:"Ar-condicionado 12.000 BTU inverter",w:1100,f:2,h:8,c:0},{n:"Micro-ondas",w:1400,f:1,h:0.3,c:0},
+ {n:"Máquina de lavar",w:500,f:3,h:1,c:0},{n:"Bomba de poço / pressurizador 1/2 cv",w:450,f:4,h:2,c:1},
+ {n:"Bomba d'água 1 cv",w:900,f:5,h:2,c:1},{n:"Ordenhadeira / resfriador de leite",w:1100,f:4,h:6,c:1},
+ {n:"Compressor 2 cv",w:1500,f:6,h:4,c:0},{n:"Chuveiro elétrico (não recomendado)",w:5500,f:1,h:0.7,c:0},
+ {n:"Outro (preencher)",w:100,f:1,h:1,c:0}
+];
+
+/* ---- catálogo embutido (dados técnicos dos datasheets; sem preço) ---- */
+const HIB_INV=[
+ {id:"h_deye5",nome:"Deye SUN-5K-SG04LP1-EU-SM2 (híbrido 5 kW)",kw:5,kwAC:5,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 8 kWp de entrada FV"},
+ {id:"h_deye6",nome:"Deye SUN-6K-SG04LP1-EU-SM2 (híbrido 6 kW)",kw:6,kwAC:6,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (1+1 string), 150–425 V, até 9,6 kWp de entrada FV"},
+ {id:"h_deye75",nome:"Deye SUN-7.5K-SG05LP1-EU-SM2 (híbrido 7,5 kW)",kw:7.5,kwAC:8,vbat:"40–60 V",surto:"2× por 10 s",mppt:"2 MPPT (2+2 strings), 150–425 V, até 12,8 kWp de entrada FV"}
+];
+const HIB_BAT=[
+ {id:"b_sef5f",nome:"Foco Energia SE-F5-F · LiFePO₄ 51,2 V · 100 Ah · 5,12 kWh",kwh:5.12,kw:2.56,tensao:51.2,dod:80,ciclos:6000,garantia:5,thr:8,iMax:120}
+];
+try{ DEF.modulos.push({id:"m_dah590",marca:"DAH Solar",modelo:"DHN-72X16/DG 590 Wp bifacial",wp:590,comp:2278,larg:1134,voc:51.8,isc:14.26,vmp:44.0,imp:13.41,coefVoc:-0.25,coefP:-0.29,garantia:30,preco:0,
+ det:["Tecnologia TOPCon (N-type) bifacial · 144 meias-células (6×24) · vidro duplo de 2,0 mm","Eficiência do módulo 22,84% · tolerância de potência 0 a +5 W · fator de bifacialidade 80±5%","Peso 30,8 kg · moldura composta · caixa de junção IP68 com 3 diodos de bypass · conector compatível MC4","Tensão máxima do sistema 1500 V · fusível máx. 30 A · NOCT 45±2 °C","Garantia de produto de 15 anos · garantia linear de potência de 30 anos (87,4% ao final)","Certificações IEC 61215, IEC 61730, CE e INMETRO"],
+ ds:{arquivo:"590w.pdf"}}); }catch(e){}
+function hibBatSel(){ return HIB_BAT.find(b=>b.id===($("hib-bat-sel")||{}).value); }
+const HIB_TIPOS={on:"On-grid (somente rede)",hib:"Híbrido com backup"};
+function hibAtivo(){ return ($("hib-tipo")||{}).value==="hib"; }
+function hibDeye(){
+  const r=R; let lig=""; try{ lig=propInfo().lig||""; }catch(e){}
+  const kwOn=r&&r.inv?r.inv.kw*(r.qtdInv||1):0, mono=!/tri/i.test(lig);
+  if(!mono) return {nome:"Inversor híbrido trifásico (modelo a definir)",kw:0,tri:true,kwOn};
+  const h=kwOn<=5.0001?HIB_INV[0]:kwOn<=6.0001?HIB_INV[1]:HIB_INV[2];
+  return Object.assign({},h,{kw:h.kwAC,kwNom:h.kw,kwOn,mono});
+}
+function hibOpcaoB(){
+  const kit=v("hib-kit"); if(!(kit>0)||!R) return null;
+  const old=$("kitcot").value; $("kitcot").value=String(kit);
+  try{ return compute(); }catch(e){ return null; } finally{ $("kitcot").value=old; }
+}
+function hibCalc(){
+  const A=HIB.cargas.filter(x=>x.q>0&&x.w>0), crit=A.filter(x=>x.c);
+  const H=Math.max(v("hib-horas"),0), dod=Math.min(Math.max(v("hib-dod"),10),100)/100, ef=Math.min(Math.max(v("hib-ef"),50),100)/100;
+  const fs=Math.min(Math.max(v("hib-fs"),10),100)/100, folga=Math.max(v("hib-folga"),1), sx=Math.max(v("hib-surto"),1);
+  const kwhM=v("hib-bat-kwh"), kwM=v("hib-bat-kw"), tens=v("hib-tensao")||48;
+  const whDia=A.reduce((s,x)=>s+x.q*x.w*x.h,0), whCrit=crit.reduce((s,x)=>s+x.q*x.w*x.h,0);
+  const runW=crit.reduce((s,x)=>s+x.q*x.w,0), pico=runW*fs/1000;
+  const dm=Math.max(0,...crit.map(x=>x.w*(Math.max(x.f,1)-1)))/1000, surto=pico+dm;
+  const pMed=crit.reduce((s,x)=>s+x.q*x.w*Math.min(x.h,24)/24,0)/1000; // kW médio
+  const eBack=pMed*H;
+  const capReq=eBack/(dod*ef);
+  const dy=hibDeye(), pNec=Math.max(pico*folga,surto/sx), pInv=dy.kw>0?dy.kw:pNec;
+  const nCap=kwhM>0?Math.ceil(capReq/kwhM-1e-9):0, nPot=kwM>0?Math.ceil(pNec/kwM-1e-9):0;
+  const nBat=Math.max(nCap,nPot,crit.length?1:0);
+  const capInst=nBat*kwhM, autH=pMed>0?capInst*dod*ef/pMed:0;
+  const av=[];
+  if(!crit.length) av.push("Marque ao menos uma carga como crítica (as que o backup precisa manter ligadas).");
+  if(crit.some(x=>x.w*x.q>3000)) av.push("Há carga crítica acima de 3 kW (ex.: chuveiro elétrico). Cargas resistivas grandes encarecem muito o backup; confirme se precisam mesmo ficar no backup.");
+  if(dy.kw>0&&pNec>dy.kw+1e-9) av.push("A potência necessária ("+pNec.toFixed(1).replace(".",",")+" kW) excede o inversor híbrido selecionado ("+dy.kw+" kW). Reduza as cargas críticas ou avalie outro modelo.");
+  if(dy.tri) av.push("Ligação trifásica: o modelo Deye monofásico não se aplica. Defina o inversor híbrido trifásico.");
+  if(!(v("hib-kit")>0)) av.push("Informe o valor do kit híbrido cotado (com baterias) para calcular o preço e o payback da Opção B.");
+  if(nPot>nCap&&nBat>0) av.push("A potência do inversor/bateria é quem define o banco (não a energia). Confira a potência contínua informada por módulo.");
+  if(surto>pInv*sx+1e-9) av.push("A partida do maior motor excede a capacidade de surto do inversor.");
+  if(dod>0.95) av.push("DoD acima de 95% reduz a vida útil da bateria; confirme o limite do fabricante.");
+  return {dy,pNec,A,crit,H,dod,ef,fs,folga,sx,tens,whDia,whCrit,runW,pico,surto,pMed,eBack,capReq,pInv,nBat,nCap,nPot,capInst,autH,kwhM,kwM,av,iDC:pico*1000/tens};
+}
+function hibRender(){
+  const on=hibAtivo(), card=$("card-hib"); if(!card) return;
+  card.hidden=!on; if(!on) return;
+  hibRows(); hibRes();
+}
+function hibRows(){
+  const tb=$("hib-rows");
+  tb.innerHTML=HIB.cargas.map((x,i)=>`<tr data-i="${i}"><td><input data-k="n" value="${esc(x.n)}"></td>
+    <td><input data-k="q" type="number" min="0" step="1" value="${x.q}" style="width:56px"></td>
+    <td><input data-k="w" type="number" min="0" step="10" value="${x.w}" style="width:76px"></td>
+    <td><input data-k="f" type="number" min="1" step="0.5" value="${x.f}" style="width:56px"></td>
+    <td><input data-k="h" type="number" min="0" max="24" step="0.1" value="${x.h}" style="width:60px"></td>
+    <td style="text-align:center"><input data-k="c" type="checkbox" ${x.c?"checked":""}></td>
+    <td style="text-align:right">${num(x.q*x.w*x.h/1000,2)}</td>
+    <td><button class="btn alt small" type="button" data-del="${i}">×</button></td></tr>`).join("")||`<tr><td colspan="8" class="note">Nenhuma carga ainda. Escolha um equipamento da lista e clique em Adicionar.</td></tr>`;
+}
+function hibRes(){
+  const c=hibCalc();
+  $("hib-res").innerHTML=`<div class="kpis3">
+    <div><b>${num(c.pico,2)} kW</b><span>pico simultâneo (críticas)</span></div>
+    <div><b>${num(c.surto,2)} kW</b><span>surto na partida</span></div>
+    <div class="hi"><b>${num(c.eBack,1)} kWh</b><span>energia do backup (${num(c.H,1)} h)</span></div></div>
+   <table class="tec"><tbody>
+    <tr><td>Consumo total das cargas</td><td>${num(c.whDia/1000,1)} kWh/dia (críticas: ${num(c.whCrit/1000,1)} kWh/dia)</td></tr>
+    <tr><td>Potência média das críticas</td><td>${num(c.pMed,2)} kW</td></tr>
+    <tr><td>Capacidade nominal necessária</td><td>${num(c.capReq,1)} kWh (energia ÷ (DoD ${num(c.dod*100,0)}% × eficiência ${num(c.ef*100,0)}%))</td></tr>
+    <tr><td>Inversor híbrido (pela regra ON)</td><td><b>${esc(c.dy.nome)}</b> · on-grid de ${num(c.dy.kwOn,1)} kW (até 5 kW → 5 kW; até 6 kW → 6 kW; acima → 7,5 kW)</td></tr>
+    <tr><td>Potência exigida pelas cargas</td><td>${num(c.pNec,2)} kW (folga ${num(c.folga,2)}×; surto ${num(c.sx,1)}× por alguns segundos)</td></tr>
+    <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,1)} kWh = ${num(c.capInst,1)} kWh</b> (${c.nCap} pela energia, ${c.nPot} pela potência)</td></tr>
+    <tr><td>Autonomia real do banco</td><td>${num(c.autH,1)} h com as cargas críticas</td></tr>
+    <tr><td>Corrente CC no pico</td><td>${num(c.iDC,0)} A em ${num(c.tens,0)} V</td></tr></tbody></table>
+   ${c.av.length?`<ul class="checks">${c.av.map(a=>`<li class="warn">${esc(a)}</li>`).join("")}</ul>`:""}`;
+}
+function hibPagina(r){
+  if(!hibAtivo()) return [];
+  const c=hibCalc(); if(!c.crit.length) return [];
+  const rb=hibOpcaoB(), fora=c.A.filter(x=>!x.c);
+  const pb=x=>{ if(!x||x.payback===null) return "acima de 25 anos"; const m=Math.round(x.payback*12),a=Math.floor(m/12),mm=m%12; return (a===0?mm+" meses":a+(a===1?" ano":" anos")+(mm?" e "+mm+(mm===1?" mês":" meses"):"")); };
+  const rows=c.crit.map(x=>`<tr><td>${pesc(x.n)}</td><td>${x.q}</td><td>${num(x.w,0)} W</td><td>${num(x.h,1)} h/dia</td></tr>`).join("");
+  const nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim(), bs=hibBatSel();
+  const comp=rb?`<table class="data"><thead><tr><th></th><th>Opção A · On-grid</th><th>Opção B · Híbrido com backup</th></tr></thead><tbody>
+    <tr><td>Investimento</td><td>${brl2(r.invest)}</td><td><b>${brl2(rb.invest)}</b></td></tr>
+    <tr><td>Payback estimado</td><td>${pb(r)}</td><td>${pb(rb)}</td></tr>
+    <tr><td>Funciona sem a rede</td><td>Não</td><td><b>Sim, cargas essenciais</b></td></tr></tbody></table>`:"";
+  return [`<h2>Opção B: sistema híbrido com backup</h2>
+   <p class="lead">Mesma geração solar, com inversor híbrido e baterias: o sistema segue alimentando as cargas essenciais quando a rede da concessionária falta.</p>
+   ${comp}
+   <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${c.dy.kwNom?num(c.dy.kwNom,1)+" kW":"-"}</b><span>${pesc(c.dy.nome)}</span></div></div>
+   <h3 class="sub">Cargas prioritárias atendidas no backup</h3>
+   <table class="data l"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência</th><th>Uso previsto</th></tr></thead><tbody>${rows}</tbody></table>
+   ${fora.length?`<p class="small"><b>Não atendidas pelo backup:</b> ${fora.map(x=>pesc(x.n)).join(", ")}. Seguem funcionando normalmente com a rede.</p>`:""}
+   <h3 class="sub">Como foi dimensionado</h3>
+   <table class="kv"><tbody>
+    <tr><td>Inversor híbrido</td><td>${pesc(c.dy.nome)}${c.dy.surto?`, suporta partida de motores (${c.dy.surto})`:""}</td></tr>
+    <tr><td>Armazenamento</td><td>${pesc(nome)}, profundidade de descarga (DoD) de ${num(c.dod*100,0)}%</td></tr>${bs?`
+    <tr><td>Vida útil da bateria</td><td>≥ ${num(bs.ciclos,0)} ciclos · garantia de ${bs.garantia} anos (condições do fabricante)</td></tr>`:""}
+    <tr><td>Duração prevista do backup</td><td>${num(c.H,1)} horas sem rede, com as cargas acima ligadas</td></tr>
+    <tr><td>Partida de motores</td><td>Pico de ${num(c.pico,2)} kW e surto de ${num(c.surto,2)} kW considerados</td></tr></tbody></table>
+   <p class="small">A autonomia depende das cargas efetivamente ligadas e do estado de carga da bateria no momento da falta. Equipamentos fora desta lista, ou com potência maior que a informada, exigem novo dimensionamento. A confirmação das cargas pelo cliente integra o aceite desta proposta.</p>`];
+}
+function hibPerm(){
+  const sel=$("hib-tipo"); if(!sel) return; const o=[...sel.options].find(x=>x.value==="hib"); if(!o) return;
+  o.disabled=!ISADM; o.textContent=ISADM?"Com Opção B: híbrido com backup":"Híbrido com backup (em breve)";
+  if(!ISADM&&sel.value==="hib"){ sel.value="on"; hibRender(); }
+}
+const _calcH=calc; calc=function(){ try{ hibPerm(); }catch(e){} return _calcH.apply(this,arguments); };
+function hibBind(){
+  const bsel=$("hib-bat-sel"); bsel.innerHTML='<option value="">Outra (preencher abaixo)</option>'+HIB_BAT.map(b=>`<option value="${b.id}">${esc(b.nome)}</option>`).join("");
+  bsel.value=HIB_BAT[0].id;
+  bsel.addEventListener("change",()=>{ const b=hibBatSel(); if(b){ $("hib-bat-nome").value=b.nome; $("hib-bat-kwh").value=b.kwh; $("hib-bat-kw").value=b.kw; $("hib-tensao").value=b.tensao; $("hib-dod").value=b.dod; } hibRender(); calc(); });
+  const sel=$("hib-lib"); sel.innerHTML=HIB_LIB.map((x,i)=>`<option value="${i}">${esc(x.n)} · ${x.w} W</option>`).join("");
+  $("hib-add").onclick=()=>{ const l=HIB_LIB[+sel.value]; HIB.cargas.push({n:l.n,q:1,w:l.w,f:l.f,h:l.h,c:l.c}); hibRender(); calc(); };
+  $("hib-rows").addEventListener("input",e=>{ const tr=e.target.closest("tr[data-i]"); if(!tr) return; const x=HIB.cargas[+tr.dataset.i], k=e.target.dataset.k; if(!x||!k) return;
+    x[k]=k==="n"?e.target.value:k==="c"?(e.target.checked?1:0):(parseFloat(e.target.value)||0);
+    const t=tr.querySelector("td:nth-last-child(2)"); if(t) t.textContent=num(x.q*x.w*x.h/1000,2); hibRes(); calc(); });
+  $("hib-rows").addEventListener("click",e=>{ const d=e.target.closest("[data-del]"); if(!d) return; HIB.cargas.splice(+d.dataset.del,1); hibRender(); calc(); });
+  document.querySelectorAll("#card-hib [data-hf],#hib-tipo").forEach(el=>el.addEventListener("input",()=>{ hibRender(); calc(); }));
+}
+const _snapH=snapshot; snapshot=function(){ const s=_snapH.apply(this,arguments); s.hib=clone(HIB.cargas); return s; };
+const _restH=restore; restore=function(s){ _restH.apply(this,arguments); HIB.cargas=(s&&s.hib)?clone(s.hib):[]; try{ hibRender(); }catch(e){} };
+hibBind(); if(!$("hib-bat-nome").value){ const b=hibBatSel(); if(b) $("hib-bat-nome").value=b.nome; } hibRender();
 
 integrar();
