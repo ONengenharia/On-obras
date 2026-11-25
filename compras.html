@@ -696,7 +696,7 @@ async function painel(id){
       <div class="subf" style="display:flex;flex-wrap:wrap;gap:18px;align-items:baseline;padding:8px 12px;margin:6px 0;border:1px solid var(--bd,#d9dee5);border-radius:8px;background:rgba(37,99,235,.06);font-size:13px"><b style="font-size:14px">Subtotal do filtro</b><span>${L.length} itens</span><span>A comprar: <b>${num(L.reduce((t,i)=>t+qc(i),0),2)}</b></span><span>Previsto (dos escolhidos): <b>${brl(sPE)}</b></span><span>Escolhido: <b>${brl(sE)}</b> <small>(${sEn} com escolha)</small></span><span>Diferença: <b>${dif(sPE-sE,sPE)}</b></span></div>
       <div class="cmpsc" style="overflow:auto;max-height:calc(100vh - 330px)"><table class="tbl cmp"><thead><tr><th>Material</th><th class="n">Orçado</th><th class="n">Estoque</th><th class="n">A comprar</th><th class="n">Previsto</th>${VC.map(c=>`<th class="n fcol" title="${esc(c.documento||"")}">${esc(c.fornecedor_nome)}<small>${c.frete?"frete "+brl(c.frete):""}</small></th>`).join("")}<th class="n">Escolhido</th><th class="n">Total</th><th class="n">vs previsto</th></tr></thead><tbody>
       ${L.map(i=>{const f=faixa(i,VC),fa=faixa(i),e=vEsc(i),q=qc(i),caro=fa&&e!=null&&e>fa.min.v+1e-6;
-        const et=+i.estoque>0,eT=et&&q===0;return `<tr class="${i.oc?"oc":eT?"estT":caro?"caro":et?"estP":""} ${q?"":"ina"}"><td><b>${esc(i.descricao)}</b>${eT?` <span class="etq">📦 DO ESTOQUE</span>`:et?` <span class="etq p">📦 estoque parcial</span>`:""}<span class="sm">${esc(i.material_codigo||"")}${i.subgrupo?" · "+esc(i.subgrupo):""}${i.oc?` · <b class="ocb">OC ${esc(i.oc)}</b>`:""}</span>${caro?`<span class="warn">⚠ ${brl((e-fa.min.v)*q)} mais caro que ${esc(nomeC(fa.min.c))}${i.motivo?" · motivo: "+esc(i.motivo):""}</span>`:""}</td>
+        const et=+i.estoque>0,eT=et&&q===0;return `<tr class="${i.oc?"oc":eT?"estT":caro?"caro":et?"estP":""} ${q?"":"ina"}"><td><b>${esc(i.descricao)}</b> <button class="btn sm" data-ai="${i.id}" title="Ajustar quantidade e preço previsto deste material" style="padding:0 6px">✏️</button>${eT?` <span class="etq">📦 DO ESTOQUE</span>`:et?` <span class="etq p">📦 estoque parcial</span>`:""}<span class="sm">${esc(i.material_codigo||"")}${i.subgrupo?" · "+esc(i.subgrupo):""}${i.oc?` · <b class="ocb">OC ${esc(i.oc)}</b>`:""}</span>${caro?`<span class="warn">⚠ ${brl((e-fa.min.v)*q)} mais caro que ${esc(nomeC(fa.min.c))}${i.motivo?" · motivo: "+esc(i.motivo):""}</span>`:""}</td>
           <td class="n"><input class="inp n est" data-qt="${i.id}" value="${num(i.qtd,2)}" inputmode="decimal" ${i.oc?"disabled title=\"Item com OC: quantidade travada\"":"title=\"Ajustar quantidade (0 retira o item)\""} style="width:74px"> <span class="sm" style="display:inline">${esc(i.unidade||"")}</span></td><td class="n"><input class="inp n est" data-est="${i.id}" value="${+i.estoque?num(i.estoque,3):""}" placeholder="0" inputmode="decimal" ${i.oc?"disabled":""}></td><td class="n"><b>${num(q,2)}</b></td>
           <td class="n">${i.preco_previsto!=null?brl(i.preco_previsto):"—"}</td>
           ${VC.map(c=>{const v=(PM[i.id]||{})[c.id];if(!(v>0))return `<td class="n"><button class="addp" data-ap="${i.id}" data-c="${c.id}" title="Digitar preço">＋</button></td>`;
@@ -715,6 +715,7 @@ async function painel(id){
     $$("[data-qt]").forEach(inp=>inp.onchange=async()=>{const it=IT.find(x=>x.id==inp.dataset.qt),v=Math.max(0,pnum(inp.value)),antes=+it.qtd;if(v===antes)return;
       await chk(O.from("compra_itens").update({qtd:v}).eq("id",it.id));it.qtd=v;await logC(v===0?"Item retirado":"Quantidade alterada",it.descricao,{qtd:antes},{qtd:v});shell()});
     if($("#cAddMat"))$("#cAddMat").onclick=addMaterial;
+    $$("[data-ai]").forEach(x=>x.onclick=()=>ajustarItem(IT.find(i=>i.id==x.dataset.ai)));
     $$("[data-est]").forEach(inp=>inp.onchange=async()=>{const it=IT.find(x=>x.id==inp.dataset.est);const v=Math.max(0,pnum(inp.value));await chk(O.from("compra_itens").update({estoque:v}).eq("id",it.id));it.estoque=v;tComp()});
     $$("[data-es]").forEach(b=>b.onclick=()=>escolher(IT.find(i=>i.id==b.dataset.es),+b.dataset.c));
     $$("[data-ap]").forEach(b=>b.onclick=()=>precoManual(IT.find(i=>i.id==b.dataset.ap),+b.dataset.c));
@@ -801,6 +802,16 @@ async function painel(id){
       const pv=pnum(f.pv)||0,ordem=Math.max(0,...IT.map(i=>+i.ordem||0))+1;
       const row={compra_id:id,material_codigo:m?m.codigo:null,descricao:m?m.nome:raw,unidade:m?m.unidade:"UN",qtd:q,preco_previsto:pv,subgrupo:m?m.subgrupo:null,ordem};
       const r=await chk(O.from("compra_itens").insert(row).select("*").single());IT.push(r);await logC("Material adicionado",r.descricao,null,{qtd:q,preco:pv});shell()},"Adicionar");
+  }
+  function ajustarItem(i){
+    if(!i)return;const bl=!!i.oc;
+    modal(`<h2>Ajustar material</h2><p class="note"><b>${esc(i.descricao)}</b>${bl?" · já tem OC: quantidade e preço travados":""}</p>
+      <div class="grid2"><label class="fld">Quantidade (${esc(i.unidade||"")})<input name="qtd" value="${num(i.qtd,2)}" inputmode="decimal" ${bl?"disabled":""}></label><label class="fld">Preço previsto unit. (R$)<input name="pv" value="${num(i.preco_previsto,2)}" inputmode="decimal" ${bl?"disabled":""}></label></div>
+      <p class="note">Quantidade 0 retira o item da compra. Fica registrado no histórico.</p>`,async f=>{
+      if(bl)return;const q=Math.max(0,pnum(f.qtd)),pv=Math.max(0,pnum(f.pv)||0),antes={qtd:+i.qtd,preco:+i.preco_previsto||0};
+      if(q===antes.qtd&&pv===antes.preco)return;
+      await chk(O.from("compra_itens").update({qtd:q,preco_previsto:pv}).eq("id",i.id));i.qtd=q;i.preco_previsto=pv;
+      await logC(q===0?"Item retirado":q!==antes.qtd?"Quantidade alterada":"Previsto alterado",i.descricao,antes,{qtd:q,preco:pv});shell()},"Salvar");
   }
   /* ---- ajustar uma cotação sem importar de novo ---- */
   function editCot(c){
