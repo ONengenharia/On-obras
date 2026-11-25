@@ -624,8 +624,9 @@ async function painel(id){
     let fPrev=0,fReal=0,nF=0;const nT=ativos().length;
     ativos().forEach(i=>{const pv=+i.preco_previsto||0,q=qc(i),ev=((+i.qtd||0)-q)*pv;fPrev+=ev;fReal+=ev;
       if(i.oc){const real=FP[i.id]!=null?FP[i.id]:(vEsc(i)!=null?q*vEsc(i):q*pv);fPrev+=q*pv;fReal+=real;nF++}else if(+i.estoque>0&&q===0)nF++});
-    const abPrev=matPrev-fPrev,abProj=matProj-fReal;
-    const dvRows=[["Material",fPrev,fReal],["Custos",custoPrev,custoReal],["Total",totPrev,totReal]];
+    const estV2=ativos().reduce((t,i)=>t+((+i.qtd||0)-qc(i))*(+i.preco_previsto||0),0);
+    const abPrev=ativos().filter(i=>!i.oc&&qc(i)>0).reduce((t,i)=>t+qc(i)*(+i.preco_previsto||0),0);
+    const dvRows=[["Material",matPrev,fReal],["Custos",custoPrev,custoReal],["Total",totPrev,totReal]];
     if(pv.total){const lp=+pv.lucro||((+pv.total)-totPrev),lr=(+pv.total)-totReal;dvRows.push(["Lucro",lp,lr,true])}
     const termo=p=>{ /* p = % do previsto consumido (quanto maior, pior). <=85 verde · 85–100 esverdeado→amarelo · >100 vermelho */
       if(p>100){const u=Math.min((p-100)/20,1),a=[240,150,150],b=[214,28,36];return`rgb(${a.map((v,k)=>Math.round(v+(b[k]-v)*u)).join(",")})`}if(p<=85)return"#2fb67c";const t=(p-85)/15,a=[47,182,124],b=[232,179,40];return`rgb(${a.map((v,k)=>Math.round(v+(b[k]-v)*t)).join(",")})`};
@@ -656,8 +657,7 @@ async function painel(id){
      <div class="mas">
       <div class="card" data-span="8"><h2>Custos: previsto × realizado</h2><p class="note">Preencha o valor real de cada custo conforme for pagando (comissão, mão de obra, frete…). Em branco, vale o previsto.</p>
        <table class="tbl"><thead><tr><th>Item</th><th class="n">Previsto</th><th class="n">Realizado</th><th class="n">Diferença</th></tr></thead><tbody>
-        <tr><td><b>Materiais fechados</b><span class="sm">${nF} de ${nT} itens · OCs geradas (valor do pedido)${k.estV?` + estoque ${brl(k.estV)} (pelo previsto)`:""}</span></td><td class="n">${brl(fPrev)}</td><td class="n">${brl(fReal)}</td><td class="n">${dif(fPrev-fReal,fPrev)}</td></tr>
-        <tr class="ina"><td><b>Materiais a comprar</b><span class="sm">${nT-nF} iten(s) sem OC · projeção pelo escolhido, mais barato cotado ou previsto</span></td><td class="n">${brl(abPrev)}</td><td class="n">${brl(abProj)}</td><td class="n">${dif(abPrev-abProj,abPrev)}</td></tr>
+        <tr><td><b>Materiais</b><span class="sm">previsto do orçamento · realizado = OCs geradas ${brl(fReal-estV2)}${estV2?` + estoque ${brl(estV2)} (pelo previsto)`:""} · falta comprar ${brl(abPrev)} (${nT-nF} iten(s) sem OC)</span></td><td class="n">${brl(matPrev)}</td><td class="n">${brl(fReal)}</td><td class="n">${dif(matPrev-fReal,matPrev)}</td></tr>
         ${custos.map((c,i)=>`<tr><td>${esc(c.desc||c.grupo)}<span class="sm">${esc(c.grupo||"")}</span></td><td class="n">${brl(c.v)}</td><td class="n"><input class="inp n" data-cr="${i}" value="${c.real!=null?num(c.real,2):""}" placeholder="${num(c.v,2)}" style="width:120px" inputmode="decimal"></td><td class="n">${c.real!=null?dif(c.v-c.real,c.v):'<span class="note">—</span>'}</td></tr>`).join("")}
        </tbody><tfoot><tr><td><b>Total</b></td><td class="n"><b>${brl(totPrev)}</b></td><td class="n"><b>${brl(totReal)}</b></td><td class="n"><b>${dif(eco,totPrev)}</b></td></tr>
         ${pv.total?`<tr><td colspan="4" class="note">Valor vendido ao cliente: <b>${brl(pv.total)}</b> · lucro previsto ${brl(pv.lucro)} · lucro com o realizado <b>${brl((+pv.total||0)-totReal)}</b> (${pct(pv.total?((+pv.total)-totReal)/pv.total*100:0)})</td></tr>`:""}</tfoot></table></div>
