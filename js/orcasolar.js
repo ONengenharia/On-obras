@@ -565,7 +565,7 @@ function renderPreco(){
   out("liq","Resultado líquido",liqP,liqE,false,"total");
 
   const act = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.real : null;
-  $("tbl-dre").innerHTML = `<thead><tr><th>Item</th><th>Modelo (previsto)</th><th>% da receita</th><th>Realizado (preencher)</th><th>Desvio</th></tr></thead><tbody>` +
+  $("tbl-dre").innerHTML = `<thead><tr><th>Item</th><th>${$("pm-atual").value?esc($("pm-atual").value):"Modelo"} (previsto)</th><th>% da receita</th><th>Realizado (preencher)</th><th>Desvio</th></tr></thead><tbody>` +
     rows.map(x=>{
       const dev = x.eff-x.prev;
       const bad = x.cost ? dev>0.005 : dev<-0.005;
@@ -2416,6 +2416,7 @@ function zerarNovo(){
   NOVO_ZERO=true;
   ["modsel","telsel","concsel","pclasse","padrao","tensao"].forEach(id=>{ const el=$(id); if(!el.querySelector('option[value=""]')) el.insertAdjacentHTML("afterbegin",'<option value="">Selecione…</option>'); el.value=""; });
   $("tarifa").value=""; $("consumo").value=""; $("consumo").placeholder="kWh";
+  try{ pmPadrao(); }catch(e){ console.error(e); }
 }
 
 /* ================= TRÊS ESTUDOS: on-grid, híbrido, off-grid ================= */
@@ -2537,5 +2538,10 @@ function propostaComb(){
 }
 estUi();
 const _ap0=atualizarPrev; atualizarPrev=function(){ if(VERBLK) return; return _ap0.apply(this,arguments); };
+
+/* ---- DRE: todo orçamento novo entra com o modelo de precificação padrão (V1) ---- */
+const _pmApl0=$("pm-apl").onclick;
+$("pm-apl").onclick=function(){ _pmApl0.apply(this,arguments); const m=pmList().find(x=>x.id===$("pm-sel").value); if(m){ $("pm-atual").value=m.nome; try{ renderPreco(); }catch(e){} } };
+function pmPadrao(){ const a=pmList(), m=a.find(x=>/v1/i.test(x.nome))||a[0]; if(!m) return; pmFill(m.id); $("pm-sel").value=m.id; $("pm-apl").onclick(); }
 
 integrar();
