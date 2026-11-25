@@ -2523,13 +2523,14 @@ function propostaComb(){
   const rs=keys.map(k=>runAs(k,()=>({k,html:propBase(),r:R,hib:k==="hib"?hibCalc():null,off:k==="off"?offCalc():null})));
   const docs=rs.map(x=>new DOMParser().parseFromString(x.html,"text/html"));
   const NM={on:"OPÇÃO A · ON-GRID",hib:"OPÇÃO B · HÍBRIDO COM BACKUP",off:"OPÇÃO C · OFF-GRID"};
-  const badge=k=>`<div style="display:inline-block;background:#1D3140;color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;padding:3px 8px;border-radius:4px;margin-bottom:6px">${NM[k]}</div>`;
+  const COR={on:"#1D3140",hib:"#2f6f9f",off:"#1f8a4c"}, SUB={on:"Conectado à rede, com créditos de energia",hib:"Gera e mantém as cargas essenciais nas quedas de energia",off:"Sistema autônomo, sem rede da concessionária"};
+  const badge=k=>`<span style="display:inline-flex;align-items:center;background:${COR[k]};color:#fff;padding:8px 18px;border-radius:8px;font-size:14px;font-weight:800;letter-spacing:.07em;line-height:1">${NM[k]}</span>`;
   const h2=sec=>{ const h=sec.querySelector(".pb h2"); return h?h.textContent:""; };
   const parts=docs.map((d,i)=>{
     const L=[...d.querySelectorAll("section.pg")], pages=L.slice(1), ia=pages.findIndex(p=>/Aceite/i.test(h2(p))), keep=ia>=0?pages.slice(0,ia):pages;
     const k=rs[i].k; let sel=keep;
     if(k==="hib") sel=keep.filter(p=>/Produtos e equipamentos|Investimento|Economia|Retorno do investimento|backup/i.test(h2(p))&&!/ambiental/i.test(h2(p)));
-    sel.forEach(p=>{ const pb=p.querySelector(".pb"); if(pb) pb.insertAdjacentHTML("afterbegin",badge(k)); });
+    sel.forEach(p=>{ const ph=p.querySelector(".ph span"); if(ph) ph.outerHTML=badge(k); });
     return {k,cover:L[0],pages:sel,all:L};
   });
   const I=propInfo(), pp=PP(), ref=(window.GC_NUM?("nº "+window.GC_NUM):propRef())+" · versão "+(propVer()||1), dataVer=($("pr-verdata").value||new Date().toLocaleDateString("pt-BR"));
