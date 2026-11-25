@@ -1196,7 +1196,7 @@ function propostaHTML(){
     paginas=fins.length?[RM(quem+det),ger,proj,prod,RM(pag),RM(ecoParc),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))]:[RM(quem+det),ger,proj,prod,RM(pag+pagEco),ret,RM(amb),RM(paginaAceite(r,I,hoje,validade,ref,pp,dataVer||hoje))];
   }
   let seguroP=[]; if(comSeg){ seguroP=paginasSeguro(nome,seg,0,0,LOGO); }
-  const todas=[...paginas,...(typeof hibPagina==="function"?hibPagina(r):[]),...seguroP];
+  const todas=(typeof offAtivo==="function"&&offAtivo())?[...offPaginas(r,I,hoje,validade,ref,pp,dataVer||hoje),...seguroP]:[...paginas,...(typeof hibPagina==="function"?hibPagina(r):[]),...seguroP];
   const total=1+todas.length;
   const head=()=>`<header class="ph"><img src="${LOGO}" alt="ON Engenharia"><span>Proposta comercial · ${pesc(nome)}</span></header>`;
   const foot=n=>`<footer class="pf"><div class="pf1"><b>Proposta ${pesc(ref)}</b><span>Folha ${n} de ${total}</span></div><div class="pf2">${pesc(CONFIG.empresa||"ON Engenharia")} · ${pesc(CONFIG.contato||"")} · <a href="https://onengenhariaeletrica.com.br/">onengenhariaeletrica.com.br</a> · <a href="https://www.instagram.com/on_engenharia_/">@on_engenharia_</a></div></footer>`;
@@ -2190,6 +2190,101 @@ try{ DEF.modulos.push({id:"m_dah590",marca:"DAH Solar",modelo:"DHN-72X16/DG 590 
 function hibBatSel(){ return HIB_BAT.find(b=>b.id===($("hib-bat-sel")||{}).value); }
 const HIB_TIPOS={on:"On-grid (somente rede)",hib:"Híbrido com backup"};
 function hibAtivo(){ return ($("hib-tipo")||{}).value==="hib"; }
+function offAtivo(){ return ($("hib-tipo")||{}).value==="off"; }
+const OFF_INV=[
+ {nome:"Deye SUN-3K-OG02LP1-EU-AM1 (off-grid 3 kW)",kw:3,pv:6000,pvIn:4800,iBat:70},
+ {nome:"Deye SUN-3.6K-OG02LP1-EU-AM1 (off-grid 3,6 kW)",kw:3.6,pv:7200,pvIn:5760,iBat:90},
+ {nome:"Deye SUN-5K-OG02LP1-EU-AM1 (off-grid 5 kW)",kw:5,pv:10000,pvIn:8000,iBat:120},
+ {nome:"Deye SUN-6K-OG02LP1-EU-AM1 (off-grid 6 kW)",kw:6,pv:12000,pvIn:9600,iBat:135}
+];
+function offCalc(){
+  const A=HIB.cargas.filter(x=>x.q>0&&x.w>0);
+  const dias=Math.max(v("off-dias"),0.5), pr=Math.min(Math.max(v("off-pr"),40),95)/100;
+  const dod=Math.min(Math.max(v("hib-dod"),10),100)/100, ef=Math.min(Math.max(v("hib-ef"),50),100)/100;
+  const fs=Math.min(Math.max(v("hib-fs"),10),100)/100, folga=Math.max(v("hib-folga"),1), sx=Math.max(v("hib-surto"),1);
+  const kwhM=v("hib-bat-kwh"), kwM=v("hib-bat-kw"), tens=v("hib-tensao")||51.2;
+  const E=A.reduce((s,x)=>s+x.q*x.w*x.h,0)/1000;
+  const runW=A.reduce((s,x)=>s+x.q*x.w,0), pico=runW*fs/1000;
+  const dm=Math.max(0,...A.map(x=>x.w*(Math.max(x.f,1)-1)))/1000, surto=pico+dm;
+  const pNec=Math.max(pico*folga,surto/sx);
+  const hs=(typeof HSPM!=="undefined"&&HSPM.length===12)?HSPM.slice():new Array(12).fill((R&&R.hsp)||4.5);
+  const hsc=Math.min(...hs), mc=hs.indexOf(hsc);
+  const mod=R&&R.mod?R.mod:null, wp=mod?mod.wp:0;
+  const kwp=hsc>0?E/(hsc*pr):0, nMod=wp>0?Math.ceil(kwp*1000/wp-1e-9):0, kwpR=nMod*wp/1000;
+  const capReq=E*dias/(dod*ef);
+  let inv=OFF_INV.find(i=>i.kw>=pNec-1e-9&&i.pv>=kwpR*1000), exc=false;
+  if(!inv){ inv=OFF_INV[OFF_INV.length-1]; exc=true; }
+  const nCap=kwhM>0?Math.ceil(capReq/kwhM-1e-9):0, nPot=kwM>0?Math.ceil(Math.min(pNec,inv.kw)/kwM-1e-9):0;
+  const nBat=Math.max(nCap,nPot,A.length?1:0), capInst=nBat*kwhM, autD=E>0?capInst*dod*ef/E:0;
+  const mes=hs.map(h=>kwpR*h*pr), def=mes.map(g=>g<E-1e-9);
+  const av=[];
+  if(!A.length) av.push("Adicione as cargas que o sistema vai alimentar.");
+  if(exc) av.push("A potência ou o arranjo FV excede o maior inversor off-grid do catálogo (6 kW). Reduza cargas ou avalie inversores em paralelo / outro modelo.");
+  if(def.some(x=>x)) av.push("Em "+def.filter(x=>x).length+" mês(es) a geração diária fica abaixo do consumo: nesses meses depende da autonomia da bateria ou de gerador de apoio.");
+  if(A.some(x=>x.w*x.q>3000)) av.push("Há carga acima de 3 kW (ex.: chuveiro elétrico). Cargas resistivas grandes encarecem muito o off-grid; considere aquecimento solar ou a gás.");
+  if(dod>0.95) av.push("DoD acima de 95% reduz a vida útil da bateria; confirme o limite do fabricante.");
+  if(!(v("hib-kit")>0)) av.push("Informe o valor do kit off-grid cotado (com baterias) para calcular o preço da proposta.");
+  if(!mod) av.push("Selecione o módulo na aba Sistema.");
+  return {A,dias,pr,dod,ef,fs,folga,sx,tens,E,pico,surto,pNec,hs,hsc,mc,wp,kwp,nMod,kwpR,capReq,inv,exc,nCap,nPot,nBat,capInst,autD,kwhM,kwM,mes,def,av};
+}
+function offRes(){
+  const c=offCalc(), M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  $("hib-res").innerHTML=`<div class="kpis3">
+   <div><b>${num(c.E,1)} kWh/dia</b><span>consumo das cargas</span></div>
+   <div><b>${num(c.kwpR,2)} kWp</b><span>${c.nMod} módulos de ${num(c.wp,0)} Wp</span></div>
+   <div class="hi"><b>${num(c.capInst,1)} kWh</b><span>${c.nBat} bateria(s) · ${num(c.autD,1)} dias</span></div></div>
+  <table class="tec"><tbody>
+   <tr><td>Mês crítico</td><td>${M[c.mc]} · ${num(c.hsc,2)} kWh/m²·dia (a menor irradiação do ano)</td></tr>
+   <tr><td>Geração no mês crítico</td><td>${num(c.kwpR*c.hsc*c.pr,1)} kWh/dia contra ${num(c.E,1)} kWh/dia de consumo (eficiência ${num(c.pr*100,0)}%)</td></tr>
+   <tr><td>Pico simultâneo / surto</td><td>${num(c.pico,2)} kW / ${num(c.surto,2)} kW</td></tr>
+   <tr><td>Inversor off-grid</td><td><b>${esc(c.inv.nome)}</b> · arranjo FV até ${num(c.inv.pv/1000,1)} kWp</td></tr>
+   <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,2)} kWh = ${num(c.capInst,1)} kWh</b> (${c.nCap} pela energia de ${num(c.dias,1)} dia(s), ${c.nPot} pela potência)</td></tr></tbody></table>
+  <div class="scroll mt"><table class="data tight"><thead><tr><th>Mês</th>${M.map(m=>`<th>${m}</th>`).join("")}</tr></thead><tbody>
+   <tr><td>Irradiação</td>${c.hs.map(h=>`<td>${num(h,1)}</td>`).join("")}</tr>
+   <tr><td>Geração kWh/dia</td>${c.mes.map((g,i)=>`<td class="${c.def[i]?"neg":""}">${num(g,1)}</td>`).join("")}</tr></tbody></table></div>
+  ${c.av.length?`<ul class="checks">${c.av.map(a=>`<li class="warn">${esc(a)}</li>`).join("")}</ul>`:""}`;
+}
+function offPaginas(r,I,hoje,validade,ref,pp,dataVer){
+  const c=offCalc(), rb=hibOpcaoB(), nome=($("hib-bat-nome").value||"Bateria de lítio (LiFePO₄)").trim(), bs=hibBatSel(), M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  const cargas=c.A.map(x=>`<tr><td>${pesc(x.n)}</td><td>${x.q}</td><td>${num(x.w,0)} W</td><td>${num(x.h,1)} h/dia</td><td>${num(x.q*x.w*x.h/1000,2)} kWh</td></tr>`).join("");
+  const tot=rb?rb.invest:0, mod=r.mod;
+  const p1=`<h2>Seu sistema solar off-grid</h2>
+   <p class="lead">Sistema autônomo, sem depender da rede da concessionária: os módulos geram, as baterias armazenam e o inversor alimenta as cargas listadas.</p>
+   <div class="kpis3"><div><b>${num(c.kwpR,2)} kWp</b><span>${c.nMod} módulos de ${num(c.wp,0)} Wp</span></div><div><b>${num(c.capInst,1)} kWh</b><span>baterias (${c.nBat} × ${num(c.kwhM,2)} kWh)</span></div><div class="hi"><b>${num(c.autD,1)} dias</b><span>de autonomia</span></div></div>
+   <h3 class="sub">Cargas atendidas</h3>
+   <table class="data l"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência</th><th>Uso</th><th>Energia/dia</th></tr></thead><tbody>${cargas}<tr><td colspan="4"><b>Total</b></td><td><b>${num(c.E,1)} kWh</b></td></tr></tbody></table>
+   <h3 class="sub">Equipamentos</h3>
+   <table class="kv"><tbody>
+    <tr><td>Módulos</td><td>${c.nMod} × ${pesc((mod.marca+" "+mod.modelo).trim())}</td></tr>
+    <tr><td>Inversor off-grid</td><td>${pesc(c.inv.nome)}, pico de partida de 2× a potência por 10 s</td></tr>
+    <tr><td>Baterias</td><td>${c.nBat} × ${pesc(nome)}${bs?` · ≥ ${num(bs.ciclos,0)} ciclos · garantia de ${bs.garantia} anos`:""}</td></tr>
+    <tr><td>Instalação</td><td>Estrutura, string box, proteções CC/CA, cabos, projeto com ART e comissionamento</td></tr></tbody></table>`;
+  const p2=`<h2>Como foi dimensionado</h2>
+   <table class="kv"><tbody>
+    <tr><td>Consumo diário</td><td>${num(c.E,1)} kWh/dia (pico simultâneo ${num(c.pico,2)} kW, surto ${num(c.surto,2)} kW)</td></tr>
+    <tr><td>Mês de projeto</td><td>${M[c.mc]}, o de menor irradiação (${num(c.hsc,2)} kWh/m²·dia), com eficiência global de ${num(c.pr*100,0)}%</td></tr>
+    <tr><td>Armazenamento</td><td>${num(c.dias,1)} dia(s) de autonomia, DoD de ${num(c.dod*100,0)}%</td></tr></tbody></table>
+   <table class="data tight"><thead><tr><th>Mês</th>${M.map(m=>`<th>${m}</th>`).join("")}</tr></thead><tbody>
+    <tr><td>Geração (kWh/dia)</td>${c.mes.map((g,i)=>`<td class="${c.def[i]?"neg":""}">${num(g,1)}</td>`).join("")}</tr></tbody></table>
+   <p class="small">Consumo de referência: ${num(c.E,1)} kWh/dia. ${c.def.some(x=>x)?"Nos meses em destaque a geração diária fica abaixo do consumo; a bateria cobre parte da diferença e pode ser necessário gerador de apoio ou redução de cargas.":"A geração cobre o consumo em todos os meses."} Estimativa baseada em irradiação média; períodos seguidos de tempo nublado reduzem a autonomia.</p>
+   ${rb?`<div class="total"><span>Valor total da proposta</span><strong>${brl2(tot)}</strong><em>com instalação e comissionamento inclusos</em></div>`:`<p class="small"><b>Valor:</b> a definir (kit off-grid cotado não informado).</p>`}
+   <table class="data l"><tbody><tr><td>Entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr><tr><td>Validade</td><td>${validade}</td></tr></tbody></table>`;
+  const p3=`<h2>Aceite da proposta</h2>
+   <p class="lead">Proposta <b>${ref}</b> · emitida em ${dataVer} · válida até ${validade}</p>
+   <table class="kv"><tbody>
+    <tr><td>Contratante</td><td>${pesc(I.nome)}</td></tr>
+    <tr><td>CPF / CNPJ</td>${window.CAD_DOC?`<td>${pesc(window.CAD_DOC)}</td>`:`<td class="blank"></td>`}</tr>
+    <tr><td>Endereço da instalação</td><td>${pesc([I.end,I.cid,I.cep].filter(Boolean).join(" · "))||"&nbsp;"}</td></tr>
+    <tr><td>Contratada</td><td>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</td></tr>
+    <tr><td>Objeto</td><td>Fornecimento e instalação de sistema fotovoltaico off-grid de ${num(c.kwpR,2)} kWp (${c.nMod} módulos), inversor off-grid e baterias de ${num(c.capInst,1)} kWh, para as cargas listadas</td></tr>
+    <tr><td>Valor</td><td><b>${rb?brl2(tot):"a definir"}</b></td></tr>
+    <tr><td>Prazo de entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr></tbody></table>
+   <p class="small" style="font-size:10.5px;color:#1D3140;margin:12px 0 4px">Declaro que li e estou de acordo com os produtos, quantidades, valores e condições desta proposta, e confirmo as cargas listadas. Equipamentos fora da lista, ou com potência maior que a informada, exigem novo dimensionamento.</p>
+   <p class="small" style="font-size:10.5px">Local e data: ______________________________, ____ / ____ / ________</p>
+   <div class="sign big"><div><i></i><span>${pesc(I.nome)}<br>Contratante</span></div>
+    <div>${pp.assin?`<img src="${pp.assin}" class="assin" alt="">`:""}<i></i><span>${pesc(pp.resp||"Responsável técnico")}${pp.crea?" · "+pesc(pp.crea):""}<br>${pesc(pp.razao)} · CNPJ ${pesc(pp.cnpj)}</span></div></div>`;
+  return [p1,p2,p3];
+}
 function hibDeye(){
   const r=R; let lig=""; try{ lig=propInfo().lig||""; }catch(e){}
   const kwOn=r&&r.inv?r.inv.kw*(r.qtdInv||1):0, mono=!/tri/i.test(lig);
@@ -2229,8 +2324,9 @@ function hibCalc(){
   return {dy,pNec,A,crit,H,dod,ef,fs,folga,sx,tens,whDia,whCrit,runW,pico,surto,pMed,eBack,capReq,pInv,nBat,nCap,nPot,capInst,autH,kwhM,kwM,av,iDC:pico*1000/tens};
 }
 function hibRender(){
-  const on=hibAtivo(), card=$("card-hib"); if(!card) return;
+  const on=hibAtivo()||offAtivo(), card=$("card-hib"); if(!card) return;
   card.hidden=!on; if(!on) return;
+  const off=offAtivo(); $("hib-tbl").classList.toggle("off",off); $("off-only").hidden=!off; $("lb-horas").style.display=off?"none":"";
   hibRows(); hibRes();
 }
 function hibRows(){
@@ -2240,11 +2336,12 @@ function hibRows(){
     <td><input data-k="w" type="number" min="0" step="10" value="${x.w}" style="width:76px"></td>
     <td><input data-k="f" type="number" min="1" step="0.5" value="${x.f}" style="width:56px"></td>
     <td><input data-k="h" type="number" min="0" max="24" step="0.1" value="${x.h}" style="width:60px"></td>
-    <td style="text-align:center"><input data-k="c" type="checkbox" ${x.c?"checked":""}></td>
+    <td class="cc" style="text-align:center"><input data-k="c" type="checkbox" ${x.c?"checked":""}></td>
     <td style="text-align:right">${num(x.q*x.w*x.h/1000,2)}</td>
     <td><button class="btn alt small" type="button" data-del="${i}">×</button></td></tr>`).join("")||`<tr><td colspan="8" class="note">Nenhuma carga ainda. Escolha um equipamento da lista e clique em Adicionar.</td></tr>`;
 }
 function hibRes(){
+  if(offAtivo()) return offRes();
   const c=hibCalc();
   $("hib-res").innerHTML=`<div class="kpis3">
     <div><b>${num(c.pico,2)} kW</b><span>pico simultâneo (críticas)</span></div>
@@ -2291,7 +2388,8 @@ function hibPagina(r){
 function hibPerm(){
   const sel=$("hib-tipo"); if(!sel) return; const o=[...sel.options].find(x=>x.value==="hib"); if(!o) return;
   o.disabled=!ISADM; o.textContent=ISADM?"Com Opção B: híbrido com backup":"Híbrido com backup (em breve)";
-  if(!ISADM&&sel.value==="hib"){ sel.value="on"; hibRender(); }
+  const f=[...sel.options].find(x=>x.value==="off"); if(f){ f.disabled=!ISADM; f.textContent=ISADM?"Off-grid (sistema autônomo)":"Off-grid (em breve)"; }
+  if(!ISADM&&(sel.value==="hib"||sel.value==="off")){ sel.value="on"; hibRender(); }
 }
 const _calcH=calc; calc=function(){ try{ hibPerm(); }catch(e){} return _calcH.apply(this,arguments); };
 function hibBind(){
