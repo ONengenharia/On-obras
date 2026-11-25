@@ -21,6 +21,10 @@ Deno.serve(async (req) => {
     if (!/^(compras|fornecedores|situacoes_compras|ordens_compras|formas_pagamentos|lojas|centros_custos|produtos)(\/\d+)?$/.test(rec)) return out({ erro: "Recurso não permitido" }, 400);
     const r = await fetch(`${BASE}/${rec}?limite=${Math.min(+b.limite || 1, 3)}`, { headers: h });
     const t = await r.text(); let j: unknown = t; try { j = JSON.parse(t) } catch (_) {}
+    if (b.resumo) { // estrutura enxuta: textos curtos e só o 1º elemento de cada lista
+      const sk = (x: unknown): unknown => Array.isArray(x) ? (x.length ? [sk(x[0]), "…" + x.length + " itens"] : []) : (x && typeof x === "object") ? Object.fromEntries(Object.entries(x as Record<string, unknown>).map(([k, v]) => [k, sk(v)])) : (typeof x === "string" && x.length > 28 ? x.slice(0, 28) + "…" : x);
+      return out({ status: r.status, estrutura: sk((j as Record<string, unknown>)?.data ?? j) });
+    }
     return out({ status: r.status, dados: j });
   }
   return out({ erro: "Ação desconhecida" }, 400);
