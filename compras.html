@@ -813,6 +813,27 @@ async function painel(id){
       await chk(O.from("compra_itens").update({qtd:q,preco_previsto:pv}).eq("id",i.id));i.qtd=q;i.preco_previsto=pv;
       await logC(q===0?"Item retirado":q!==antes.qtd?"Quantidade alterada":"Previsto alterado",i.descricao,antes,{qtd:q,preco:pv});shell()},"Salvar");
   }
+  /* ---- OC -> Gestão Click (compra "Em aberto", sem pagamento; você finaliza lá) ---- */
+  let GCC=null;
+  async function enviarGC(p){
+    if(!p)return;
+    const inv=async b=>{const {data,error}=await DB.sb.functions.invoke("gc_compras",{body:b});let d=data;if(error&&error.context&&error.context.json){try{d=await error.context.json()}catch(_){}}return d||{ok:false,erro:String(error&&error.message||"sem resposta")}};
+    if(!GCC){const r=await inv({acao:"centros"});if(!r.ok){toast("Não consegui ler os centros de custo do Gestão Click: "+(r.erro||""));return}GCC=r.centros}
+    const c=CT.find(x=>x.id==p.cotacao_id)||{},f=FORNS.find(x=>x.id===c.fornecedor_id)||{},frete=+c.frete||0,sal=localStorage.getItem("gc.cc."+id);
+    const tk=norm((C.titulo||"")+" "+(C.cliente||"")).split(" ").filter(w=>w.length>3);
+    const sc=x=>{const n=norm(x.nome);return tk.reduce((t,w)=>t+(n.includes(w)?1:0),0)};
+    const melhor=sal&&GCC.find(x=>x.id==sal)||[...GCC].sort((a,b)=>sc(b)-sc(a))[0];
+    modal(`<h2>Enviar OC ${esc(p.oc||p.numero)} ao Gestão Click</h2>
+      <p class="note">Cria a compra <b>Em aberto</b>, sem forma de pagamento e sem finalizar. Você confere, troca o fornecedor se precisar e finaliza lá. ${(p.itens||[]).length} itens · ${brl(p.total)}${frete?" (frete "+brl(frete)+" vai no campo frete)":""}.</p>
+      <label class="fld">Centro de custo (obra no Gestão Click)<select name="cc">${GCC.map(x=>`<option value="${esc(x.id)}" ${melhor&&x.id==melhor.id?"selected":""}>${esc(x.nome)}</option>`).join("")}</select></label>
+      <p class="note">Fornecedor: ${esc(p.fornecedor_nome)}${f.cnpj?" · "+esc(f.cnpj):""}. É procurado no Gestão Click pelo CNPJ ou nome; se não achar, vai como “FORNECEDOR A DEFINIR”.</p>`,async fm=>{
+      localStorage.setItem("gc.cc."+id,fm.cc);
+      const r=await inv({acao:"compra_enviar",oc:p.oc||p.numero,obra:C.titulo||"",centro_custo_id:fm.cc,frete,fornecedor:{nome:f.razao_social||p.fornecedor_nome,cnpj:f.cnpj||""},itens:(p.itens||[]).map(i=>({codigo:i.codigo,descricao:i.descricao,qtd:i.qtd,preco:i.preco}))});
+      if(!r.ok){alert("Não foi enviado ("+(r.etapa||"erro")+"):\n"+JSON.stringify(r.resposta||r.erro||r).slice(0,600));return false}
+      p.gc_id=r.id;p.gc_codigo=r.codigo||r.id;p.gc_em=new Date().toISOString();
+      O.from("compra_pedidos").update({gc_id:p.gc_id,gc_codigo:p.gc_codigo,gc_em:p.gc_em,gc_por:quem()}).eq("id",p.id).then(()=>{});
+      toast(`Compra ${p.gc_codigo} criada no Gestão Click (Em aberto)${r.provisorio?" · fornecedor provisório, troque lá":""}.`);shell()},"Enviar");
+  }
   /* ---- ajustar uma cotação sem importar de novo ---- */
   function editCot(c){
     const m=document.createElement("div");m.className="modal";
@@ -970,7 +991,7 @@ async function painel(id){
         return `<div class="pedc" data-g="${cid}"><div class="row"><div><b>${esc(c.fornecedor_nome)}</b><span class="sm" style="display:block">${its.length} itens · <span data-gt="${cid}">${brl(tot)}</span>${c.frete?" + frete "+brl(c.frete):""}${c.prazo?" · prazo "+esc(c.prazo):""}</span></div><button class="btn pri sm" data-gp="${cid}">Criar OC…</button></div>
           <table class="tbl"><tbody>${its.map(i=>`<tr><td style="width:24px"><input type="checkbox" data-pi="${i.id}" checked></td><td>${esc(i.descricao)}<span class="sm">${esc(i.material_codigo||"")}</span></td><td class="n">${num(qc(i),2)} ${esc(i.unidade||"")}</td><td class="n">${brl(vEsc(i))}</td><td class="n">${brl(qc(i)*vEsc(i))}</td></tr>`).join("")}</tbody></table></div>`}).join("")||'<p class="note">Nada pendente. Escolha fornecedores no Comparativo (itens com OC não aparecem aqui).</p>'}</div>
       <div class="card"><h2>OCs emitidas</h2><table class="tbl"><thead><tr><th>OC</th><th>Fornecedor</th><th class="n">Itens</th><th class="n">Total</th><th class="hm">Emitida</th><th></th></tr></thead><tbody>
-      ${PD.map(p=>`<tr class="oc"><td class="mono"><b>${esc(p.oc||p.numero)}</b></td><td>${esc(p.fornecedor_nome)}</td><td class="n">${(p.itens||[]).length}</td><td class="n">${brl(p.total)}</td><td class="hm">${fdata(p.gerado_em)} · ${esc(p.gerado_nome||"")}</td><td class="n" style="white-space:nowrap"><button class="btn sm" data-pdf="${p.id}">⬇ PDF</button> <button class="btn sm" data-bx="${p.id}">Excel</button> <button class="xb" data-undo="${p.id}" title="Cancelar OC">✕</button></td></tr>`).join("")||'<tr><td colspan="6" class="note">Nenhuma OC emitida.</td></tr>'}</tbody></table></div></div>`;
+      ${PD.map(p=>`<tr class="oc"><td class="mono"><b>${esc(p.oc||p.numero)}</b></td><td>${esc(p.fornecedor_nome)}</td><td class="n">${(p.itens||[]).length}</td><td class="n">${brl(p.total)}</td><td class="hm">${fdata(p.gerado_em)} · ${esc(p.gerado_nome||"")}</td><td class="n" style="white-space:nowrap"><button class="btn sm" data-pdf="${p.id}">⬇ PDF</button> <button class="btn sm" data-bx="${p.id}">Excel</button> ${p.gc_codigo?`<span class="chip finalizado" title="Enviada ao Gestão Click em ${esc(fdata(p.gc_em))}">GC #${esc(p.gc_codigo)}</span>`:`<button class="btn sm" data-gc="${p.id}" title="Cria esta compra no Gestão Click (Em aberto, sem pagamento)">↗ Gestão Click</button>`} <button class="xb" data-undo="${p.id}" title="Cancelar OC">✕</button></td></tr>`).join("")||'<tr><td colspan="6" class="note">Nenhuma OC emitida.</td></tr>'}</tbody></table></div></div>`;
     $$("[data-pi]").forEach(x=>x.onchange=()=>{const g=x.closest("[data-g]").dataset.g;const tot=G[g].filter(i=>$(`[data-pi="${i.id}"]`).checked).reduce((s,i)=>s+qc(i)*vEsc(i),0);$(`[data-gt="${g}"]`).textContent=brl(tot)});
     $$("[data-gp]").forEach(b=>b.onclick=()=>{const cid=+b.dataset.gp;const c=CT.find(x=>x.id==cid);const its=G[cid].filter(i=>$(`[data-pi="${i.id}"]`).checked);if(!its.length){toast("Marque ao menos um item.");return}
       const f=FORNS.find(x=>x.id===c.fornecedor_id)||{};const caros=its.filter(i=>{const fa=faixa(i);return fa&&vEsc(i)>fa.min.v+1e-6});const tot=its.reduce((s,i)=>s+qc(i)*vEsc(i),0)+(+c.frete||0);
@@ -986,6 +1007,7 @@ async function painel(id){
         if(fm.sessao.trim()!==(C.sessao||"")){C.sessao=fm.sessao.trim()||null;O.from("compras").update({sessao:C.sessao}).eq("id",id).then(()=>{})}
         if(f.id&&(fm.contato.trim()!==(f.contato||"")||fm.cond.trim()!==(f.cond_pagto||""))){f.contato=fm.contato.trim()||null;f.cond_pagto=fm.cond.trim()||null;O.from("fornecedores").update({contato:f.contato,cond_pagto:f.cond_pagto}).eq("id",f.id).then(()=>{})}
         toast(`OC ${oc} criada. Gerando o PDF…`);await pdfPedido(p,c);shell()},"Criar OC e baixar PDF")});
+    $$("[data-gc]").forEach(b=>b.onclick=()=>enviarGC(PD.find(x=>x.id==b.dataset.gc)));
     $$("[data-pdf]").forEach(b=>b.onclick=()=>{const p=PD.find(x=>x.id==b.dataset.pdf);pdfPedido(p,CT.find(c=>c.id==p.cotacao_id)||{fornecedor_nome:p.fornecedor_nome})});
     $$("[data-bx]").forEach(b=>b.onclick=()=>{const p=PD.find(x=>x.id==b.dataset.bx);baixarPedido(p,CT.find(c=>c.id==p.cotacao_id)||{fornecedor_nome:p.fornecedor_nome})});
     $$("[data-undo]").forEach(b=>b.onclick=()=>{const p=PD.find(x=>x.id==b.dataset.undo);modal(`<h2>Cancelar a OC ${esc(p.oc||p.numero)}?</h2><p class="note">Os itens voltam para pendentes (a escolha de fornecedor continua).</p>`,async()=>{
