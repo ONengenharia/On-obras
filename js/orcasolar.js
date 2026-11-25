@@ -2217,17 +2217,18 @@ function offCalc(){
   let inv=OFF_INV.find(i=>i.kw>=pNec-1e-9&&i.pv>=kwpR*1000), exc=false;
   if(!inv){ inv=OFF_INV[OFF_INV.length-1]; exc=true; }
   const nCap=kwhM>0?Math.ceil(capReq/kwhM-1e-9):0, nPot=kwM>0?Math.ceil(Math.min(pNec,inv.kw)/kwM-1e-9):0;
-  const nBat=Math.max(nCap,nPot,A.length?1:0), capInst=nBat*kwhM, autD=E>0?capInst*dod*ef/E:0;
+  const nAuto=Math.max(nCap,nPot,A.length?1:0), man=Math.floor(v("hib-nbat")), nBat=man>0?man:nAuto, capInst=nBat*kwhM, autD=E>0?capInst*dod*ef/E:0;
   const mes=hs.map(h=>kwpR*h*pr), def=mes.map(g=>g<E-1e-9);
   const av=[];
   if(!A.length) av.push("Adicione as cargas que o sistema vai alimentar.");
   if(exc) av.push("A potência ou o arranjo FV excede o maior inversor off-grid do catálogo (6 kW). Reduza cargas ou avalie inversores em paralelo / outro modelo.");
   if(def.some(x=>x)) av.push("Em "+def.filter(x=>x).length+" mês(es) a geração diária fica abaixo do consumo: nesses meses depende da autonomia da bateria ou de gerador de apoio.");
   if(A.some(x=>x.w*x.q>3000)) av.push("Há carga acima de 3 kW (ex.: chuveiro elétrico). Cargas resistivas grandes encarecem muito o off-grid; considere aquecimento solar ou a gás.");
+  if(man>0&&man<nAuto) av.push("Quantidade manual de baterias ("+man+") abaixo do calculado ("+nAuto+"): a autonomia fica menor que a pedida.");
   if(dod>0.95) av.push("DoD acima de 95% reduz a vida útil da bateria; confirme o limite do fabricante.");
   if(!(v("kitcot")>0)) av.push("Informe o valor do kit off-grid cotado (com baterias) na aba Valor para calcular o preço da proposta.");
   if(!mod) av.push("Selecione o módulo na aba Sistema.");
-  return {A,dias,pr,dod,ef,fs,folga,sx,tens,E,pico,surto,pNec,hs,hsc,mc,wp,kwp,nMod,kwpR,capReq,inv,exc,nCap,nPot,nBat,capInst,autD,kwhM,kwM,mes,def,av};
+  return {nAuto,man,A,dias,pr,dod,ef,fs,folga,sx,tens,E,pico,surto,pNec,hs,hsc,mc,wp,kwp,nMod,kwpR,capReq,inv,exc,nCap,nPot,nBat,capInst,autD,kwhM,kwM,mes,def,av};
 }
 function offRes(){
   const c=offCalc(), M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
@@ -2241,10 +2242,11 @@ function offRes(){
    <tr><td>Geração no mês crítico</td><td>${num(c.kwpR*c.hsc*c.pr,1)} kWh/dia contra ${num(c.E,1)} kWh/dia de consumo (eficiência ${num(c.pr*100,0)}%)</td></tr>
    <tr><td>Pico simultâneo / surto</td><td>${num(c.pico,2)} kW / ${num(c.surto,2)} kW</td></tr>
    <tr><td>Inversor off-grid</td><td><b>${esc(c.inv.nome)}</b> · arranjo FV até ${num(c.inv.pv/1000,1)} kWp</td></tr>
-   <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,2)} kWh = ${num(c.capInst,1)} kWh</b> (${c.nCap} pela energia de ${num(c.dias,1)} dia(s), ${c.nPot} pela potência)</td></tr></tbody></table>
+   <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,2)} kWh = ${num(c.capInst,1)} kWh</b> ${c.man>0?`(ajuste manual; calculado: ${c.nAuto})`:`(${c.nCap} pela energia de ${num(c.dias,1)} dia(s), ${c.nPot} pela potência)`}</td></tr></tbody></table>
   <div class="scroll mt"><table class="data tight"><thead><tr><th>Mês</th>${M.map(m=>`<th>${m}</th>`).join("")}</tr></thead><tbody>
    <tr><td>Irradiação</td>${c.hs.map(h=>`<td>${num(h,1)}</td>`).join("")}</tr>
    <tr><td>Geração kWh/dia</td>${c.mes.map((g,i)=>`<td class="${c.def[i]?"neg":""}">${num(g,1)}</td>`).join("")}</tr></tbody></table></div>
+  <h3 class="sub">Geração por mês e consumo</h3>${offSvgMes(c)}
   ${c.av.length?`<ul class="checks">${c.av.map(a=>`<li class="warn">${esc(a)}</li>`).join("")}</ul>`:""}`;
 }
 function offPaginas(r,I,hoje,validade,ref,pp,dataVer){
@@ -2268,9 +2270,8 @@ function offPaginas(r,I,hoje,validade,ref,pp,dataVer){
     <tr><td>Quantidade de placas</td><td>${num(c.E,1)} kWh/dia ÷ (${num(c.hsc,2)} kWh/m²·dia × ${num(c.pr,2)}) = ${num(c.kwp,2)} kWp; ÷ ${num(c.wp,0)} Wp = <b>${c.nMod} placas</b> (${num(c.kwpR,2)} kWp)</td></tr>
     <tr><td>Mês de projeto</td><td>${M[c.mc]}, o de menor irradiação (${num(c.hsc,2)} kWh/m²·dia), com eficiência global de ${num(c.pr*100,0)}%</td></tr>
     <tr><td>Armazenamento</td><td>${num(c.dias,1)} dia(s) de autonomia, DoD de ${num(c.dod*100,0)}%</td></tr></tbody></table>
-   <table class="data tight"><thead><tr><th>Mês</th>${M.map(m=>`<th>${m}</th>`).join("")}</tr></thead><tbody>
-    <tr><td>Geração (kWh/dia)</td>${c.mes.map((g,i)=>`<td class="${c.def[i]?"neg":""}">${num(g,1)}</td>`).join("")}</tr></tbody></table>
-   <p class="small">Consumo de referência: ${num(c.E,1)} kWh/dia. ${c.def.some(x=>x)?"Nos meses em destaque a geração diária fica abaixo do consumo; a bateria cobre parte da diferença e pode ser necessário gerador de apoio ou redução de cargas.":"A geração cobre o consumo em todos os meses."} Estimativa baseada em irradiação média; períodos seguidos de tempo nublado reduzem a autonomia.</p>
+   ${offSvgMes(c)}
+   <p class="small">${c.def.some(x=>x)?"Barras laranja: meses em que a geração diária fica abaixo do consumo (linha tracejada). ":""}Consumo de referência: ${num(c.E,1)} kWh/dia. ${c.def.some(x=>x)?"Nesses meses a bateria cobre parte da diferença e pode ser necessário gerador de apoio ou redução de cargas.":"A geração cobre o consumo em todos os meses."} Estimativa baseada em irradiação média; períodos seguidos de tempo nublado reduzem a autonomia.</p>
    ${rb?`<div class="total"><span>Valor total da proposta</span><strong>${brl2(tot)}</strong><em>com instalação e comissionamento inclusos</em></div>`:`<p class="small"><b>Valor:</b> a definir (kit off-grid cotado não informado).</p>`}
    <table class="data l"><tbody><tr><td>Entrega</td><td>${v("prazo")||45} dias após a contratação</td></tr><tr><td>Validade</td><td>${validade}</td></tr></tbody></table>`;
   const p3=`<h2>Aceite da proposta</h2>
@@ -2309,7 +2310,7 @@ function hibCalc(){
   const capReq=eBack/(dod*ef);
   const dy=hibDeye(), pNec=Math.max(pico*folga,surto/sx), pInv=dy.kw>0?dy.kw:pNec;
   const nCap=kwhM>0?Math.ceil(capReq/kwhM-1e-9):0, nPot=kwM>0?Math.ceil(pNec/kwM-1e-9):0;
-  const nBat=Math.max(nCap,nPot,crit.length?1:0);
+  const nAuto=Math.max(nCap,nPot,crit.length?1:0), man=Math.floor(v("hib-nbat")), nBat=man>0?man:nAuto;
   const capInst=nBat*kwhM, autH=pMed>0?capInst*dod*ef/pMed:0;
   const av=[];
   if(!crit.length) av.push("Marque ao menos uma carga como crítica (as que o backup precisa manter ligadas).");
@@ -2317,10 +2318,11 @@ function hibCalc(){
   if(dy.kw>0&&pNec>dy.kw+1e-9) av.push("A potência necessária ("+pNec.toFixed(1).replace(".",",")+" kW) excede o inversor híbrido selecionado ("+dy.kw+" kW). Reduza as cargas críticas ou avalie outro modelo.");
   if(dy.tri) av.push("Ligação trifásica: o modelo Deye monofásico não se aplica. Defina o inversor híbrido trifásico.");
   if(!(v("kitcot")>0)) av.push("Informe o valor do kit híbrido cotado (com baterias) na aba Valor para calcular o preço e o payback.");
+  if(man>0&&man<nAuto) av.push("Quantidade manual de baterias ("+man+") abaixo do calculado ("+nAuto+"): a autonomia fica menor que o backup pedido.");
   if(nPot>nCap&&nBat>0) av.push("A potência do inversor/bateria é quem define o banco (não a energia). Confira a potência contínua informada por módulo.");
   if(surto>pInv*sx+1e-9) av.push("A partida do maior motor excede a capacidade de surto do inversor.");
   if(dod>0.95) av.push("DoD acima de 95% reduz a vida útil da bateria; confirme o limite do fabricante.");
-  return {dy,pNec,A,crit,H,dod,ef,fs,folga,sx,tens,whDia,whCrit,runW,pico,surto,pMed,eBack,capReq,pInv,nBat,nCap,nPot,capInst,autH,kwhM,kwM,av,iDC:pico*1000/tens};
+  return {nAuto,man,dy,pNec,A,crit,H,dod,ef,fs,folga,sx,tens,whDia,whCrit,runW,pico,surto,pMed,eBack,capReq,pInv,nBat,nCap,nPot,capInst,autH,kwhM,kwM,av,iDC:pico*1000/tens};
 }
 function hibRender(){
   const on=hibAtivo()||offAtivo(), card=$("card-hib"); if(!card) return;
@@ -2339,6 +2341,29 @@ function hibRows(){
     <td style="text-align:right">${num(x.q*x.w*x.h/1000,2)}</td>
     <td><button class="btn alt small" type="button" data-del="${i}">×</button></td></tr>`).join("")||`<tr><td colspan="8" class="note">Nenhuma carga ainda. Escolha um equipamento da lista e clique em Adicionar.</td></tr>`;
 }
+
+function chAxisTicks(tmax){ const st=tmax>72?24:tmax>48?12:tmax>24?6:tmax>12?3:tmax>6?2:1, a=[]; for(let t=0;t<=tmax+1e-9;t+=st) a.push(t); return a; }
+function hibSvgSOC(c,Hh=215){
+  if(!(c.autH>0)) return "";
+  const W=560,L=44,Rr=16,T=16,B=36, iw=W-L-Rr, ih=Hh-T-B, tmax=Math.max(c.autH,c.H)*1.15, floor=100-c.dod*100;
+  const x=t=>L+t/tmax*iw, y=sc=>T+(100-sc)/100*ih;
+  let o=`<svg viewBox="0 0 ${W} ${Hh}" class="chart" role="img" aria-label="Carga da bateria durante a queda de energia" style="width:100%;max-width:640px;height:auto;display:block;color:inherit">`;
+  [0,25,50,75,100].forEach(g=>{ o+=`<line x1="${L}" x2="${W-Rr}" y1="${y(g)}" y2="${y(g)}" stroke="currentColor" opacity=".15"/><text x="${L-6}" y="${y(g)+4}" text-anchor="end" font-size="11" fill="currentColor" opacity=".7">${g}%</text>`; });
+  o+=`<rect x="${L}" y="${y(floor)}" width="${iw}" height="${y(0)-y(floor)}" fill="currentColor" opacity=".08"/><text x="${L+6}" y="${y(floor)+14}" font-size="10" fill="currentColor" opacity=".6">reserva da bateria (fora do DoD)</text>`;
+  chAxisTicks(tmax).forEach(t=>{ o+=`<text x="${x(t)}" y="${Hh-18}" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">${num(t,0)} h</text>`; });
+  if(c.H>0&&c.H<=tmax) o+=`<line x1="${x(c.H)}" x2="${x(c.H)}" y1="${T}" y2="${y(0)}" stroke="#e0a800" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${x(c.H)+4}" y="${T+11}" font-size="10.5" fill="#e0a800">backup pedido: ${num(c.H,1)} h</text>`;
+  o+=`<polyline points="${x(0)},${y(100)} ${x(c.autH)},${y(floor)}" fill="none" stroke="#64ABDE" stroke-width="3" stroke-linecap="round"/><circle cx="${x(c.autH)}" cy="${y(floor)}" r="4.5" fill="#64ABDE"/><text x="${x(c.autH)+6}" y="${y(floor)+17}" text-anchor="end" font-size="11.5" font-weight="700" fill="currentColor">autonomia ${num(c.autH,1)} h</text></svg>`;
+  return o;
+}
+function offSvgMes(c){
+  const M=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"], W=560,Hh=215,L=44,Rr=16,T=18,B=30, iw=W-L-Rr, ih=Hh-T-B, mx=Math.max(c.E,...c.mes)*1.18||1, bw=iw/12;
+  const y=vv=>T+(1-vv/mx)*ih;
+  let o=`<svg viewBox="0 0 ${W} ${Hh}" class="chart" role="img" aria-label="Geração diária por mês contra o consumo" style="width:100%;max-width:640px;height:auto;display:block;color:inherit">`;
+  for(let k=0;k<=4;k++){ const vv=mx*k/4; o+=`<line x1="${L}" x2="${W-Rr}" y1="${y(vv)}" y2="${y(vv)}" stroke="currentColor" opacity=".15"/><text x="${L-6}" y="${y(vv)+4}" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".7">${num(vv,0)}</text>`; }
+  c.mes.forEach((g,i)=>{ o+=`<rect x="${L+i*bw+bw*.18}" y="${y(g)}" width="${bw*.64}" height="${y(0)-y(g)}" fill="${c.def[i]?"#D85A30":"#64ABDE"}" rx="2"/><text x="${L+i*bw+bw/2}" y="${Hh-12}" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".7">${M[i]}</text>`; });
+  o+=`<line x1="${L}" x2="${W-Rr}" y1="${y(c.E)}" y2="${y(c.E)}" stroke="#e0a800" stroke-width="1.8" stroke-dasharray="6 4"/><text x="${W-Rr}" y="${y(c.E)-5}" text-anchor="end" font-size="10.5" font-weight="700" fill="currentColor" style="paint-order:stroke;stroke:var(--surface,#fff);stroke-width:4px">consumo ${num(c.E,1)} kWh/dia</text><text x="${L}" y="10" font-size="10.5" fill="currentColor" opacity=".7">geração por dia (kWh)</text></svg>`;
+  return o;
+}
 function hibRes(){
   if(offAtivo()) return offRes();
   const c=hibCalc();
@@ -2352,9 +2377,10 @@ function hibRes(){
     <tr><td>Capacidade nominal necessária</td><td>${num(c.capReq,1)} kWh (energia ÷ (DoD ${num(c.dod*100,0)}% × eficiência ${num(c.ef*100,0)}%))</td></tr>
     <tr><td>Inversor híbrido (pela regra ON)</td><td><b>${esc(c.dy.nome)}</b> · on-grid de ${num(c.dy.kwOn,1)} kW (até 5 kW → 5 kW; até 6 kW → 6 kW; acima → 7,5 kW)</td></tr>
     <tr><td>Potência exigida pelas cargas</td><td>${num(c.pNec,2)} kW (folga ${num(c.folga,2)}×; surto ${num(c.sx,1)}× por alguns segundos)</td></tr>
-    <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,1)} kWh = ${num(c.capInst,1)} kWh</b> (${c.nCap} pela energia, ${c.nPot} pela potência)</td></tr>
+    <tr><td>Baterias</td><td><b>${c.nBat} × ${num(c.kwhM,2)} kWh = ${num(c.capInst,1)} kWh</b> ${c.man>0?`(ajuste manual; calculado: ${c.nAuto})`:`(${c.nCap} pela energia, ${c.nPot} pela potência)`}</td></tr>
     <tr><td>Autonomia real do banco</td><td>${num(c.autH,1)} h com as cargas críticas</td></tr>
     <tr><td>Corrente CC no pico</td><td>${num(c.iDC,0)} A em ${num(c.tens,0)} V</td></tr></tbody></table>
+   <h3 class="sub">Autonomia do backup</h3>${hibSvgSOC(c)}
    ${c.av.length?`<ul class="checks">${c.av.map(a=>`<li class="warn">${esc(a)}</li>`).join("")}</ul>`:""}`;
 }
 function hibPagina(r){
@@ -2367,6 +2393,7 @@ function hibPagina(r){
   return [`<h2>Sistema híbrido: energia de reserva (backup)</h2>
    <p class="lead">Mesma geração solar, com inversor híbrido e baterias: o sistema segue alimentando as cargas essenciais quando a rede da concessionária falta.</p>
    <div class="kpis3"><div><b>${num(c.autH,1)} h</b><span>autonomia com as cargas essenciais</span></div><div><b>${num(c.capInst,1)} kWh</b><span>capacidade instalada (${c.nBat} × ${num(c.kwhM,1)} kWh)</span></div><div class="hi"><b>${c.dy.kwNom?num(c.dy.kwNom,1)+" kW":"-"}</b><span>${pesc(c.dy.nome)}</span></div></div>
+   ${hibSvgSOC(c,150)}
    <h3 class="sub">Cargas prioritárias atendidas no backup</h3>
    <table class="data l"><thead><tr><th>Equipamento</th><th>Qtd.</th><th>Potência</th><th>Uso previsto</th></tr></thead><tbody>${rows}</tbody></table>
    ${fora.length?`<p class="small"><b>Não atendidas pelo backup:</b> ${fora.map(x=>pesc(x.n)).join(", ")}. Seguem funcionando normalmente com a rede.</p>`:""}
