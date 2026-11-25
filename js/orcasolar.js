@@ -1137,11 +1137,11 @@ function propostaHTML(){
     const limpa=l=>l.replace(/^\s*\d{5,}\s*[–—-]\s*/,"").replace(/^[–—-]\s*/,"").trim();
     const distLinhas=($("disttxt").value||"").split(/\n+/).map(limpa).filter(l=>l&&!/frete/i.test(l)).slice(0,40);
     const porCat={mod:[],inv:[],estr:[],cabo:[],prot:[],inst:[]}, sobra=distLinhas.slice();
-    const li=a_=>a_.map(x=>x.startsWith("§")?`<li class="d">${x.slice(1)}</li>`:`<li>${x}</li>`).join("");
+    const li=a_=>a_.map(x=>x.startsWith("§")?`<li class="d">${x.slice(1)}</li>`:x.startsWith("¶")?`<li><b style="font-size:14px;color:#1D3140">${x.slice(1)}</b></li>`:`<li>${x}</li>`).join("");
     const row=(ic,titulo,sub,base,extra)=>`<div class="eqr"><div class="ico">${iconProd(ic)}</div><div class="eqt"><h4>${titulo}</h4>${sub?`<b>${pesc(sub)}</b>`:""}</div><ul>${li(base.map(x=>pesc(x)))}${li(extra.map(x=>pesc(x)))}</ul></div>`;
     const rows=[
       row("mod",`Módulos fotovoltaicos · ${r.modulos} un.`,(mod.marca+" "+mod.modelo).trim()||`${mod.wp} Wp`,[`Potência ${mod.wp} Wp · ${num(r.kwp,2)} kWp no total`,`Dimensões ${mod.comp} × ${mod.larg} mm`,`Voc ${mod.voc} V · Isc ${mod.isc} A · Vmp ${mod.vmp} V · Imp ${mod.imp} A`,`Coeficiente de temperatura da potência ${num(mod.coefP,2)} %/°C`,`Garantia de desempenho de ${mod.garantia||25} anos, conforme o fabricante`].concat((mod.det||[]).slice(0,5).map(x=>"§"+x)),porCat.mod),
-      row("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`].concat((inv.det||[]).slice(0,5).map(x=>"§"+x)),porCat.inv),
+      row("inv",`Inversor · ${r.qtdInv} un.`,(inv.marca+" "+inv.modelo).trim(),[`Potência ${num(inv.kw,1)} kW (CA) · ${inv.fases===1?"monofásico":inv.fases===2?"bifásico":"trifásico"}`,`${inv.mppt} MPPT · ${inv.strMppt} string(s) por MPPT`,`Tensão máxima CC ${inv.vmax} V · corrente máx. por MPPT ${inv.iscMax} A`].concat((inv.det||[]).slice(0,5).map(x=>"§"+x)).concat((r.maisMod>0&&!(typeof hibAtivo==="function"&&(hibAtivo()||offAtivo())))?[`¶Comporta mais ${r.maisMod} módulo${r.maisMod>1?"s":""} de capacidade`]:[]),porCat.inv),
       ...(typeof hibBatRow==="function"&&hibAtivo()?[hibBatRow(row)]:[]),
       row("estr","Estrutura de fixação",`Para ${r.tel.nome.toLowerCase()}`,[`Estrutura selecionada: ${r.tel.nome.toLowerCase()}`,`${r.modulos} módulos fixados em perfis e fixadores`,`Área útil estimada de ${num(r.areaTotal,1)} m²`],porCat.estr),
       row("cabo","Cabos e conectores","",[`Cabos CC solares e conectores MC4 para ${num(r.kwp,2)} kWp`,`Cabeamento CA até o quadro de entrada`],porCat.cabo),
