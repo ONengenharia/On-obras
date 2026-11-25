@@ -2288,6 +2288,12 @@ function hibPagina(r){
     <tr><td>Partida de motores</td><td>Pico de ${num(c.pico,2)} kW e surto de ${num(c.surto,2)} kW considerados</td></tr></tbody></table>
    <p class="small">A autonomia depende das cargas efetivamente ligadas e do estado de carga da bateria no momento da falta. Equipamentos fora desta lista, ou com potência maior que a informada, exigem novo dimensionamento. A confirmação das cargas pelo cliente integra o aceite desta proposta.</p>`];
 }
+function hibPerm(){
+  const sel=$("hib-tipo"); if(!sel) return; const o=[...sel.options].find(x=>x.value==="hib"); if(!o) return;
+  o.disabled=!ISADM; o.textContent=ISADM?"Com Opção B: híbrido com backup":"Híbrido com backup (em breve)";
+  if(!ISADM&&sel.value==="hib"){ sel.value="on"; hibRender(); }
+}
+const _calcH=calc; calc=function(){ try{ hibPerm(); }catch(e){} return _calcH.apply(this,arguments); };
 function hibBind(){
   const bsel=$("hib-bat-sel"); bsel.innerHTML='<option value="">Outra (preencher abaixo)</option>'+HIB_BAT.map(b=>`<option value="${b.id}">${esc(b.nome)}</option>`).join("");
   bsel.value=HIB_BAT[0].id;
