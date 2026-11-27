@@ -982,7 +982,7 @@ function ambIcon(t){
   if(t==="fator") return W(`<path d="M7 33 A17 17 0 0 1 41 33" ${s}/><path d="M24 33 L33 20" ${s}/><circle cx="24" cy="33" r="3" ${a} ${s}/><path d="M12 33 H9 M39 33 H36 M24 14 V17" ${s} stroke-width="2"/>`);
   return W(`<path d="M9 39 C9 21 21 9 39 9 C39 27 27 39 9 39 Z" ${a} ${s}/><path d="M9 39 L27 21" ${s}/>`);
 }
-function capaModelo(M,pill,nome,local){
+function capaModelo(M,pill,nome,local,data){
   const k=210/M.W, mm=v=>(v*k).toFixed(2)+"mm", bx=M.bar[0], by=M.bar[1], bl=M.bar[2], left=bx+35*M.W/1055;
   const src=(typeof CAPA_B64!=="undefined"&&CAPA_B64[M.id])||capaUrl(M.id);
   const nm=String(nome||""), ad=String(local||"");
@@ -991,7 +991,7 @@ function capaModelo(M,pill,nome,local){
   const T=(y,fs,col,wt,txt)=>`<div class="cvt" style="left:${mm(left)};top:${mm(y)};font-size:${mm(fs)};color:${col};font-weight:${wt}">${pesc(txt)}</div>`;
   return `<section class="pg cover cvimg"><img class="cvbg" src="${src}" alt="">
     <div class="cvp" style="left:${mm(M.pill[0])};top:${mm(M.pill[1])};width:${mm(pw)};height:${mm(ph)};font-size:${mm(fP)}">${pesc(pill)}</div>
-    ${T(by+.16*bl,fL,M.cl,500,"Preparada para")}${T(by+.54*bl,fN,M.cn,700,nm)}${ad?T(by+.86*bl,fA,M.cl,500,ad):""}
+    ${T(by+.16*bl,fL,M.cl,500,"Preparada para")}${T(by+.54*bl,fN,M.cn,700,nm)}${ad?T(by+.86*bl,fA,M.cl,500,ad):""}${data?T(by+bl+.22*bl,fA*1.25,M.cn,700,"Emitida em "+data):""}
   </section>`;
 }
 function propInfo(){
@@ -1073,13 +1073,13 @@ function propostaHTML(){
     <div class="cv-main">
       <p class="eyebrow">${pesc(cap.titulo||"Energia solar fotovoltaica")}</p>
       <h1>Proposta<br>comercial</h1>
-      <div class="cv-client"><span>Preparada para</span><strong>${pesc(nome)}</strong><em>${pesc(local)}</em></div>
+      <div class="cv-client"><span>Preparada para</span><strong>${pesc(nome)}</strong><em>${pesc(local)}</em><em style="display:block;margin-top:6px;font-weight:700;font-style:normal">Emitida em ${dataVer}</em></div>
     </div>
     ${capaArte(cap.estilo||"aneis",cap.imagem)}
     ${cap.campanha?`<div class="camp"><b>${pesc(cap.campanha)}</b>${cap.detalhe?`<span>${pesc(cap.detalhe)}</span>`:""}</div>`:""}
     <div class="cv-foot"><span>Emitida em ${dataVer} · válida até ${validade}</span><span>${pesc(CONFIG.empresa||"ON Engenharia")}</span><span>${pesc(CONFIG.contato||"")}</span></div>
   </section>`;
-  const capaHtml=_CM?capaModelo(_CM,pillTxt,nome,local):capaSvg;
+  const capaHtml=_CM?capaModelo(_CM,pillTxt,nome,local,dataVer):capaSvg;
   const kp4=`<div class="kpis4"><div><b>${num(r.kwp,2)} kWp</b><span>potência</span></div><div><b>${r.modulos} módulos</b><span>de ${mod.wp} Wp</span></div><div><b>${num(r.gerMes+r.rateio)} kWh</b><span>geração por mês (média anual)${r.rateio>0?" · inclui rateio":""}</span></div><div><b>${num(r.areaTotal,0)} m²</b><span>área necessária</span></div></div>`;
   const faces=r.al.faces.filter(f=>f.n>0).map(f=>`${ORI[f.ori][0]} (${f.n})`).join(" · ")||"Norte";
   const detalhes=`<table class="kv"><tbody>
