@@ -1204,7 +1204,7 @@ function propostaHTML(){
   const corpo=[capaHtml].concat(todas.map((b,i)=>`<section class="pg">${head()}<div class="pb">${b}</div>${foot(i+2)}</section>`));
   return `<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${pesc(("Proposta.v"+(propVer()||1)+"_"+String(nome||"cliente").trim()+"_"+String(dataVer||hoje).replace(/\//g,"-")).replace(/[\\/:*?"<>|]/g,""))}</title>
+<title>${pesc((String(window.GC_NUM?window.GC_NUM:propRef())+".v"+(propVer()||1)+"_"+String(nome||"cliente").trim()+"_"+String(dataVer||hoje).replace(/\//g,"-")).replace(/[\\/:*?"<>|]/g,""))}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
 <style>
 @page{size:A4;margin:0}
