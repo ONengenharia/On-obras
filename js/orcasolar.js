@@ -1204,7 +1204,7 @@ function propostaHTML(){
   const corpo=[capaHtml].concat(todas.map((b,i)=>`<section class="pg">${head()}<div class="pb">${b}</div>${foot(i+2)}</section>`));
   return `<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Proposta ${pesc(nome)}</title>
+<title>${pesc(("Proposta.v"+(propVer()||1)+"_"+String(nome||"cliente").trim()+"_"+String(dataVer||hoje).replace(/\//g,"-")).replace(/[\\/:*?"<>|]/g,""))}</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap">
 <style>
 @page{size:A4;margin:0}
@@ -1345,7 +1345,7 @@ ${corpo.join("\n")}
 
 function atualizarPrev(){ if(!R) return; try{ $("prev").srcdoc = propostaHTML(); }catch(e){ console.error(e); } }
 $("pr-abrir").onclick=async()=>{ if(!R) return; emitirVersao(); const w=window.open("","_blank"); if(!w){ flash($("toast"),"Libere pop-ups para abrir a proposta."); return; } if(!(await garantirGC())){ try{ w.close(); }catch(e){} return; } await capaPronta(); w.document.open(); w.document.write(propostaHTML()); w.document.close(); };
-$("pr-baixar").onclick=async()=>{ if(!R) return; emitirVersao(); if(!(await garantirGC())) return; await capaPronta(); const b=new Blob([propostaHTML()],{type:"text/html"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download="Proposta - "+(($("cliente").value||"cliente").replace(/[\\/:*?"<>|]/g,"").trim())+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); };
+$("pr-baixar").onclick=async()=>{ if(!R) return; emitirVersao(); if(!(await garantirGC())) return; await capaPronta(); const b=new Blob([propostaHTML()],{type:"text/html"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=((propostaHTML().match(/<title>([^<]*)<\/title>/)||[])[1]||"Proposta")+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); };
 
 /* capa: imagem configurável + seguro */
 function capaPrev(){ const im=(CONFIG.capa||{}).imagem||""; const e=$("capa-prev"), b=$("capa-rm"); e.style.display=im?"block":"none"; b.style.display=im?"inline-block":"none"; if(im) e.src=im; }
@@ -2146,7 +2146,7 @@ $("pr-baixar").onclick=async function(){
   const sv=$("pr-psel").value; if(!sv||sv==="cur") return _baixar0.apply(this,arguments);
   if(!(await versaoPronta())) return; const x=histGet()[+sv], h=await htmlDaVersao(sv); if(!h) return;
   const b=new Blob([h],{type:"text/html"}), a=document.createElement("a"); a.href=URL.createObjectURL(b);
-  a.download="Proposta - "+(($("cliente").value||"cliente").replace(/[\\/:*?"<>|]/g,"").trim())+" - v"+x.v+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  a.download=((h.match(/<title>([^<]*)<\/title>/)||[])[1]||("Proposta v"+x.v))+".html"; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 };
 try{ pselFill(); }catch(e){}
 
@@ -2599,5 +2599,6 @@ function hibBatRow(row){
   const extra=bs&&bs.det?bs.det.map(x=>"§"+x):[];
   return row("bat","Baterias · "+c.nBat+" un.",nome,base,extra);
 }
+
 
 integrar();
